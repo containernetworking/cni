@@ -1,0 +1,22 @@
+{
+	"ImportPath": "github.com/appc/cni",
+	"GoVersion": "go1.4.2",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/coreos/go-iptables/iptables",
+			"Rev": "83dfad0f13fd7310fb3c1cb8563248d8d604b95b"
+		},
+		{
+			"ImportPath": "github.com/coreos/rkt/pkg/lock",
+			"Comment": "v0.5.3-84-gdc2e480",
+			"Rev": "dc2e4803c86ad429a43d73a9ee0172afd952a760"
+		},
+		{
+			"ImportPath": "github.com/vishvananda/netlink",
+			"Rev": "ae3e7dba57271b4e976c4f91637861ee477135e2"
+		}
+	]
+}

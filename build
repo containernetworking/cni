@@ -1,0 +1,27 @@
+#!/bin/bash -e
+
+ORG_PATH="github.com/appc"
+REPO_PATH="${ORG_PATH}/cni"
+
+if [ ! -h gopath/src/${REPO_PATH} ]; then
+	mkdir -p gopath/src/${ORG_PATH}
+	ln -s ../../../.. gopath/src/${REPO_PATH} || exit 255
+fi
+
+export GOBIN=${PWD}/bin
+export GOPATH=${PWD}/gopath
+
+echo "Building plugins"
+
+PLUGINS="plugins/main/* plugins/ipam/*"
+for d in $PLUGINS; do
+	if [ -d $d ]; then
+		plugin=$(basename $d)
+		echo "  " $plugin
+		go install ${REPO_PATH}/$d
+	fi
+done
+
+if [ ! -h $GOBIN/host-local-ptp ]; then
+	ln -s host-local $GOBIN/host-local-ptp
+fi
