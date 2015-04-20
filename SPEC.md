@@ -75,9 +75,9 @@ The network configuration is described in JSON form. The configuration can be st
 - `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network.
 - `ipam`: Dictionary with IPAM specific values:
   - `type` (string): Refers to the filename of the CNI plugin executable.
-  - `routes` (list): List of subnets (in CIDR notation) that the CNI plugin should ensure are reachable by routing them through the network. Each entry in the list is either a string in CIDR notation or a dictionary containing:
+  - `routes` (list): List of subnets (in CIDR notation) that the CNI plugin should ensure are reachable by routing them through the network. Each entry is a dictionary containing:
     - `dst` (string): subnet in CIDR notation
-    - `gw` (string): IP address of the gateway to use. If not specified, the default gateway for the subnet is assumed (as determined by the CNI plugin).
+    - `gw` (string): IP address of the gateway to use. If not specified, the default gateway for the subnet is assumed (as determined by the IPAM plugin).
 
 ### Example configurations
 
@@ -152,9 +152,14 @@ Success is indicated by a zero return code and the following JSON being printed 
 }
 ```
 
+`gateway` is the default gateway for this subnet, if one exists.
+It does not instruct the CNI plugin to add any routes with this gateway.
+Routes to add are separately specified via `routes` field.
+Example use of this value is for CNI plugin to add this IP address to the linux-bridge to make it a gateway.
+
 Each route entry is a dictionary with the following fields:
 - `dst` (string): Destination subnet specified in CIDR notation.
-- `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the IPAM plugin).
+- `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
 
 Errors are indicated by a non-zero return code and error details printed to stderr.
 
