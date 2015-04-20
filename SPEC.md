@@ -153,9 +153,8 @@ Success is indicated by a zero return code and the following JSON being printed 
 ```
 
 `gateway` is the default gateway for this subnet, if one exists.
-It does not instruct the CNI plugin to add any routes with this gateway.
-Routes to add are separately specified via `routes` field.
-Example use of this value is for CNI plugin to add this IP address to the linux-bridge to make it a gateway.
+It does not instruct the CNI plugin to add any routes with this gateway: routes to add are specified separately via the `routes` field.
+An example use of this value is for the CNI plugin to add this IP address to the linux-bridge to make it a gateway.
 
 Each route entry is a dictionary with the following fields:
 - `dst` (string): Destination subnet specified in CIDR notation.
