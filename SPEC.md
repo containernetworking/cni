@@ -16,13 +16,23 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 [appc-github]: https://github.com/appc/spec
 [docker]: https://docker.com 
 
+## General considerations
+
+The intention is for the container runtime to first create a new network namespace for the container.
+It then determines which networks this container should belong to and for each network, which plugin must be executed.
+The network configuration is in JSON format and can easily be stored in a file.
+The network configuration includes mandatory fields such as "name" and "type" as well as plugin (type) specific ones.
+The container runtime sequentially sets up the networks by executing the corresponding plugin for each network.
+Upon completion of the container lifecycle, the runtime executes the plugins in reverse order (relative to the order in which they were added) to disconnect them from the networks.
+
 ## CNI Plugin
 
 ### Overview
 
 Each CNI plugin is implemented as an executable that is invoked by the container management system (e.g. rkt or Docker).
 
-A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching other end of veth into a bridge). It should then assign the IP to the interface and setup the routes consistent with IP Address Management section by invoking appropriate IPAM plugin.
+A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching other end of veth into a bridge).
+It should then assign the IP to the interface and setup the routes consistent with IP Address Management section by invoking appropriate IPAM plugin.
 
 ### Parameters
 
@@ -31,7 +41,7 @@ The operations that the CNI plugin needs to support are:
 
 - Add container to network
   - Parameters:
-    - **Container ID**. This is optional but recommended, and should be unique across an administrative domain. For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
+    - **Container ID**. This is optional but recommended, and should be unique across an administrative domain while the container is live (it may be reused in the future). For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
     - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
     - **Extra arguments**. This allows granular configuration of CNI plugins on a per-container basis.
@@ -57,24 +67,48 @@ The executable command-line API uses the type of network (see [Network Configura
 
 Network configuration in JSON format is streamed through stdin.
 
-Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command:
+
+### Result
+
+Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details).
+
 ```json
 {
-    "ip4": <ipv4-and-subnet-in-CIDR>,
-    "ip6": <ipv6-and-subnet-in-CIDR>
+  "ip4": {
+    "ip": <ipv4-and-subnet-in-CIDR>,
+    "gateway": <ipv4-of-the-gateway>,  (optional)
+    "routes": <list-of-ipv4-routes>    (optional)
+  },
+  "ip6": {
+    "ip": <ipv6-and-subnet-in-CIDR>,
+    "gateway": <ipv6-of-the-gateway>,  (optional)
+    "routes": <list-of-ipv6-routes>    (optional)
+  }
 }
 ```
 
-Errors are indicated by a non-zero return code and error details printed to stderr.
+Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
+```json
+{
+  "code": <numeric-error-code>,
+  "msg": <short-error-message>,
+  "details": <long-error-message> (optional)
+}
+```
+
+Error codes 0-99 are reserved for well-known errors (to be defined later).
+Values of 100+ can be freely used for plugin specific errors. 
+
+In addition, stderr can be used for unstructured output such as logs.
 
 ### Network Configuration
 
 The network configuration is described in JSON form. The configuration can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `type` (string): Refers to the filename of the CNI plugin executable.
-- `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network.
+- `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
 - `ipam`: Dictionary with IPAM specific values:
-  - `type` (string): Refers to the filename of the CNI plugin executable.
+  - `type` (string): Refers to the filename of the IPAM plugin executable.
   - `routes` (list): List of subnets (in CIDR notation) that the CNI plugin should ensure are reachable by routing them through the network. Each entry is a dictionary containing:
     - `dst` (string): subnet in CIDR notation
     - `gw` (string): IP address of the gateway to use. If not specified, the default gateway for the subnet is assumed (as determined by the IPAM plugin).
@@ -86,11 +120,11 @@ The network configuration is described in JSON form. The configuration can be st
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
-  "bridge": "CNI0",
+  "bridge": "cni0",
   "addIf": "eth0",
-  // ipam specific
   "ipam": {
     "type": "host-local",
+    // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
   },
@@ -104,7 +138,6 @@ The network configuration is described in JSON form. The configuration can be st
   // type (plugin) specific
   "bridge": "ovs0",
   "vxlanID": 42
-  // ipam specific
   "ipam": {
     "type": "dhcp"
     "routes": [ "10.3.0.0/16", "10.4.0.0/16" ]
@@ -133,7 +166,7 @@ To lessen the burden and make IP management strategy be orthogonal to the type o
 
 #### IP Address Management (IPAM) Interface
 
-Like CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin receives all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM receives the JSON configuration file via stdin.
+Like CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin receives all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM receives the network configuration file via stdin.
 
 Success is indicated by a zero return code and the following JSON being printed to stdout (in the case of the ADD command):
 
@@ -160,7 +193,7 @@ Each route entry is a dictionary with the following fields:
 - `dst` (string): Destination subnet specified in CIDR notation.
 - `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
 
-Errors are indicated by a non-zero return code and error details printed to stderr.
+Errors and logs are communicated in the same way as the CNI plugin. See [CNI Plugin Result](#result) section for details.
 
 IPAM plugin examples:
  - **host-local**: Select an unused (by other containers on the same host) IP within the specified range.
