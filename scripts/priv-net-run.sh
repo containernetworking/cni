@@ -3,18 +3,18 @@
 # Run a command in a private network namespace
 # set up by CNI plugins
 
-netnsname=$(printf '%x%x' $RANDOM $RANDOM)
-netnspath=/var/run/netns/$netnsname
+contid=$(printf '%x%x%x%x' $RANDOM $RANDOM $RANDOM $RANDOM)
+netnspath=/var/run/netns/$contid
 
-ip netns add $netnsname
-ip netns exec $netnsname ip link set lo up
-./exec-plugins.sh add $netnspath
+ip netns add $contid
+ip netns exec $contid ip link set lo up
+./exec-plugins.sh add $contid $netnspath
 
 
 function cleanup() {
-	./exec-plugins.sh del $netnspath
-	ip netns delete $netnsname
+	./exec-plugins.sh del $contid $netnspath
+	ip netns delete $contid
 }
 trap cleanup EXIT
 
-ip netns exec $netnsname $@
+ip netns exec $contid $@

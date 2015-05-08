@@ -48,9 +48,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	switch ipamConf.Type {
 	case "host-local":
-		ipConf, err = allocator.Get(args.Netns)
+		ipConf, err = allocator.Get(args.ContainerID)
 	case "host-local-ptp":
-		ipConf, err = allocator.GetPtP(args.Netns)
+		ipConf, err = allocator.GetPtP(args.ContainerID)
 	default:
 		return errors.New("Unsupported IPAM plugin type")
 	}
@@ -81,5 +81,5 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return allocator.Release(args.Netns)
+	return allocator.Release(args.ContainerID)
 }

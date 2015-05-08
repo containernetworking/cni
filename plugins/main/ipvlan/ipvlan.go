@@ -107,7 +107,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
-	tmpName := ip.RandomVethName(args.Netns)
+	tmpName, err := ip.RandomVethName()
+	if err != nil {
+		return err
+	}
+
 	if err = createIpvlan(n, tmpName, netns); err != nil {
 		return err
 	}
