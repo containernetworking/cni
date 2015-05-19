@@ -46,7 +46,7 @@ type NetConf struct {
 
 func setupContainerVeth(netns, ifName string, mtu int, pr *plugin.Result) (string, error) {
 	var hostVethName string
-	err := ns.WithNetNSPath(netns, func(hostNS *os.File) error {
+	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
 		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
 		if err != nil {
 			return err
@@ -131,7 +131,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	var ipn *net.IPNet
-	err := ns.WithNetNSPath(args.Netns, func(hostNS *os.File) error {
+	err := ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
 		var err error
 		ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
 		return err

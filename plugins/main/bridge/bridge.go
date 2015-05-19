@@ -124,7 +124,7 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 func setupVeth(netns string, br *netlink.Bridge, ifName string, mtu int) error {
 	var hostVethName string
 
-	err := ns.WithNetNSPath(netns, func(hostNS *os.File) error {
+	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
 		// create the veth pair in the container and move host end into host netns
 		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
 		if err != nil {
@@ -196,7 +196,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		result.IP4.Gateway = calcGatewayIP(&result.IP4.IP)
 	}
 
-	err = ns.WithNetNSPath(args.Netns, func(hostNS *os.File) error {
+	err = ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
 		return plugin.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
@@ -235,7 +235,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, func(hostNS *os.File) error {
+	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
 		return ip.DelLinkByName(args.IfName)
 	})
 }

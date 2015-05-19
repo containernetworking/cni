@@ -101,7 +101,7 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 		return fmt.Errorf("failed to create macvlan: %v", err)
 	}
 
-	return ns.WithNetNS(netns, func(_ *os.File) error {
+	return ns.WithNetNS(netns, false, func(_ *os.File) error {
 		err := renameLink(tmpName, ifName)
 		if err != nil {
 			return fmt.Errorf("failed to rename macvlan to %q: %v", ifName, err)
@@ -135,7 +135,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	err = ns.WithNetNS(netns, func(_ *os.File) error {
+	err = ns.WithNetNS(netns, false, func(_ *os.File) error {
 		return plugin.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
@@ -163,7 +163,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, func(hostNS *os.File) error {
+	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
 		return ip.DelLinkByName(args.IfName)
 	})
 }
