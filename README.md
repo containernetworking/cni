@@ -17,6 +17,7 @@ Hence we are proposing this specification, along with an initial set of plugins 
 
 ## Included Plugins
 This repository includes a number of common plugins that can be found in plugins/ directory.
+Please see Documentation/ folder for documentation about particular plugins.
 
 ## Running the plugins
 The scripts/ directory contains two scripts, priv-net-run.sh and docker-run.sh, that can be used to excercise the plugins.
