@@ -221,7 +221,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	return plugin.PrintResult(result)
+	return result.Print()
 }
 
 func cmdDel(args *skel.CmdArgs) error {

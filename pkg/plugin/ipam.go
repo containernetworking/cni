@@ -41,6 +41,22 @@ func Find(plugin string) string {
 	return ""
 }
 
+func pluginErr(err error, output []byte) error {
+	if _, ok := err.(*exec.ExitError); ok {
+		emsg := Error{}
+		if perr := json.Unmarshal(output, &emsg); perr != nil {
+			return fmt.Errorf("netplugin failed but error parsing its diagnostic message %q: %v", string(output), perr)
+		}
+		details := ""
+		if emsg.Details != "" {
+			details = fmt.Sprintf("; %v", emsg.Details)
+		}
+		return fmt.Errorf("%v%v", emsg.Msg, details)
+	}
+
+	return err
+}
+
 // ExecAdd executes IPAM plugin, assuming CNI_COMMAND == ADD.
 // Parses and returns resulting IPConfig
 func ExecAdd(plugin string, netconf []byte) (*Result, error) {
@@ -63,7 +79,7 @@ func ExecAdd(plugin string, netconf []byte) (*Result, error) {
 		Stderr: os.Stderr,
 	}
 	if err := c.Run(); err != nil {
-		return nil, err
+		return nil, pluginErr(err, stdout.Bytes())
 	}
 
 	res := &Result{}
@@ -82,13 +98,19 @@ func ExecDel(plugin string, netconf []byte) error {
 		return fmt.Errorf("could not find %q plugin", plugin)
 	}
 
+	stdout := &bytes.Buffer{}
+
 	c := exec.Cmd{
 		Path:   pluginPath,
 		Args:   []string{pluginPath},
 		Stdin:  bytes.NewBuffer(netconf),
+		Stdout: stdout,
 		Stderr: os.Stderr,
 	}
-	return c.Run()
+	if err := c.Run(); err != nil {
+		return pluginErr(err, stdout.Bytes())
+	}
+	return nil
 }
 
 // ConfigureIface takes the result of IPAM plugin and
@@ -123,23 +145,4 @@ func ConfigureIface(ifName string, res *Result) error {
 	}
 
 	return nil
-}
-
-// PrintResult writes out prettified Result JSON to stdout
-func PrintResult(res *Result) error {
-	return prettyPrint(res)
-}
-
-// PrintError writes out prettified Error JSON to stdout
-func PrintError(err *Error) error {
-	return prettyPrint(err)
-}
-
-func prettyPrint(obj interface{}) error {
-	data, err := json.MarshalIndent(obj, "", "    ")
-	if err != nil {
-		return err
-	}
-	_, err = os.Stdout.Write(data)
-	return err
 }

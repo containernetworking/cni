@@ -45,7 +45,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("error calling DHCP.Add: %v", err)
 	}
 
-	return plugin.PrintResult(result)
+	return result.Print()
 }
 
 func cmdDel(args *skel.CmdArgs) error {
