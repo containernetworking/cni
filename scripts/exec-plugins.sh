@@ -16,9 +16,14 @@ function exec_plugins() {
 		plugin=$(jq -r '.type' <$netconf)
 		export CNI_IFNAME=$(printf eth%d $i)
 
-		$plugin <$netconf >/dev/null
+		res=$($plugin <$netconf)
 		if [ $? -ne 0 ]; then
-			echo "${name} : error executing $CNI_COMMAND"
+			errmsg=$(echo $res | jq -r '.msg')
+			if [ -z "$errmsg" ]; then
+				errmsg=$res
+			fi
+
+			echo "${name} : error executing $CNI_COMMAND: $errmsg"
 			exit 1
 		fi
 
