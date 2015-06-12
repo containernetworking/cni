@@ -23,7 +23,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink"
 
 	"github.com/appc/cni/pkg/ip"
 	"github.com/appc/cni/pkg/ns"

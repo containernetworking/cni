@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appc/cni/Godeps/_workspace/src/golang.org/x/sys/unix"
+	"golang.org/x/sys/unix"
 )
 
 // Tests that below functions, structures and constants are consistent

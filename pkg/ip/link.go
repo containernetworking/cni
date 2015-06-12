@@ -20,7 +20,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink"
 )
 
 func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {

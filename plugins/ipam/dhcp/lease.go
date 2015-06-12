@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/d2g/dhcp4"
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/d2g/dhcp4client"
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/vishvananda/netlink"
+	"github.com/d2g/dhcp4"
+	"github.com/d2g/dhcp4client"
+	"github.com/vishvananda/netlink"
 
 	"github.com/appc/cni/pkg/ns"
 	"github.com/appc/cni/pkg/plugin"

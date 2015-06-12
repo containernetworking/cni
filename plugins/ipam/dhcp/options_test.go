@@ -18,8 +18,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/d2g/dhcp4"
 	"github.com/appc/cni/pkg/plugin"
+	"github.com/d2g/dhcp4"
 )
 
 func validateRoutes(t *testing.T, routes []plugin.Route) {
