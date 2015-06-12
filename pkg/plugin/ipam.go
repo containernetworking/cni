@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/vishvananda/netlink"
 	"github.com/appc/cni/pkg/ip"
+	"github.com/vishvananda/netlink"
 )
 
 // Find returns the full path of the plugin by searching in CNI_PATH

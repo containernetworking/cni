@@ -27,9 +27,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/appc/cni/Godeps/_workspace/src/github.com/coreos/go-systemd/activation"
 	"github.com/appc/cni/pkg/plugin"
 	"github.com/appc/cni/pkg/skel"
+	"github.com/coreos/go-systemd/activation"
 )
 
 const listenFdsStart = 3
