@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/rpc"
 	"os"
+	"path/filepath"
 
 	"github.com/appc/cni/pkg/plugin"
 	"github.com/appc/cni/pkg/skel"
@@ -34,30 +35,38 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	client, err := rpc.DialHTTP("unix", socketPath)
-	if err != nil {
-		return fmt.Errorf("error dialing DHCP daemon: %v", err)
+	result := plugin.Result{}
+	if err := rpcCall("DHCP.Allocate", args, &result); err != nil {
+		return err
 	}
-
-	result := &plugin.Result{}
-	err = client.Call("DHCP.Allocate", args, result)
-	if err != nil {
-		return fmt.Errorf("error calling DHCP.Add: %v", err)
-	}
-
 	return result.Print()
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	result := struct{}{}
+	if err := rpcCall("DHCP.Release", args, &result); err != nil {
+		return fmt.Errorf("error dialing DHCP daemon: %v", err)
+	}
+	return nil
+}
+
+func rpcCall(method string, args *skel.CmdArgs, result interface{}) error {
 	client, err := rpc.DialHTTP("unix", socketPath)
 	if err != nil {
 		return fmt.Errorf("error dialing DHCP daemon: %v", err)
 	}
 
-	dummy := struct{}{}
-	err = client.Call("DHCP.Release", args, &dummy)
+	// The daemon may be running under a different working dir
+	// so make sure the netns path is absolute.
+	netns, err := filepath.Abs(args.Netns)
 	if err != nil {
-		return fmt.Errorf("error calling DHCP.Del: %v", err)
+		return fmt.Errorf("failed to make %q an absolute path: %v", args.Netns, err)
+	}
+	args.Netns = netns
+
+	err = client.Call(method, args, result)
+	if err != nil {
+		return fmt.Errorf("error calling %v: %v", method, err)
 	}
 
 	return nil
