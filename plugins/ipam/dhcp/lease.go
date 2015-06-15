@@ -73,32 +73,31 @@ func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 	log.Printf("%v: acquiring lease", clientID)
 
 	l.wg.Add(1)
-	go ns.WithNetNSPath(netns, true, func(_ *os.File) (e error) {
-		defer l.wg.Done()
+	go func() {
+		errCh <- ns.WithNetNSPath(netns, true, func(_ *os.File) error {
+			defer l.wg.Done()
 
-		link, err := netlink.LinkByName(ifName)
-		if err != nil {
-			errCh <- fmt.Errorf("error looking up %q", ifName)
-			return
-		}
+			link, err := netlink.LinkByName(ifName)
+			if err != nil {
+				return fmt.Errorf("error looking up %q: %v", ifName, err)
+			}
 
-		l.link = link
+			l.link = link
 
-		if err = l.acquire(); err != nil {
-			errCh <- err
-			return
-		}
+			if err = l.acquire(); err != nil {
+				return err
+			}
 
-		log.Printf("%v: lease acquired, expiration is %v", l.clientID, l.expireTime)
+			log.Printf("%v: lease acquired, expiration is %v", l.clientID, l.expireTime)
 
-		errCh <- nil
+			errCh <- nil
 
-		l.maintain()
-		return
-	})
+			l.maintain()
+			return nil
+		})
+	}()
 
-	err := <-errCh
-	if err != nil {
+	if err := <-errCh; err != nil {
 		return nil, err
 	}
 
