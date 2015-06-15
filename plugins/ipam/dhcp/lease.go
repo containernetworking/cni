@@ -34,6 +34,7 @@ import (
 // RFC 2131 suggests using exponential backoff, starting with 4sec
 // and randomized to +/- 1sec
 const resendDelay0 = 4 * time.Second
+const resendDelayMax = 32 * time.Second
 
 const (
 	leaseStateBound = iota
@@ -308,7 +309,9 @@ func backoffRetry(f func() (*dhcp4.Packet, error)) (*dhcp4.Packet, error) {
 
 		time.Sleep(baseDelay + jitter(time.Second))
 
-		baseDelay *= 2
+		if baseDelay < resendDelayMax {
+			baseDelay *= 2
+		}
 	}
 
 	return nil, errNoMoreTries
@@ -322,7 +325,7 @@ func newDHCPClient(link netlink.Link) (*dhcp4client.Client, error) {
 
 	return dhcp4client.New(
 		dhcp4client.HardwareAddr(link.Attrs().HardwareAddr),
-		dhcp4client.Timeout(10*time.Second),
+		dhcp4client.Timeout(5*time.Second),
 		dhcp4client.Broadcast(false),
 		dhcp4client.Connection(pktsock),
 	)
