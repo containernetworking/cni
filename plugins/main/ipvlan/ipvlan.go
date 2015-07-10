@@ -86,7 +86,7 @@ func createIpvlan(conf *NetConf, ifName string, netns *os.File) error {
 	mv := &netlink.IPVlan{
 		LinkAttrs: netlink.LinkAttrs{
 			MTU:         conf.MTU,
-			Name:        ifName,
+			Name:        tmpName,
 			ParentIndex: m.Attrs().Index,
 			Namespace:   netlink.NsFd(int(netns.Fd())),
 		},
