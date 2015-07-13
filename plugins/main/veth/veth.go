@@ -95,6 +95,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("failed to load netconf: %v", err)
 	}
 
+	if err := ip.EnableIP4Forward(); err != nil {
+		return fmt.Errorf("failed to enable forwarding: %v", err)
+	}
+
 	// run the IPAM plugin and get back the config to apply
 	result, err := plugin.ExecAdd(conf.IPAM.Type, args.StdinData)
 	if err != nil {

@@ -212,6 +212,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if err = ensureBridgeAddr(br, gwn); err != nil {
 			return err
 		}
+
+		if err := ip.EnableIP4Forward(); err != nil {
+			return fmt.Errorf("failed to enable forwarding: %v", err)
+		}
 	}
 
 	if n.IPMasq {
