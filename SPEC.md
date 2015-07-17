@@ -72,7 +72,7 @@ Network configuration in JSON format is streamed through stdin.
 
 Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details).
 
-```json
+```
 {
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
@@ -88,7 +88,7 @@ Success is indicated by a return code of zero and the following JSON printed to 
 ```
 
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
-```json
+```
 {
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
@@ -137,10 +137,10 @@ The network configuration is described in JSON form. The configuration can be st
   "type": "ovs",
   // type (plugin) specific
   "bridge": "ovs0",
-  "vxlanID": 42
+  "vxlanID": 42,
   "ipam": {
-    "type": "dhcp"
-    "routes": [ "10.3.0.0/16", "10.4.0.0/16" ]
+    "type": "dhcp",
+    "routes": [ { "dst": "10.3.0.0/16" }, { "dst": "10.4.0.0/16" } ]
   }
 }
 ```
@@ -151,8 +151,8 @@ The network configuration is described in JSON form. The configuration can be st
   "type": "macvlan",
   // ipam specific
   "ipam": {
-    "type": "dhcp"
-    "routes": [ "10.0.0.0/8" ]
+    "type": "dhcp",
+    "routes": [ { "dst": "10.0.0.0/8", "gw": "10.0.0.1" } ]
   },
 }
 ```
@@ -170,7 +170,7 @@ Like CNI plugins, the IPAM plugins are invoked by running an executable. The exe
 
 Success is indicated by a zero return code and the following JSON being printed to stdout (in the case of the ADD command):
 
-```json
+```
 {
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
