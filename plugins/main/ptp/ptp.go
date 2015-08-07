@@ -26,9 +26,10 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/appc/cni/pkg/ip"
+	"github.com/appc/cni/pkg/ipam"
 	"github.com/appc/cni/pkg/ns"
-	"github.com/appc/cni/pkg/plugin"
 	"github.com/appc/cni/pkg/skel"
+	"github.com/appc/cni/pkg/types"
 )
 
 func init() {
@@ -39,12 +40,12 @@ func init() {
 }
 
 type NetConf struct {
-	plugin.NetConf
+	types.NetConf
 	IPMasq bool `json:"ipMasq"`
 	MTU    int  `json:"mtu"`
 }
 
-func setupContainerVeth(netns, ifName string, mtu int, pr *plugin.Result) (string, error) {
+func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string, error) {
 	var hostVethName string
 	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
 		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
@@ -52,7 +53,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *plugin.Result) (strin
 			return err
 		}
 
-		err = plugin.ConfigureIface(ifName, pr)
+		err = ipam.ConfigureIface(ifName, pr)
 		if err != nil {
 			return err
 		}
@@ -64,7 +65,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *plugin.Result) (strin
 	return hostVethName, err
 }
 
-func setupHostVeth(vethName string, ipConf *plugin.IPConfig) error {
+func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 	// hostVeth moved namespaces and may have a new ifindex
 	veth, err := netlink.LinkByName(vethName)
 	if err != nil {
@@ -100,7 +101,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// run the IPAM plugin and get back the config to apply
-	result, err := plugin.ExecAdd(conf.IPAM.Type, args.StdinData)
+	result, err := ipam.ExecAdd(conf.IPAM.Type, args.StdinData)
 	if err != nil {
 		return err
 	}
@@ -152,7 +153,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		}
 	}
 
-	return plugin.ExecDel(conf.IPAM.Type, args.StdinData)
+	return ipam.ExecDel(conf.IPAM.Type, args.StdinData)
 }
 
 func main() {

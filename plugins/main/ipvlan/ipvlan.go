@@ -22,14 +22,15 @@ import (
 	"runtime"
 
 	"github.com/appc/cni/pkg/ip"
+	"github.com/appc/cni/pkg/ipam"
 	"github.com/appc/cni/pkg/ns"
-	"github.com/appc/cni/pkg/plugin"
 	"github.com/appc/cni/pkg/skel"
+	"github.com/appc/cni/pkg/types"
 	"github.com/vishvananda/netlink"
 )
 
 type NetConf struct {
-	plugin.NetConf
+	types.NetConf
 	Master string `json:"master"`
 	Mode   string `json:"mode"`
 	MTU    int    `json:"mtu"`
@@ -122,7 +123,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// run the IPAM plugin and get back the config to apply
-	result, err := plugin.ExecAdd(n.IPAM.Type, args.StdinData)
+	result, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
 	if err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	err = ns.WithNetNS(netns, false, func(_ *os.File) error {
-		return plugin.ConfigureIface(args.IfName, result)
+		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
 		return err
@@ -146,7 +147,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	err = plugin.ExecDel(n.IPAM.Type, args.StdinData)
+	err = ipam.ExecDel(n.IPAM.Type, args.StdinData)
 	if err != nil {
 		return err
 	}
