@@ -31,6 +31,11 @@ It stores the state locally on the host filesystem, therefore ensuring uniquenes
 * `gateway` (string, optional): IP inside of "subnet" to designate as the gateway. Defaults to ".1" IP inside of the "subnet" block.
 * `routes` (string, optional): list of routes to add to the container namespace. Each route is a dictionary with "dst" and optional "gw" fields. If "gw" is omitted, value of "gateway" will be used.
 
+## Supported arguments
+The following [CNI_ARGS](https://github.com/appc/cni/blob/master/SPEC.md#parameters) are supported:
+
+* `ip`: request a specific IP address from the subnet. If it's not available, the plugin will exit with an error
+
 ## Files
 
 Allocated IP addresses are stored as files in /var/lib/cni/networks/$NETWORK_NAME.
