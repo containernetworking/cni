@@ -54,7 +54,7 @@ This supplies a configuration parameter to the bridge plugin -- the created brid
 Notice that `mtu` has also been specified and this value will not be overwritten by flannel plugin.
 
 Additionally, the `delegate` field can be used to select a different kind of plugin altogether.
-To use `ipvlan` instead of `bridge`, the following configuratoin can be specified:
+To use `ipvlan` instead of `bridge`, the following configuration can be specified:
 
 ```
 {
