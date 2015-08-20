@@ -6,7 +6,7 @@ One end of the veth pair is placed inside a container and the other end resides 
 Both ends receive an IP address out of a /31 range.
 The IP of the host end becomes the gateway address inside the container.
 
-Because ptp plugin requires a pair of IP addresses for each container, it should be used in conjuction with host-local-ptp IPAM plugin.
+Because ptp plugin requires a pair of IP addresses for each container, it should be used in conjunction with host-local-ptp IPAM plugin.
 
 ## Example network configuration
 ```

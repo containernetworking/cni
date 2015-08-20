@@ -23,7 +23,7 @@ This repository includes a number of common plugins that can be found in plugins
 Please see Documentation/ folder for documentation about particular plugins.
 
 ## Running the plugins
-The scripts/ directory contains two scripts, priv-net-run.sh and docker-run.sh, that can be used to excercise the plugins.
+The scripts/ directory contains two scripts, priv-net-run.sh and docker-run.sh, that can be used to exercise the plugins.
 
 Start out by creating a netconf file to describe a network:
 
