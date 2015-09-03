@@ -28,7 +28,7 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData)
+	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
@@ -38,6 +38,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 	defer store.Close()
+
+	ipamArgs := IPAMArgs{}
+	err = plugin.LoadArgs(args.Args, &ipamArgs)
+	if err != nil {
+		return err
+	}
+	ipamConf.Args = &ipamArgs
 
 	allocator, err := NewIPAllocator(ipamConf, store)
 	if err != nil {
@@ -66,7 +73,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData)
+	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
