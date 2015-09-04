@@ -17,7 +17,7 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 	"name": "mynet",
 	"type": "bridge",
 	"bridge": "mynet0",
-	"isGateway": true,
+	"isDefaultGateway": true,
 	"ipMasq": true,
 	"hairpinMode": true,
 	"ipam": {
@@ -33,6 +33,7 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 * `type` (string, required): "bridge".
 * `bridge` (string, optional): name of the bridge to use/create. Defaults to "cni0".
 * `isGateway` (boolean, optional): assign an IP address to the bridge. Defaults to false.
+* `isDefaultGateway` (boolean, optional): Sets isGateway to true and makes the assigned IP the default route. Defaults to false.
 * `ipMasq` (boolean, optional): set up IP Masquerade on the host for traffic originating from this network and destined outside of it. Defaults to false.
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to the value chosen by the kernel.
 * `hairpinMode` (boolean, optional): set hairpin mode for interfaces on the bridge. Defaults to false.
