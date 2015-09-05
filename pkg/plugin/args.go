@@ -14,7 +14,7 @@ func LoadArgs(args string, container interface{}) error {
 
 	containerValue := reflect.ValueOf(container)
 
-	pairs := strings.Split(args, ",")
+	pairs := strings.Split(args, ";")
 	for _, pair := range pairs {
 		kv := strings.Split(pair, "=")
 		if len(kv) != 2 {
