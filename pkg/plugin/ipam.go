@@ -63,10 +63,13 @@ func ExecAdd(plugin string, netconf []byte) (*Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
 	}
+	if plugin == "" {
+		return nil, fmt.Errorf(`name of IPAM plugin is missing. Please specify a "type" field in the "ipam" section`)
+	}
 
 	pluginPath := Find(plugin)
 	if pluginPath == "" {
-		return nil, fmt.Errorf("could not find %q plugin", plugin)
+		return nil, fmt.Errorf("could not find %q IPAM plugin", plugin)
 	}
 
 	stdout := &bytes.Buffer{}
