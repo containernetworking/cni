@@ -32,7 +32,6 @@ type NetConf struct {
 	plugin.NetConf
 	Master string `json:"master"`
 	Mode   string `json:"mode"`
-	IPMasq bool   `json:"ipMasq"`
 	MTU    int    `json:"mtu"`
 }
 
@@ -136,13 +135,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 	})
 	if err != nil {
 		return err
-	}
-
-	if n.IPMasq {
-		chain := "CNI-" + n.Name
-		if err = ip.SetupIPMasq(ip.Network(&result.IP4.IP), chain); err != nil {
-			return err
-		}
 	}
 
 	return result.Print()
