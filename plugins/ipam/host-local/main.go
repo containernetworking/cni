@@ -19,8 +19,8 @@ import (
 
 	"github.com/appc/cni/plugins/ipam/host-local/backend/disk"
 
-	"github.com/appc/cni/pkg/plugin"
 	"github.com/appc/cni/pkg/skel"
+	"github.com/appc/cni/pkg/types"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	defer store.Close()
 
 	ipamArgs := IPAMArgs{}
-	err = plugin.LoadArgs(args.Args, &ipamArgs)
+	err = types.LoadArgs(args.Args, &ipamArgs)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	var ipConf *plugin.IPConfig
+	var ipConf *types.IPConfig
 
 	switch ipamConf.Type {
 	case "host-local":
@@ -66,7 +66,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	r := &plugin.Result{
+	r := &types.Result{
 		IP4: ipConf,
 	}
 	return r.Print()

@@ -11,7 +11,7 @@
 source ./build
 
 TESTABLE="plugins/ipam/dhcp"
-FORMATTABLE="$TESTABLE pkg/ip pkg/ns pkg/plugin pkg/skel plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel"
+FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ns pkg/invoke pkg/types pkg/ipam pkg/skel plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel"
 
 # user has not provided PKG override
 if [ -z "$PKG" ]; then
