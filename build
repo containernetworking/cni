@@ -27,7 +27,3 @@ for d in $PLUGINS; do
 		go install ${REPO_PATH}/$d
 	fi
 done
-
-if [ ! -h $GOBIN/host-local-ptp ]; then
-	ln -s host-local $GOBIN/host-local-ptp
-fi
