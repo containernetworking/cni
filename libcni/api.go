@@ -43,20 +43,18 @@ type CNIConfig struct {
 }
 
 func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error) {
-	return c.execPlugin("ADD", net, rt)
+	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
+	return invoke.ExecPluginWithResult(pluginPath, net.Bytes, c.args("ADD", rt))
 }
 
 func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
-	_, err := c.execPlugin("DEL", net, rt)
-	return err
+	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
+	return invoke.ExecPluginWithoutResult(pluginPath, net.Bytes, c.args("DEL", rt))
 }
 
 // =====
-
-func (c *CNIConfig) execPlugin(action string, conf *NetworkConfig, rt *RuntimeConf) (*types.Result, error) {
-	pluginPath := invoke.FindInPath(conf.Network.Type, c.Path)
-
-	args := &invoke.Args{
+func (c *CNIConfig) args(action string, rt *RuntimeConf) *invoke.Args {
+	return &invoke.Args{
 		Command:     action,
 		ContainerID: rt.ContainerID,
 		NetNS:       rt.NetNS,
@@ -64,5 +62,4 @@ func (c *CNIConfig) execPlugin(action string, conf *NetworkConfig, rt *RuntimeCo
 		IfName:      rt.IfName,
 		Path:        strings.Join(c.Path, ":"),
 	}
-	return invoke.ExecPlugin(pluginPath, conf.Bytes, args)
 }

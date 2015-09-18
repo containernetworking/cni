@@ -41,7 +41,23 @@ func pluginErr(err error, output []byte) error {
 	return err
 }
 
-func ExecPlugin(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
+func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
+	stdoutBytes, err := execPlugin(pluginPath, netconf, args)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &types.Result{}
+	err = json.Unmarshal(stdoutBytes, res)
+	return res, err
+}
+
+func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
+	_, err := execPlugin(pluginPath, netconf, args)
+	return err
+}
+
+func execPlugin(pluginPath string, netconf []byte, args CNIArgs) ([]byte, error) {
 	if pluginPath == "" {
 		return nil, fmt.Errorf("could not find %q plugin", filepath.Base(pluginPath))
 	}
@@ -60,7 +76,5 @@ func ExecPlugin(pluginPath string, netconf []byte, args CNIArgs) (*types.Result,
 		return nil, pluginErr(err, stdout.Bytes())
 	}
 
-	res := &types.Result{}
-	err := json.Unmarshal(stdout.Bytes(), res)
-	return res, err
+	return stdout.Bytes(), nil
 }
