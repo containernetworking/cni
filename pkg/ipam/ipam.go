@@ -29,15 +29,14 @@ func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
 	}
-	return invoke.ExecPlugin(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
+	return invoke.ExecPluginWithResult(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
 }
 
 func ExecDel(plugin string, netconf []byte) error {
 	if os.Getenv("CNI_COMMAND") != "DEL" {
 		return fmt.Errorf("CNI_COMMAND is not DEL")
 	}
-	_, err := invoke.ExecPlugin(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
-	return err
+	return invoke.ExecPluginWithoutResult(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
 }
 
 // ConfigureIface takes the result of IPAM plugin and
