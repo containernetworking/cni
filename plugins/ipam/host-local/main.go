@@ -15,8 +15,6 @@
 package main
 
 import (
-	"errors"
-
 	"github.com/appc/cni/plugins/ipam/host-local/backend/disk"
 
 	"github.com/appc/cni/pkg/skel"
@@ -51,17 +49,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	var ipConf *types.IPConfig
-
-	switch ipamConf.Type {
-	case "host-local":
-		ipConf, err = allocator.Get(args.ContainerID)
-	case "host-local-ptp":
-		ipConf, err = allocator.GetPtP(args.ContainerID)
-	default:
-		return errors.New("Unsupported IPAM plugin type")
-	}
-
+	ipConf, err := allocator.Get(args.ContainerID)
 	if err != nil {
 		return err
 	}

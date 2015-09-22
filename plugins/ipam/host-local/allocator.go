@@ -133,50 +133,6 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 	return nil, fmt.Errorf("no IP addresses available in network: %s", a.conf.Name)
 }
 
-// Allocates both an IP and the Gateway IP, i.e. a /31
-// This is used for Point-to-Point links
-func (a *IPAllocator) GetPtP(id string) (*types.IPConfig, error) {
-	a.store.Lock()
-	defer a.store.Unlock()
-
-	for cur := a.start; !cur.Equal(a.end); cur = ip.NextIP(cur) {
-		// we're looking for unreserved even, odd pair
-		if !evenIP(cur) {
-			continue
-		}
-
-		gw := cur
-		reserved, err := a.store.Reserve(id, gw)
-		if err != nil {
-			return nil, err
-		}
-		if reserved {
-			cur = ip.NextIP(cur)
-			if cur.Equal(a.end) {
-				break
-			}
-
-			reserved, err := a.store.Reserve(id, cur)
-			if err != nil {
-				return nil, err
-			}
-			if reserved {
-				// found them both!
-				_, bits := a.conf.Subnet.Mask.Size()
-				mask := net.CIDRMask(bits-1, bits)
-
-				return &types.IPConfig{
-					IP:      net.IPNet{cur, mask},
-					Gateway: gw,
-					Routes:  a.conf.Routes,
-				}, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("no ip addresses available in network: %s", a.conf.Name)
-}
-
 // Releases all IPs allocated for the container with given ID
 func (a *IPAllocator) Release(id string) error {
 	a.store.Lock()
@@ -203,16 +159,4 @@ func networkRange(ipnet *net.IPNet) (net.IP, net.IP, error) {
 		end = append(end, ip[i]|^ipnet.Mask[i])
 	}
 	return ipnet.IP, end, nil
-}
-
-func evenIP(ip net.IP) bool {
-	i := ip.To4()
-	if i == nil {
-		i = ip.To16()
-		if i == nil {
-			panic("IP is not v4 or v6")
-		}
-	}
-
-	return i[len(i)-1]%2 == 0
 }
