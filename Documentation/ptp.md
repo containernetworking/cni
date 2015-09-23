@@ -3,10 +3,8 @@
 ## Overview
 The ptp plugin creates a point-to-point link between a container and the host by using a veth device.
 One end of the veth pair is placed inside a container and the other end resides on the host.
-Both ends receive an IP address out of a /31 range.
-The IP of the host end becomes the gateway address inside the container.
-
-Because ptp plugin requires a pair of IP addresses for each container, it should be used in conjunction with host-local-ptp IPAM plugin.
+The host-local IPAM plugin can be used to allocate an IP address to the container.
+The traffic of the container interface will be routed through the interface of the host.
 
 ## Example network configuration
 ```
@@ -14,7 +12,7 @@ Because ptp plugin requires a pair of IP addresses for each container, it should
 	"name": "mynet",
 	"type": "ptp",
 	"ipam": {
-		"type": "host-local-ptp",
+		"type": "host-local",
 		"subnet": "10.1.1.0/24"
 	}
 }
