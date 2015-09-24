@@ -128,10 +128,6 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 		return fmt.Errorf("failed to lookup %q: %v", vethName, err)
 	}
 
-	if err = netlink.LinkSetUp(veth); err != nil {
-		return fmt.Errorf("failed to set %q up: %v", vethName, err)
-	}
-
 	// TODO(eyakubovich): IPv6
 	ipn := &net.IPNet{
 		IP:   ipConf.Gateway,
