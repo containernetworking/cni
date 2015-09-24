@@ -163,7 +163,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	// run the IPAM plugin and get back the config to apply
 	result, err := ipam.ExecAdd(conf.IPAM.Type, args.StdinData)
 	if err != nil {
-		return err
+		return fmt.Errorf("IPAM: %v", err)
 	}
 	if result.IP4 == nil {
 		return errors.New("IPAM plugin returned missing IPv4 config")
@@ -171,18 +171,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
 	if err != nil {
-		return err
+		return fmt.Errorf("container veth setup: %v", err)
 	}
 
 	if err = setupHostVeth(hostVethName, result.IP4); err != nil {
-		return err
+		return fmt.Errorf("host veth setup: %v", err)
 	}
 
 	if conf.IPMasq {
 		h := sha512.Sum512([]byte(args.ContainerID))
 		chain := fmt.Sprintf("CNI-%s-%x", conf.Name, h[:8])
 		if err = ip.SetupIPMasq(&result.IP4.IP, chain); err != nil {
-			return err
+			return fmt.Errorf("IPmasq setup: %v", err)
 		}
 	}
 
