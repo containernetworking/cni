@@ -77,8 +77,9 @@ func RandomVethName() (string, error) {
 	return fmt.Sprintf("veth%x", entropy), nil
 }
 
-// SetupVeth sets up a virtual ethernet link.
-// Should be in container netns.
+// SetupVeth creates the virtual ethernet pair and sets up the container's end in the container netns.
+// Setting up the host end up has to be done in the host netns outside of this function.
+// This is because moving the host veth end will cause it to be brought down automatically when it is moved to the host netns.
 func SetupVeth(contVethName string, mtu int, hostNS *os.File) (hostVeth, contVeth netlink.Link, err error) {
 	var hostVethName string
 	hostVethName, contVeth, err = makeVeth(contVethName, mtu)
@@ -94,11 +95,6 @@ func SetupVeth(contVethName string, mtu int, hostNS *os.File) (hostVeth, contVet
 	hostVeth, err = netlink.LinkByName(hostVethName)
 	if err != nil {
 		err = fmt.Errorf("failed to lookup %q: %v", hostVethName, err)
-		return
-	}
-
-	if err = netlink.LinkSetUp(hostVeth); err != nil {
-		err = fmt.Errorf("failed to set %q up: %v", contVethName, err)
 		return
 	}
 

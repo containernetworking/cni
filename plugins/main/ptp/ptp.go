@@ -46,6 +46,17 @@ type NetConf struct {
 }
 
 func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string, error) {
+	// The IPAM result will be something like IP=192.168.3.5/24, GW=192.168.3.1.
+	// What we want is really a point-to-point link but veth does not support IFF_POINTOPONT.
+	// Next best thing would be to let it ARP but set interface to 192.168.3.5/32 and
+	// add a route like "192.168.3.0/24 via 192.168.3.1 dev $ifName".
+	// Unfortunately that won't work as the GW will be outside the interface's subnet.
+
+	// Our solution is to configure the interface with 192.168.3.5/24, then delete the
+	// "192.168.3.0/24 dev $ifName" route that was automatically added. Then we add
+	// "192.168.3.1/32 dev $ifName" and "192.168.3.0/24 via 192.168.3.1 dev $ifName".
+	// In other words we force all traffic to ARP via the gateway except for GW itself.
+
 	var hostVethName string
 	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
 		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
@@ -53,9 +64,54 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return err
 		}
 
-		err = ipam.ConfigureIface(ifName, pr)
+		if err = ipam.ConfigureIface(ifName, pr); err != nil {
+			return err
+		}
+
+		contVeth, err := netlink.LinkByName(ifName)
 		if err != nil {
 			return err
+		}
+
+		// Delete the route that was automatically added
+		route := netlink.Route{
+			LinkIndex: contVeth.Attrs().Index,
+			Dst: &net.IPNet{
+				IP:   pr.IP4.IP.IP.Mask(pr.IP4.IP.Mask),
+				Mask: pr.IP4.IP.Mask,
+			},
+			Scope: netlink.SCOPE_LINK,
+			Src:   pr.IP4.IP.IP,
+		}
+
+		if err := netlink.RouteDel(&route); err != nil {
+			return err
+		}
+
+		for _, r := range []netlink.Route{
+			netlink.Route{
+				LinkIndex: contVeth.Attrs().Index,
+				Dst: &net.IPNet{
+					IP:   pr.IP4.Gateway,
+					Mask: net.CIDRMask(32, 32),
+				},
+				Scope: netlink.SCOPE_LINK,
+				Src:   pr.IP4.IP.IP,
+			},
+			netlink.Route{
+				LinkIndex: contVeth.Attrs().Index,
+				Dst: &net.IPNet{
+					IP:   pr.IP4.IP.IP.Mask(pr.IP4.IP.Mask),
+					Mask: pr.IP4.IP.Mask,
+				},
+				Scope: netlink.SCOPE_UNIVERSE,
+				Gw:    pr.IP4.Gateway,
+				Src:   pr.IP4.IP.IP,
+			},
+		} {
+			if err := netlink.RouteAdd(&r); err != nil {
+				return err
+			}
 		}
 
 		hostVethName = hostVeth.Attrs().Name
@@ -72,16 +128,24 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 		return fmt.Errorf("failed to lookup %q: %v", vethName, err)
 	}
 
+	if err = netlink.LinkSetUp(veth); err != nil {
+		return fmt.Errorf("failed to set %q up: %v", vethName, err)
+	}
+
 	// TODO(eyakubovich): IPv6
 	ipn := &net.IPNet{
 		IP:   ipConf.Gateway,
-		Mask: net.CIDRMask(31, 32),
+		Mask: net.CIDRMask(32, 32),
 	}
 	addr := &netlink.Addr{IPNet: ipn, Label: ""}
 	if err = netlink.AddrAdd(veth, addr); err != nil {
 		return fmt.Errorf("failed to add IP addr (%#v) to veth: %v", ipn, err)
 	}
 
+	ipn = &net.IPNet{
+		IP:   ipConf.IP.IP,
+		Mask: net.CIDRMask(32, 32),
+	}
 	// dst happens to be the same as IP/net of host veth
 	if err = ip.AddHostRoute(ipn, nil, veth); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("failed to add route on host: %v", err)
