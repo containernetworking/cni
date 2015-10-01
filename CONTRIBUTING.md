@@ -1,6 +1,6 @@
 # How to Contribute
 
-appc is [Apache 2.0 licensed](LICENSE) and accepts contributions via GitHub
+cni is [Apache 2.0 licensed](LICENSE) and accepts contributions via GitHub
 pull requests. This document outlines some of the conventions on development
 workflow, commit message formatting, contact points and other resources to make
 it easier to get your contribution accepted.
@@ -16,8 +16,8 @@ contribution. See the [DCO](DCO) file for details.
 
 # Email and Chat
 
-The project uses the the appc-dev email list and #appc on Freenode for chat:
-- Email: [appc-dev](https://groups.google.com/forum/#!forum/appc-dev)
+The project uses the the cni-dev email list and #appc on Freenode for chat:
+- Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[appc](irc://irc.freenode.org:6667/#appc) IRC channel on freenode.org
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
