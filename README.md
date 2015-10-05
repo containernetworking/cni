@@ -110,3 +110,9 @@ lo        Link encap:Local Loopback
           collisions:0 txqueuelen:0 
           RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 ```
+
+## Contact
+
+For any questions about CNI, please reach out on the mailing list or IRC:
+- Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
+- IRC: #[appc](irc://irc.freenode.org:6667/#appc) IRC channel on freenode.org
