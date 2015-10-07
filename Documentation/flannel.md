@@ -4,7 +4,8 @@
 This plugin is designed to work in conjunction with [flannel](https://github.com/coreos/flannel), a network fabric for containers.
 When flannel daemon is started, it outputs a `/run/flannel/subnet.env` file that looks like this:
 ```
-FLANNEL_SUBNET=10.1.17.0/24
+FLANNEL_NETWORK=10.1.0.0/16
+FLANNEL_SUBNET=10.1.17.1/24
 FLANNEL_MTU=1472
 FLANNEL_IPMASQ=true
 ```
