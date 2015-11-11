@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_. It is derived from the [rkt Networking Proposal][rkt-networking-proposal], which aimed to satisfy many of the [design considerations][rkt-networking-design] for networking in [rkt][rkt-github].
+This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_.
+It is derived from the [rkt Networking Proposal][rkt-networking-proposal], which aimed to satisfy many of the [design considerations][rkt-networking-design] for networking in [rkt][rkt-github].
 
 For the purposes of this proposal, we define two terms very specifically:
 - _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
@@ -48,6 +49,7 @@ The operations that the CNI plugin needs to support are:
     - **Name of the interface inside the container**. This is the name that should be assigned to the interface created inside the container (network namespace); consequently it must comply with the standard Linux restrictions on interface names.
   - Result:
     - **IPs assigned to the interface**. This is either an IPv4 address, an IPv6 address, or both.
+    - **List of DNS nameservers**. This is a priority-ordered list of IPv4 and IPv6 addresses of DNS nameservers.
 
 - Delete container from network
   - Parameters:
@@ -83,9 +85,16 @@ Success is indicated by a return code of zero and the following JSON printed to 
     "ip": <ipv6-and-subnet-in-CIDR>,
     "gateway": <ipv6-of-the-gateway>,  (optional)
     "routes": <list-of-ipv6-routes>    (optional)
-  }
+  },
+  "dns": <list-of-DNS-nameservers>     (optional)
 }
 ```
+
+The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
+Each entry in the list is a string containing either an IPv4 or an IPv6 address.
+Typically this value would just be the value returned by the IPAM plugin.
+It is outside the scope of this specification how the container runtime uses the list of DNS nameservers from each of the networks to provide name resolution services to the container.
+Examples of how this list could be used include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
 
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
@@ -127,7 +136,7 @@ The network configuration is described in JSON form. The configuration can be st
     // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
-  },
+  }
 }
 ```
 
@@ -153,7 +162,7 @@ The network configuration is described in JSON form. The configuration can be st
   "ipam": {
     "type": "dhcp",
     "routes": [ { "dst": "10.0.0.0/8", "gw": "10.0.0.1" } ]
-  },
+  }
 }
 ```
 
@@ -181,7 +190,8 @@ Success is indicated by a zero return code and the following JSON being printed 
     "ip": <ipv6-and-subnet-in-CIDR>,
     "gateway": <ipv6-of-the-gateway>,  (optional)
     "routes": <list-of-ipv6-routes>    (optional)
-  }
+  },
+  "dns": <list-of-DNS-nameservers>     (optional)
 }
 ```
 
@@ -193,6 +203,10 @@ Each route entry is a dictionary with the following fields:
 - `dst` (string): Destination subnet specified in CIDR notation.
 - `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
 
+The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
+Each entry in the list is a string containing either an IPv4 or an IPv6 address.
+See [CNI Plugin Result](#result) section for details.
+
 Errors and logs are communicated in the same way as the CNI plugin. See [CNI Plugin Result](#result) section for details.
 
 IPAM plugin examples:
@@ -200,10 +214,5 @@ IPAM plugin examples:
  - **dhcp**: Use DHCP protocol to acquire and maintain a lease. The DHCP requests will be sent via the created container interface; therefore, the associated network must support broadcast.
 
 #### Notes
-
  - Routes are expected to be added with a 0 metric.
  - A default route may be specified via "0.0.0.0/0". Since another network might have already configured the default route, the CNI plugin should be prepared to skip over its default route definition.
-
-## Open Questions
-- Should CNI define anything regarding DNS? For example, generating /etc/resolv.conf
-- Should CNI provide /etc/hosts?
