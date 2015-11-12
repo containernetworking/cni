@@ -142,6 +142,9 @@ func (a *IPAllocator) Release(id string) error {
 }
 
 func networkRange(ipnet *net.IPNet) (net.IP, net.IP, error) {
+	if ipnet.IP == nil {
+		return nil, nil, fmt.Errorf("missing field %q in IPAM configuration", "subnet")
+	}
 	ip := ipnet.IP.To4()
 	if ip == nil {
 		ip = ipnet.IP.To16()
