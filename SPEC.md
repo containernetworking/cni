@@ -42,6 +42,7 @@ The operations that the CNI plugin needs to support are:
 
 - Add container to network
   - Parameters:
+    - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
     - **Container ID**. This is optional but recommended, and should be unique across an administrative domain while the container is live (it may be reused in the future). For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
     - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
@@ -53,13 +54,16 @@ The operations that the CNI plugin needs to support are:
 
 - Delete container from network
   - Parameters:
+    - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
     - **Container ID**, as defined above.
     - **Network namespace path**, as defined above.
     - **Network configuration**, as defined above.
     - **Extra arguments**, as defined above.
     - **Name of the interface inside the container**, as defined above.
 
-The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke. It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
+The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
+It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
+- `CNI_VERSION`:  [Semantic Version 2.0](http://semver.org) of CNI specification. This effectively versions the CNI_XXX environment variables.
 - `CNI_COMMAND`: indicates the desired operation; either `ADD` or `DEL`
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
@@ -76,6 +80,7 @@ Success is indicated by a return code of zero and the following JSON printed to 
 
 ```
 {
+  "cniVersion": "0.1.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
@@ -90,6 +95,7 @@ Success is indicated by a return code of zero and the following JSON printed to 
 }
 ```
 
+`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
 The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
 Each entry in the list is a string containing either an IPv4 or an IPv6 address.
 Typically this value would just be the value returned by the IPAM plugin.
@@ -99,13 +105,15 @@ Examples of how this list could be used include generating an `/etc/resolv.conf`
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
+  "cniVersion": "0.1.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
 }
 ```
 
-Error codes 0-99 are reserved for well-known errors (to be defined later).
+`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
+Error codes 0-99 are reserved for well-known errors (see [Well-known Error Codes](#well-known-error-codes) section).
 Values of 100+ can be freely used for plugin specific errors. 
 
 In addition, stderr can be used for unstructured output such as logs.
@@ -113,6 +121,7 @@ In addition, stderr can be used for unstructured output such as logs.
 ### Network Configuration
 
 The network configuration is described in JSON form. The configuration can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
+- `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration conforms.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `type` (string): Refers to the filename of the CNI plugin executable.
 - `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
@@ -126,6 +135,7 @@ The network configuration is described in JSON form. The configuration can be st
 
 ```json
 {
+  "cniVersion": "0.1.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -142,6 +152,7 @@ The network configuration is described in JSON form. The configuration can be st
 
 ```json
 {
+  "cniVersion": "0.1.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -156,6 +167,7 @@ The network configuration is described in JSON form. The configuration can be st
 
 ```json
 {
+  "cniVersion": "0.1",
   "name": "wan",
   "type": "macvlan",
   // ipam specific
@@ -181,6 +193,7 @@ Success is indicated by a zero return code and the following JSON being printed 
 
 ```
 {
+  "cniVersion": "0.1.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
@@ -195,6 +208,7 @@ Success is indicated by a zero return code and the following JSON being printed 
 }
 ```
 
+`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
 `gateway` is the default gateway for this subnet, if one exists.
 It does not instruct the CNI plugin to add any routes with this gateway: routes to add are specified separately via the `routes` field.
 An example use of this value is for the CNI plugin to add this IP address to the linux-bridge to make it a gateway.
@@ -216,3 +230,6 @@ IPAM plugin examples:
 #### Notes
  - Routes are expected to be added with a 0 metric.
  - A default route may be specified via "0.0.0.0/0". Since another network might have already configured the default route, the CNI plugin should be prepared to skip over its default route definition.
+
+## Well-known Error Codes
+- `1` - Incompatible CNI version
