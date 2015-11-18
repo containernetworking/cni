@@ -33,3 +33,5 @@ With the daemon running, containers using the dhcp plugin can be launched.
 ## Network configuration reference
 
 * `type` (string, required): "dhcp"
+* `sendClientID` (boolean, optional): whether to include the Client Identifier option (61) in messages to the DHCP server. Defaults to true.
+* `broadcast` (boolean, optional): whether to set the Broacast flag in DHCP messages. Defaults to false.
