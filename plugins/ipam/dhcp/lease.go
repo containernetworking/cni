@@ -118,6 +118,13 @@ func (l *DHCPLease) acquire() error {
 	}
 	defer c.Close()
 
+	if (l.link.Attrs().Flags & net.FlagUp) != net.FlagUp {
+		log.Printf("Link %q down. Attempting to set up", l.link.Attrs().Name)
+		if err = netlink.LinkSetUp(l.link); err != nil {
+			return err
+		}
+	}
+
 	pkt, err := backoffRetry(func() (*dhcp4.Packet, error) {
 		ok, ack, err := c.Request()
 		switch {
