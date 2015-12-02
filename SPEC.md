@@ -33,69 +33,35 @@ Upon completion of the container lifecycle, the runtime executes the plugins in 
 Each CNI plugin is implemented as an executable that is invoked by the container management system (e.g. rkt or Docker).
 
 A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching other end of veth into a bridge).
-It should then assign the IP to the interface and setup the routes consistent with IP Address Management section by invoking appropriate IPAM plugin.
-
-### Parameters
+It should then assign the IP to the interface and set up the routes consistent with IP Address Management section by invoking appropriate IPAM plugin.
 
 The operations that the CNI plugin needs to support are:
+- Adding a container to the network
+- Deleting a container from the network
 
+### ADD command
 
-- Add container to network
-  - Parameters:
-    - **Container ID**. This is optional but recommended, and should be unique across an administrative domain while the container is live (it may be reused in the future). For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
-    - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
-    - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
-    - **Extra arguments**. This allows granular configuration of CNI plugins on a per-container basis.
-    - **Name of the interface inside the container**. This is the name that should be assigned to the interface created inside the container (network namespace); consequently it must comply with the standard Linux restrictions on interface names.
-  - Result:
-    - **IPs assigned to the interface**. This is either an IPv4 address, an IPv6 address, or both.
-    - **List of DNS nameservers**. This is a priority-ordered list of IPv4 and IPv6 addresses of DNS nameservers.
+The ADD command is executed to add (join) the container to a network.
+It is typically done as part of the container creation process.
 
-- Delete container from network
-  - Parameters:
-    - **Container ID**, as defined above.
-    - **Network namespace path**, as defined above.
-    - **Network configuration**, as defined above.
-    - **Extra arguments**, as defined above.
-    - **Name of the interface inside the container**, as defined above.
+#### Parameters passed via environment variables
+- `CNI_COMMAND`: `ADD`
+- `CNI_CONTAINERID`: Container ID. This is optional but recommended, and should be unique across an administrative domain while the container is live (it may be reused in the future). For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
+- `CNI_NETNS`: Path to network namespace file representing network namespace to which the container is to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
+- `CNI_IFNAME`: Interface name to set up. This is the name that should be assigned to the interface created inside the container (network namespace); consequently it must comply with the standard Linux restrictions on interface names.
+- `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123". This allows granular configuration of CNI plugins on a per-container basis.
+- `CNI_PATH`: Colon-separated list of paths to search for CNI plugin executables.
 
-The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke. It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
-- `CNI_COMMAND`: indicates the desired operation; either `ADD` or `DEL`
-- `CNI_CONTAINERID`: Container ID
-- `CNI_NETNS`: Path to network namespace file
-- `CNI_IFNAME`: Interface name to set up
-- `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
-- `CNI_PATH`: Colon-separated list of paths to search for CNI plugin executables
+#### Network configuration streamed via standard input
+This is a JSON document describing a network to which a container is to be joined.
+The schema is described below.
 
-Network configuration in JSON format is streamed through stdin.
+#### Result streamed via standard output
+Success is indicated by an exit code of zero and a JSON result printed to stdout.
+This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details) with the exception of `state` field.
+`state` field should contain both the state that the plugin itself needs the runtime to persist as well as any `state` returned by the IPAM plugin.
 
-
-### Result
-
-Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details).
-
-```
-{
-  "ip4": {
-    "ip": <ipv4-and-subnet-in-CIDR>,
-    "gateway": <ipv4-of-the-gateway>,  (optional)
-    "routes": <list-of-ipv4-routes>    (optional)
-  },
-  "ip6": {
-    "ip": <ipv6-and-subnet-in-CIDR>,
-    "gateway": <ipv6-of-the-gateway>,  (optional)
-    "routes": <list-of-ipv6-routes>    (optional)
-  },
-  "dns": <list-of-DNS-nameservers>     (optional)
-}
-```
-
-The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
-Each entry in the list is a string containing either an IPv4 or an IPv6 address.
-Typically this value would just be the value returned by the IPAM plugin.
-It is outside the scope of this specification how the container runtime uses the list of DNS nameservers from each of the networks to provide name resolution services to the container.
-Examples of how this list could be used include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
-
+#### Error Result
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
@@ -106,8 +72,27 @@ Errors are indicated by a non-zero return code and the following JSON being prin
 ```
 
 Error codes 0-99 are reserved for well-known errors (to be defined later).
-Values of 100+ can be freely used for plugin specific errors. 
+Values of 100+ can be freely used for plugin specific errors.
 
+In addition, stderr can be used for unstructured output such as logs.
+
+### DEL command
+
+The DEL command is executed when the container needs to be deleted (leave) from a network.
+It is typically done as part of the container teardown.
+
+#### Parameters passed via environment variables
+- `CNI_COMMAND`: `DEL`
+- `CNI_CONTAINERID`: Container ID. This must be the same Container ID that was passed in during the ADD command. If no Container ID was passed into the ADD command, no ID must be passed in during the DEL command.
+- `CNI_NETNS`: Path to network namespace file representing network namespace from which the container is to be deleted, i.e. `/proc/[pid]/ns/net` or a bind-mount/link to it.
+- `CNI_PATH`: Colon-separated list of paths to search for CNI plugin executables.
+
+#### State streamed via standard input
+This is the JSON value that was returned in the `state` field of the successful result JSON document during the ADD command.
+
+#### Result streamed via standard output
+Success is indicated by a return code of zero with nothing streamed to stdout.
+Errors are indicated by a non-zero return code and the error JSON being printed to stdout (see ADD command).
 In addition, stderr can be used for unstructured output such as logs.
 
 ### Network Configuration
@@ -167,16 +152,16 @@ The network configuration is described in JSON form. The configuration can be st
 ```
 
 
-### IP Allocation
+## IP Allocation
 
 As part of its operation, a CNI plugin is expected to assign (and maintain) an IP address to the interface and install any necessary routes relevant for that interface. This gives the CNI plugin great flexibility but also places a large burden on it. Many CNI plugins would need to have the same code to support several IP management schemes that users may desire (e.g. dhcp, host-local). 
 
 To lessen the burden and make IP management strategy be orthogonal to the type of CNI plugin, we define a second type of plugin -- IP Address Management Plugin (IPAM plugin). It is however the responsibility of the CNI plugin to invoke the IPAM plugin at the proper moment in its execution. The IPAM plugin is expected to determine the interface IP/subnet, Gateway and Routes and return this information to the "main" plugin to apply. The IPAM plugin may obtain the information via a protocol (e.g. dhcp), data stored on a local filesystem, the "ipam" section of the Network Configuration file or a combination of the above.
 
-#### IP Address Management (IPAM) Interface
+### IP Address Management (IPAM) Interface
+Like the main CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin receives all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM receives the network configuration JSON via stdin.
 
-Like CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin receives all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM receives the network configuration file via stdin.
-
+#### Successful Result
 Success is indicated by a zero return code and the following JSON being printed to stdout (in the case of the ADD command):
 
 ```
@@ -191,7 +176,8 @@ Success is indicated by a zero return code and the following JSON being printed 
     "gateway": <ipv6-of-the-gateway>,  (optional)
     "routes": <list-of-ipv6-routes>    (optional)
   },
-  "dns": <list-of-DNS-nameservers>     (optional)
+  "dns": <list-of-DNS-nameservers>,     (optional)
+  "state": <opaque-value-to-persist>    (optional)
 }
 ```
 
@@ -205,14 +191,14 @@ Each route entry is a dictionary with the following fields:
 
 The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
 Each entry in the list is a string containing either an IPv4 or an IPv6 address.
-See [CNI Plugin Result](#result) section for details.
+See [Successful Result](#successful-result) section for details.
 
-Errors and logs are communicated in the same way as the CNI plugin. See [CNI Plugin Result](#result) section for details.
+Errors and logs are communicated in the same way as the CNI plugin. See [Error Result](#error-result) section for details.
 
 IPAM plugin examples:
- - **host-local**: Select an unused (by other containers on the same host) IP within the specified range.
- - **dhcp**: Use DHCP protocol to acquire and maintain a lease. The DHCP requests will be sent via the created container interface; therefore, the associated network must support broadcast.
+- **host-local**: Select an unused (by other containers on the same host) IP within the specified range.
+- **dhcp**: Use DHCP protocol to acquire and maintain a lease. The DHCP requests will be sent via the created container interface; therefore, the associated network must support broadcast.
 
 #### Notes
- - Routes are expected to be added with a 0 metric.
- - A default route may be specified via "0.0.0.0/0". Since another network might have already configured the default route, the CNI plugin should be prepared to skip over its default route definition.
+- Routes are expected to be added with a 0 metric.
+- A default route may be specified via "0.0.0.0/0". Since another network might have already configured the default route, the CNI plugin should be prepared to skip over its default route definition.
