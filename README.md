@@ -91,7 +91,7 @@ Next, docker-run.sh script wraps `docker run` command to execute the plugins pri
 ```
 $ CNI_PATH=`pwd`/bin
 $ cd scripts
-$ sudo CNI_PATH=$CNI_PATH ./docker-run.sh --rm busybox:latest /sbin/ifconfig
+$ sudo CNI_PATH=$CNI_PATH ./docker-run.sh --rm busybox:latest ifconfig
 eth0      Link encap:Ethernet  HWaddr fa:60:70:aa:07:d1  
           inet addr:10.22.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
           inet6 addr: fe80::f860:70ff:feaa:7d1/64 Scope:Link
