@@ -28,7 +28,7 @@ The scripts/ directory contains two scripts, priv-net-run.sh and docker-run.sh, 
 
 Start out by creating a netconf file to describe a network:
 
-```
+```bash
 $ mkdir -p /etc/cni/net.d
 $ cat >/etc/cni/net.d/10-mynet.conf <<EOF
 {
@@ -52,13 +52,13 @@ The directory `/etc/cni/net.d` is the default location in which the scripts will
 
 Next, build the plugins:
 
-```
+```bash
 $ ./build
 ```
 
 Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined `mynet` network:
 
-```
+```bash
 $ CNI_PATH=`pwd`/bin
 $ cd scripts
 $ sudo CNI_PATH=$CNI_PATH ./priv-net-run.sh ifconfig
@@ -88,7 +88,7 @@ The environment variable `CNI_PATH` tells the scripts and library where to look 
 Use instructions in the previous section to define a netconf and build the plugins.
 Next, docker-run.sh script wraps `docker run` command to execute the plugins prior to entering the container:
 
-```
+```bash
 $ CNI_PATH=`pwd`/bin
 $ cd scripts
 $ sudo CNI_PATH=$CNI_PATH ./docker-run.sh --rm busybox:latest ifconfig
