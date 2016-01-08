@@ -24,12 +24,15 @@ import (
 )
 
 const (
+	// EnvCNIPath represents paths to search for CNI plugin executables
 	EnvCNIPath = "CNI_PATH"
-	EnvNetDir  = "NETCONFPATH"
-
+	// EnvNetDir represents path of netconf file
+	EnvNetDir = "NETCONFPATH"
+	// DefaultNetDir is default location in which the scripts will look for net configurations
 	DefaultNetDir = "/etc/cni/net.d"
-
+	// CmdAdd represents the operation that add container to network
 	CmdAdd = "add"
+	// CmdDel represents the operation that delete container from network
 	CmdDel = "del"
 )
 

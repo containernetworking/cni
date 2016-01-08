@@ -19,6 +19,7 @@ import (
 	"strings"
 )
 
+// CNIArgs represents extra arguments passed in by the user at invocation time
 type CNIArgs interface {
 	// For use with os/exec; i.e., return nil to inherit the
 	// environment from this process
@@ -29,14 +30,18 @@ type inherited struct{}
 
 var inheritArgsFromEnv inherited
 
-func (_ *inherited) AsEnv() []string {
+func (i *inherited) AsEnv() []string {
+	// The parameter i reserved for future use
+	i = i
 	return nil
 }
 
+// ArgsFromEnv get CNIArgs from envionment variables
 func ArgsFromEnv() CNIArgs {
 	return &inheritArgsFromEnv
 }
 
+// Args defines the contents of CNIArgs
 type Args struct {
 	Command       string
 	ContainerID   string
@@ -47,6 +52,7 @@ type Args struct {
 	Path          string
 }
 
+// AsEnv gets envionment variables from CNIArgs
 func (args *Args) AsEnv() []string {
 	env := os.Environ()
 	pluginArgsStr := args.PluginArgsStr

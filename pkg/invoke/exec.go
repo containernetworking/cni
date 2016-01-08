@@ -41,6 +41,7 @@ func pluginErr(err error, output []byte) error {
 	return err
 }
 
+// ExecPluginWithResult invokes network plugin and get the results
 func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
 	stdoutBytes, err := execPlugin(pluginPath, netconf, args)
 	if err != nil {
@@ -52,6 +53,7 @@ func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*typ
 	return res, err
 }
 
+// ExecPluginWithoutResult invokes network plugin but ignore the results.
 func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
 	_, err := execPlugin(pluginPath, netconf, args)
 	return err

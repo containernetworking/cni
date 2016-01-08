@@ -23,6 +23,7 @@ import (
 	"sort"
 )
 
+// ConfFromBytes gets netconf struct from bytes stream
 func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	conf := &NetworkConfig{Bytes: bytes}
 	if err := json.Unmarshal(bytes, &conf.Network); err != nil {
@@ -31,6 +32,7 @@ func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	return conf, nil
 }
 
+// ConfFromFile gets netconf struct from a file
 func ConfFromFile(filename string) (*NetworkConfig, error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -39,6 +41,7 @@ func ConfFromFile(filename string) (*NetworkConfig, error) {
 	return ConfFromBytes(bytes)
 }
 
+// ConfFiles gets netconf files from a specified directory
 func ConfFiles(dir string) ([]string, error) {
 	// In part, adapted from rkt/networking/podenv.go#listFiles
 	files, err := ioutil.ReadDir(dir)
@@ -62,6 +65,7 @@ func ConfFiles(dir string) ([]string, error) {
 	return confFiles, nil
 }
 
+// LoadConf gets netconf struct from a specified directory and a netconf file name
 func LoadConf(dir, name string) (*NetworkConfig, error) {
 	files, err := ConfFiles(dir)
 	switch {

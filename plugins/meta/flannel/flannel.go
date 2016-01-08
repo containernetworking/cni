@@ -39,6 +39,7 @@ const (
 	stateDir          = "/var/lib/cni/flannel"
 )
 
+// NetConf contains configurations for flannel plugin
 type NetConf struct {
 	types.NetConf
 	SubnetFile string                 `json:"subnetFile"`

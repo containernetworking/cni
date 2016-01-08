@@ -25,6 +25,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+// ExecAdd invoke the plugin to add container to network
 func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
@@ -32,6 +33,7 @@ func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
 	return invoke.ExecPluginWithResult(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
 }
 
+// ExecDel invoke th plugin to delete container from network
 func ExecDel(plugin string, netconf []byte) error {
 	if os.Getenv("CNI_COMMAND") != "DEL" {
 		return fmt.Errorf("CNI_COMMAND is not DEL")

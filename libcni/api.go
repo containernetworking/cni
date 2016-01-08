@@ -21,6 +21,7 @@ import (
 	"github.com/appc/cni/pkg/types"
 )
 
+// RuntimeConf is container runtime configuration for network add/del operation
 type RuntimeConf struct {
 	ContainerID string
 	NetNS       string
@@ -28,25 +29,30 @@ type RuntimeConf struct {
 	Args        [][2]string
 }
 
+// NetworkConfig is network configuration network add/del operation
 type NetworkConfig struct {
 	Network *types.NetConf
 	Bytes   []byte
 }
 
+// CNI defines the operations that the CNI plugin needs to support
 type CNI interface {
 	AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error)
 	DelNetwork(net *NetworkConfig, rt *RuntimeConf) error
 }
 
+// CNIConfig is the implementation of CNI network operations
 type CNIConfig struct {
 	Path []string
 }
 
+// AddNetwork is the implementation of adding container to network
 func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error) {
 	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
 	return invoke.ExecPluginWithResult(pluginPath, net.Bytes, c.args("ADD", rt))
 }
 
+// DelNetwork is the implementation of deleting container from network
 func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
 	return invoke.ExecPluginWithoutResult(pluginPath, net.Bytes, c.args("DEL", rt))

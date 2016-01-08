@@ -39,6 +39,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
+// NetConf contains configurations for ptp plugin
 type NetConf struct {
 	types.NetConf
 	IPMasq bool `json:"ipMasq"`

@@ -34,16 +34,18 @@ type IPAMConfig struct {
 	Args       *IPAMArgs     `json:"-"`
 }
 
+// IPAMArgs represents the args for the specified plugin
 type IPAMArgs struct {
 	IP net.IP `json:"ip",omitempty`
 }
 
+// Net is a encapsulation for IP network configuration
 type Net struct {
 	Name string      `json:"name"`
 	IPAM *IPAMConfig `json:"ipam"`
 }
 
-// NewIPAMConfig creates a NetworkConfig from the given network name.
+// LoadIPAMConfig gets a NetworkConfig from the given network name.
 func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, error) {
 	n := Net{}
 	if err := json.Unmarshal(bytes, &n); err != nil {

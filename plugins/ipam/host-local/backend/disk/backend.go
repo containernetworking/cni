@@ -23,11 +23,13 @@ import (
 
 var defaultDataDir = "/var/lib/cni/networks"
 
+// Store contains the information for file operations
 type Store struct {
 	FileLock
 	dataDir string
 }
 
+// New creats new Store from network information
 func New(network string) (*Store, error) {
 	dir := filepath.Join(defaultDataDir, network)
 	if err := os.MkdirAll(dir, 0644); err != nil {
@@ -41,6 +43,7 @@ func New(network string) (*Store, error) {
 	return &Store{*lk, dir}, nil
 }
 
+// Reserve ip address for ip allocator
 func (s *Store) Reserve(id string, ip net.IP) (bool, error) {
 	fname := filepath.Join(s.dataDir, ip.String())
 	f, err := os.OpenFile(fname, os.O_RDWR|os.O_EXCL|os.O_CREATE, 0644)
@@ -62,10 +65,12 @@ func (s *Store) Reserve(id string, ip net.IP) (bool, error) {
 	return true, nil
 }
 
+// Release ip address for ip allocator
 func (s *Store) Release(ip net.IP) error {
 	return os.Remove(filepath.Join(s.dataDir, ip.String()))
 }
 
+// ReleaseByID is like Release but through the parameter id
 // N.B. This function eats errors to be tolerant and
 // release as much as possible
 func (s *Store) ReleaseByID(id string) error {

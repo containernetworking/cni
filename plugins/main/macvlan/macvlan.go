@@ -29,6 +29,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+// NetConf contains configurations for creating a mac vlan
 type NetConf struct {
 	types.NetConf
 	Master string `json:"master"`
