@@ -33,7 +33,7 @@ func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
 	return invoke.ExecPluginWithResult(invoke.Find(plugin), netconf, invoke.ArgsFromEnv())
 }
 
-// ExecDel invoke th plugin to delete container from network
+// ExecDel invoke the plugin to delete container from network
 func ExecDel(plugin string, netconf []byte) error {
 	if os.Getenv("CNI_COMMAND") != "DEL" {
 		return fmt.Errorf("CNI_COMMAND is not DEL")

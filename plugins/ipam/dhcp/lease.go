@@ -290,7 +290,7 @@ func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	}, nil
 }
 
-// Gateway retruns the ip address of gateway
+// Gateway returns the ip address of gateway
 func (l *DHCPLease) Gateway() net.IP {
 	return parseRouter(l.opts)
 }

@@ -71,7 +71,9 @@ type Result struct {
 	IP6 *IPConfig `json:"ip6,omitempty"`
 }
 
-// Print is a tool for specific use
+// Print is for outputting a result to stdout.
+// The protocol for plugins is that they are given arguments in the process environment,
+// and output the result on stdout.
 func (r *Result) Print() error {
 	return prettyPrint(r)
 }

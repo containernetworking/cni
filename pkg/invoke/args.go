@@ -19,7 +19,9 @@ import (
 	"strings"
 )
 
-// CNIArgs represents extra arguments passed in by the user at invocation time
+// CNIArgs represents the arguments to be passed to the plugin via the process environment.
+// Sometimes these must be assembled from configuration.
+// Sometimes (when calling a plugin recursively) they must be inherited from the calling process.
 type CNIArgs interface {
 	// For use with os/exec; i.e., return nil to inherit the
 	// environment from this process
@@ -31,7 +33,7 @@ type inherited struct{}
 var inheritArgsFromEnv inherited
 
 func (i *inherited) AsEnv() []string {
-	// The parameter i reserved for future use
+	// It stands in for "just use the calling process's environment"
 	i = i
 	return nil
 }
