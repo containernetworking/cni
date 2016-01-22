@@ -140,7 +140,6 @@ The network configuration is described in JSON form. The configuration can be st
   "type": "bridge",
   // type (plugin) specific
   "bridge": "cni0",
-  "addIf": "eth0",
   "ipam": {
     "type": "host-local",
     // ipam specific
