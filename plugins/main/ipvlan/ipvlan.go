@@ -31,10 +31,9 @@ import (
 
 type NetConf struct {
 	types.NetConf
-	Master string   `json:"master"`
-	Mode   string   `json:"mode"`
-	MTU    int      `json:"mtu"`
-	DNS    []string `json:"dns"`
+	Master string `json:"master"`
+	Mode   string `json:"mode"`
+	MTU    int    `json:"mtu"`
 }
 
 func init() {
