@@ -67,8 +67,15 @@ func TestChain(t *testing.T) {
 		t.Fatalf("ClearChain (of non-empty) failed: %v", err)
 	}
 
+	// rename the chain
+	newChain := randChain(t)
+	err = ipt.RenameChain("filter", chain, newChain)
+	if err != nil {
+		t.Fatalf("RenameChain failed: %v", err)
+	}
+
 	// chain empty, should be ok
-	err = ipt.DeleteChain("filter", chain)
+	err = ipt.DeleteChain("filter", newChain)
 	if err != nil {
 		t.Fatalf("DeleteChain of empty chain failed: %v", err)
 	}
@@ -115,7 +122,7 @@ func TestRules(t *testing.T) {
 
 	err = ipt.Delete("filter", chain, "-s", "10.1.0.0/16", "-d", "9.9.9.9/32", "-j", "ACCEPT")
 	if err != nil {
-		t.Fatalf("Insert failed: %v", err)
+		t.Fatalf("Delete failed: %v", err)
 	}
 
 	rules, err := ipt.List("filter", chain)
@@ -132,5 +139,17 @@ func TestRules(t *testing.T) {
 
 	if !reflect.DeepEqual(rules, expected) {
 		t.Fatalf("List mismatch: \ngot  %#v \nneed %#v", rules, expected)
+	}
+
+	// Clear the chain that was created.
+	err = ipt.ClearChain("filter", chain)
+	if err != nil {
+		t.Fatalf("Failed to clear test chain: %v", err)
+	}
+
+	// Delete the chain that was created
+	err = ipt.DeleteChain("filter", chain)
+	if err != nil {
+		t.Fatalf("Failed to delete test chain: %v", err)
 	}
 }
