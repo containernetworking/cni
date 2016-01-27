@@ -7,7 +7,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/coreos/go-iptables/iptables",
-			"Rev": "83dfad0f13fd7310fb3c1cb8563248d8d604b95b"
+			"Rev": "90456be57fcb8185b264b77ce42a9539df42df25"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/activation",
