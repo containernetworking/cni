@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 #
 # Run all CNI tests 
 #   ./test
@@ -7,6 +7,7 @@
 # Run tests for one package
 #   PKG=./plugins/ipam/dhcp ./test
 #
+set -e
 
 source ./build
 
