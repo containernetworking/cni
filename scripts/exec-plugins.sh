@@ -25,6 +25,8 @@ function exec_plugins() {
 
 			echo "${name} : error executing $CNI_COMMAND: $errmsg"
 			exit 1
+		elif [[ ${DEBUG} -gt 0 ]]; then
+			echo ${res} | jq -r .
 		fi
 
 		let "i=i+1"
