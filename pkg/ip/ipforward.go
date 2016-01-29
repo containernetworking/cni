@@ -18,12 +18,12 @@ import (
 	"io/ioutil"
 )
 
-// EnableIP4Forward enables ip forwarding function
+// EnableIP4Forward enabled IPv4 forwarding
 func EnableIP4Forward() error {
 	return echo1("/proc/sys/net/ipv4/ip_forward")
 }
 
-// EnableIP6Forward enables ipv6 forwarding function
+// EnableIP6Forward enabled IPv6 forwarding
 func EnableIP6Forward() error {
 	return echo1("/proc/sys/net/ipv6/conf/all/forwarding")
 }

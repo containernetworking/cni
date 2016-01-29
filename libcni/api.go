@@ -29,13 +29,14 @@ type RuntimeConf struct {
 	Args        [][2]string
 }
 
-// NetworkConfig is network configuration network add/del operation
+// NetworkConfig contains data for a network's add/del operation,
+// and the data comes from netconf file.
 type NetworkConfig struct {
 	Network *types.NetConf
 	Bytes   []byte
 }
 
-// CNI defines the operations that the CNI plugin needs to support
+// CNI defines the operations that a CNI plugin needs to support
 type CNI interface {
 	AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error)
 	DelNetwork(net *NetworkConfig, rt *RuntimeConf) error

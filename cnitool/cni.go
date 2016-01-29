@@ -28,11 +28,11 @@ const (
 	EnvCNIPath = "CNI_PATH"
 	// EnvNetDir represents path of netconf file
 	EnvNetDir = "NETCONFPATH"
-	// DefaultNetDir is default location in which the scripts will look for net configurations
+	// DefaultNetDir is the default location in which the scripts will look for net configurations
 	DefaultNetDir = "/etc/cni/net.d"
-	// CmdAdd represents the operation that add container to network
+	// CmdAdd adds a container to a network
 	CmdAdd = "add"
-	// CmdDel represents the operation that delete container from network
+	// CmdDel deletes a container from a network
 	CmdDel = "del"
 )
 

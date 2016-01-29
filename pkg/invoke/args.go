@@ -34,12 +34,12 @@ var inheritArgsFromEnv inherited
 
 func (i *inherited) AsEnv() []string {
 	// It stands in for "just use the calling process's environment"
-	i = i
 	return nil
 }
 
-// ArgsFromEnv get CNIArgs from envionment variables
+// ArgsFromEnv returns CNIArgs by inheriting environment variables
 func ArgsFromEnv() CNIArgs {
+	// Now no environment variables inherited
 	return &inheritArgsFromEnv
 }
 
@@ -54,7 +54,7 @@ type Args struct {
 	Path          string
 }
 
-// AsEnv gets envionment variables from CNIArgs
+// AsEnv returns args serialised as an array of environment variables
 func (args *Args) AsEnv() []string {
 	env := os.Environ()
 	pluginArgsStr := args.PluginArgsStr
