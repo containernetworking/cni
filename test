@@ -56,7 +56,7 @@ echo "Checking golint..."
 lintRes=$(golint $LINT)
 if [ -n "${lintRes}" ]; then
         echo -e "golint checking failed:\n${lintRes}"
-        exit 255
+        # Prompt: golint check error is just for reminder, don't exit.
+else
+	echo "Success"
 fi
-
-echo "Success"
