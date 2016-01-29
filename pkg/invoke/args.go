@@ -39,7 +39,7 @@ func (i *inherited) AsEnv() []string {
 
 // ArgsFromEnv returns CNIArgs by inheriting environment variables
 func ArgsFromEnv() CNIArgs {
-	// Now no environment variables inherited
+	// So far no environment variables inherited
 	return &inheritArgsFromEnv
 }
 
