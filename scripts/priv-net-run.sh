@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 # Run a command in a private network namespace
 # set up by CNI plugins
