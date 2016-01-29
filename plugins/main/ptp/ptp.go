@@ -41,9 +41,8 @@ func init() {
 
 type NetConf struct {
 	types.NetConf
-	IPMasq bool     `json:"ipMasq"`
-	MTU    int      `json:"mtu"`
-	DNS    []string `json:"dns"`
+	IPMasq bool `json:"ipMasq"`
+	MTU    int  `json:"mtu"`
 }
 
 func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string, error) {

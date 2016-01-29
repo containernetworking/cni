@@ -50,7 +50,7 @@ The operations that the CNI plugin needs to support are:
     - **Name of the interface inside the container**. This is the name that should be assigned to the interface created inside the container (network namespace); consequently it must comply with the standard Linux restrictions on interface names.
   - Result:
     - **IPs assigned to the interface**. This is either an IPv4 address, an IPv6 address, or both.
-    - **List of DNS nameservers**. This is a priority-ordered list of IPv4 and IPv6 addresses of DNS nameservers.
+    - **DNS information**. Dictionary that includes DNS information for nameservers, domain, search domains and options.
 
 - Delete container from network
   - Parameters:
@@ -91,16 +91,20 @@ Success is indicated by a return code of zero and the following JSON printed to 
     "gateway": <ipv6-of-the-gateway>,  (optional)
     "routes": <list-of-ipv6-routes>    (optional)
   },
-  "dns": <list-of-DNS-nameservers>     (optional)
+  "dns": {
+    "nameservers": <list-of-nameservers>           (optional)
+    "domain": <name-of-local-domain>               (optional)
+    "search": <list-of-additional-search-domains>  (optional)
+    "options": <list-of-options>                   (optional)
+  }
 }
 ```
 
 `cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
-The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
-Each entry in the list is a string containing either an IPv4 or an IPv6 address.
-Typically this value would just be the value returned by the IPAM plugin.
-It is outside the scope of this specification how the container runtime uses the list of DNS nameservers from each of the networks to provide name resolution services to the container.
-Examples of how this list could be used include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
+`dns` field contains a dictionary consisting of common DNS information that this network is aware of.
+The result is returned in the same format as specified in the [configuration](#network-configuration).
+The specification does not declare how this information must be processed by CNI consumers.
+Examples include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
 
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
@@ -130,6 +134,11 @@ The network configuration is described in JSON form. The configuration can be st
   - `routes` (list): List of subnets (in CIDR notation) that the CNI plugin should ensure are reachable by routing them through the network. Each entry is a dictionary containing:
     - `dst` (string): subnet in CIDR notation
     - `gw` (string): IP address of the gateway to use. If not specified, the default gateway for the subnet is assumed (as determined by the IPAM plugin).
+- `dns`: Dictionary with DNS specific values:
+  - `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
+  - `domain` (string): the local domain used for short hostname lookups.
+  - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
+  - `options` (list of strings): list of options that can be passed to the resolver
 
 ### Example configurations
 
@@ -145,6 +154,9 @@ The network configuration is described in JSON form. The configuration can be st
     // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
   }
 }
 ```
@@ -173,6 +185,9 @@ The network configuration is described in JSON form. The configuration can be st
   "ipam": {
     "type": "dhcp",
     "routes": [ { "dst": "10.0.0.0/8", "gw": "10.0.0.1" } ]
+  },
+  "dns": {
+    "nameservers": [ "10.0.0.1" ]
   }
 }
 ```
@@ -203,7 +218,12 @@ Success is indicated by a zero return code and the following JSON being printed 
     "gateway": <ipv6-of-the-gateway>,  (optional)
     "routes": <list-of-ipv6-routes>    (optional)
   },
-  "dns": <list-of-DNS-nameservers>     (optional)
+  "dns": {
+    "nameservers": <list-of-nameservers>           (optional)
+    "domain": <name-of-local-domain>               (optional)
+    "search": <list-of-search-domains>             (optional)
+    "options": <list-of-options>                   (optional)
+  }
 }
 ```
 
@@ -216,9 +236,12 @@ Each route entry is a dictionary with the following fields:
 - `dst` (string): Destination subnet specified in CIDR notation.
 - `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
 
-The "dns" field contains a list of a priority-ordered list of DNS nameservers that this network is aware of.
-Each entry in the list is a string containing either an IPv4 or an IPv6 address.
-See [CNI Plugin Result](#result) section for details.
+The "dns" field contains a dictionary consisting of common DNS information. 
+- `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
+- `domain` (string): the local domain used for short hostname lookups.
+- `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
+- `options` (list of strings): list of options that can be passed to the resolver
+See [CNI Plugin Result](#result) section for more information.
 
 Errors and logs are communicated in the same way as the CNI plugin. See [CNI Plugin Result](#result) section for details.
 

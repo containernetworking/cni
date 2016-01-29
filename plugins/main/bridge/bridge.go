@@ -35,11 +35,10 @@ const defaultBrName = "cni0"
 
 type NetConf struct {
 	types.NetConf
-	BrName string   `json:"bridge"`
-	IsGW   bool     `json:"isGateway"`
-	IPMasq bool     `json:"ipMasq"`
-	MTU    int      `json:"mtu"`
-	DNS    []string `json:"dns"`
+	BrName string `json:"bridge"`
+	IsGW   bool   `json:"isGateway"`
+	IPMasq bool   `json:"ipMasq"`
+	MTU    int    `json:"mtu"`
 }
 
 func init() {
