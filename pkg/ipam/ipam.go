@@ -33,6 +33,28 @@ func ExecDel(plugin string, netconf []byte) error {
 	return invoke.DelegateDel(plugin, netconf)
 }
 
+func addIPConfigToLink(ipConfig *types.IPConfig, link netlink.Link, ifName string) error {
+	addr := &netlink.Addr{IPNet: &ipConfig.IP, Label: ""}
+	if err := netlink.AddrAdd(link, addr); err != nil {
+		return fmt.Errorf("failed to add addr to %q: %v", ifName, err)
+	}
+
+	for _, r := range ipConfig.Routes {
+		gw := r.GW
+		if gw == nil {
+			gw = ipConfig.Gateway
+		}
+		if err := ip.AddRoute(&r.Dst, gw, link); err != nil {
+			// we skip over duplicate routes as we assume the first one wins
+			if !os.IsExist(err) {
+				return fmt.Errorf("failed to add route '%v via %v dev %v': %v", r.Dst, gw, ifName, err)
+			}
+		}
+	}
+
+	return nil
+}
+
 // ConfigureIface takes the result of IPAM plugin and
 // applies to the ifName interface
 func ConfigureIface(ifName string, res *types.Result) error {
@@ -45,22 +67,14 @@ func ConfigureIface(ifName string, res *types.Result) error {
 		return fmt.Errorf("failed to set %q UP: %v", ifName, err)
 	}
 
-	// TODO(eyakubovich): IPv6
-	addr := &netlink.Addr{IPNet: &res.IP4.IP, Label: ""}
-	if err = netlink.AddrAdd(link, addr); err != nil {
-		return fmt.Errorf("failed to add IP addr to %q: %v", ifName, err)
-	}
-
-	for _, r := range res.IP4.Routes {
-		gw := r.GW
-		if gw == nil {
-			gw = res.IP4.Gateway
+	if res.IP4 != nil {
+		if err := addIPConfigToLink(res.IP4, link, ifName); err != nil {
+			return fmt.Errorf("error configuring IP4: %s", err.Error())
 		}
-		if err = ip.AddRoute(&r.Dst, gw, link); err != nil {
-			// we skip over duplicate routes as we assume the first one wins
-			if !os.IsExist(err) {
-				return fmt.Errorf("failed to add route '%v via %v dev %v': %v", r.Dst, gw, ifName, err)
-			}
+	}
+	if res.IP6 != nil {
+		if err := addIPConfigToLink(res.IP6, link, ifName); err != nil {
+			return fmt.Errorf("error configuring IP6: %s", err.Error())
 		}
 	}
 
