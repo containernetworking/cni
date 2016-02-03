@@ -277,7 +277,7 @@ func (l *DHCPLease) release() error {
 	return nil
 }
 
-// IPNet returns ip address information
+// IPNet returns IP address information
 func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	mask := parseSubnetMask(l.opts)
 	if mask == nil {
@@ -290,7 +290,7 @@ func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	}, nil
 }
 
-// Gateway returns the ip address of gateway
+// Gateway returns the IP address of gateway
 func (l *DHCPLease) Gateway() net.IP {
 	return parseRouter(l.opts)
 }

@@ -16,7 +16,7 @@ package backend
 
 import "net"
 
-// Store defines a collection of operations for ip allocating
+// Store defines a collection of operations for IP allocating
 type Store interface {
 	Lock() error
 	Unlock() error
