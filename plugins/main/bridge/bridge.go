@@ -227,6 +227,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
+	result.DNS = n.DNS
 	return result.Print()
 }
 

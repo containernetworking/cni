@@ -63,12 +63,14 @@ type NetConf struct {
 	IPAM struct {
 		Type string `json:"type,omitempty"`
 	} `json:"ipam,omitempty"`
+	DNS DNS `json:"dns"`
 }
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
 	IP4 *IPConfig `json:"ip4,omitempty"`
 	IP6 *IPConfig `json:"ip6,omitempty"`
+	DNS DNS       `json:"dns,omitempty"`
 }
 
 // Print is for outputting a result to stdout.
@@ -83,6 +85,14 @@ type IPConfig struct {
 	IP      net.IPNet
 	Gateway net.IP
 	Routes  []Route
+}
+
+// DNS contains values interesting for DNS resolvers
+type DNS struct {
+	Nameservers []string `json:"nameservers,omitempty"`
+	Domain      string   `json:"domain,omitempty"`
+	Search      []string `json:"search,omitempty"`
+	Options     []string `json:"options,omitempty"`
 }
 
 // Route represents a routing table entry

@@ -14,6 +14,9 @@ The traffic of the container interface will be routed through the interface of t
 	"ipam": {
 		"type": "host-local",
 		"subnet": "10.1.1.0/24"
+	},
+	"dns": {
+		"nameservers": [ "10.1.1.1", "8.8.8.8" ]
 	}
 }
 
@@ -24,3 +27,4 @@ The traffic of the container interface will be routed through the interface of t
 * `ipMasq` (boolean, optional): set up IP Masquerade on the host for traffic originating from this network and destined outside of it. Defaults to false.
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to value chosen by the kernel.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
+* `dns` (dictionary, optional): DNS information to return as described in the [Result](/SPEC.md#result).
