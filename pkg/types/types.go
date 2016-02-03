@@ -35,12 +35,12 @@ func ParseCIDR(s string) (*net.IPNet, error) {
 	return ipn, nil
 }
 
-// MarshalJSON returns the JSON encoding of bytes
+// MarshalJSON returns the JSON encoding of n bytes
 func (n IPNet) MarshalJSON() ([]byte, error) {
 	return json.Marshal((*net.IPNet)(&n).String())
 }
 
-// UnmarshalJSON parses the JSON-encoded data and stores the result in bytes
+// UnmarshalJSON unmarshals data into n bytes
 func (n *IPNet) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -85,13 +85,13 @@ type IPConfig struct {
 	Routes  []Route
 }
 
-// Route contains a routing table entry
+// Route represents a routing table entry
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
 }
 
-// Error is a encapsulation for specific use
+// Error encapsulates a structured error message
 type Error struct {
 	Code    uint   `json:"code"`
 	Msg     string `json:"msg"`
@@ -134,7 +134,7 @@ func (c *IPConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ipc)
 }
 
-// UnmarshalJSON parses the JSON-encoded data to IPConfig
+// UnmarshalJSON parses the JSON-encoded data and stores the result in the value pointed to by c.
 func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	ipc := ipConfig{}
 	if err := json.Unmarshal(data, &ipc); err != nil {
@@ -147,7 +147,7 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// UnmarshalJSON parses the JSON-encoded data to Route
+// UnmarshalJSON parses the JSON-encoded data and stores the result in the value pointed to by r.
 func (r *Route) UnmarshalJSON(data []byte) error {
 	rt := route{}
 	if err := json.Unmarshal(data, &rt); err != nil {

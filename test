@@ -53,11 +53,10 @@ fi
 
 echo "Success"
 
-echo "Checking golint..."
+echo "Checking golint (informational only)..."
 lintRes=$(golint $LINT)
 if [ -n "${lintRes}" ]; then
-        echo -e "golint checking failed:\n${lintRes}"
-        # Prompt: golint check error is just for reminder, don't exit.
+	echo -e "golint checking found errors:\n${lintRes}"
 else
 	echo "Success"
 fi
