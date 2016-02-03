@@ -37,7 +37,7 @@ const resendCount = 3
 
 var errNoMoreTries = errors.New("no more tries")
 
-// DHCP struct contains information of dhcp protocol
+// DHCP represents a DHCP server that can allocate IP address leases
 type DHCP struct {
 	mux    sync.Mutex
 	leases map[string]*DHCPLease

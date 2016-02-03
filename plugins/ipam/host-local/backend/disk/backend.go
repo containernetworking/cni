@@ -29,7 +29,7 @@ type Store struct {
 	dataDir string
 }
 
-// New creates a new Store by using a netconf
+// New creates a new Store, the input is a netconf name.
 func New(network string) (*Store, error) {
 	dir := filepath.Join(defaultDataDir, network)
 	if err := os.MkdirAll(dir, 0644); err != nil {

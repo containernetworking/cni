@@ -23,7 +23,7 @@ import (
 	"github.com/appc/cni/plugins/ipam/host-local/backend"
 )
 
-// IPAllocator defines a mechanism for ip allocating
+// IPAllocator defines a mechanism for IP allocating
 type IPAllocator struct {
 	start net.IP
 	end   net.IP
@@ -31,7 +31,7 @@ type IPAllocator struct {
 	store backend.Store
 }
 
-// NewIPAllocator returns a IPAllocator from configuration
+// NewIPAllocator returns an IPAllocator from configuration
 func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error) {
 	var (
 		start net.IP
@@ -135,7 +135,7 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 	return nil, fmt.Errorf("no IP addresses available in network: %s", a.conf.Name)
 }
 
-// Release works for releasing all IPs allocated for the container with given ID
+// Release releases all IPs allocated for the container with given ID
 func (a *IPAllocator) Release(id string) error {
 	a.store.Lock()
 	defer a.store.Unlock()
