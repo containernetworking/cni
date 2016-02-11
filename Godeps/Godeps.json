@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/appc/cni",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5.3",
 	"Packages": [
 		"./..."
 	],
@@ -21,6 +21,16 @@
 		{
 			"ImportPath": "github.com/d2g/dhcp4client",
 			"Rev": "bed07e1bc5b85f69c6f0fd73393aa35ec68ed892"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-71-g2152b45",
+			"Rev": "2152b45fa28a361beba9aab0885972323a444e28"
 		},
 		{
 			"ImportPath": "github.com/vishvananda/netlink",
