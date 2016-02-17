@@ -38,7 +38,8 @@ func LoadArgs(args string, container interface{}) error {
 		valueString := kv[1]
 		keyField := containerValue.Elem().FieldByName(keyString)
 		if !keyField.IsValid() {
-			return fmt.Errorf("ARGS: invalid key %q", keyString)
+			// Skipping unknown key
+			continue
 		}
 		u := keyField.Addr().Interface().(encoding.TextUnmarshaler)
 		err := u.UnmarshalText([]byte(valueString))
