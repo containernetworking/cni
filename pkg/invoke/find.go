@@ -20,6 +20,7 @@ import (
 	"strings"
 )
 
+// FindInPath returns the full path of the plugin by searching in the specified directories
 func FindInPath(plugin string, path []string) string {
 	for _, p := range path {
 		fullname := filepath.Join(p, plugin)

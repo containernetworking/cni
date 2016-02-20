@@ -13,6 +13,7 @@ source ./build
 
 TESTABLE="plugins/ipam/dhcp"
 FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ns pkg/invoke pkg/types pkg/ipam pkg/skel plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel"
+LINT="./..."
 
 # user has not provided PKG override
 if [ -z "$PKG" ]; then
@@ -51,3 +52,11 @@ if [ -n "${vetRes}" ]; then
 fi
 
 echo "Success"
+
+echo "Checking golint (informational only)..."
+lintRes=$(golint $LINT)
+if [ -n "${lintRes}" ]; then
+	echo -e "golint checking found errors:\n${lintRes}"
+else
+	echo "Success"
+fi
