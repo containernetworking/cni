@@ -57,7 +57,7 @@ var _ = Describe("Loopback", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			var lo *net.Interface
-			err = ns.WithNetNSPath(networkNS, false, func(hostNS *os.File) error {
+			err = ns.WithNetNSPath(networkNS, true, func(hostNS *os.File) error {
 				var err error
 				lo, err = net.InterfaceByName("lo")
 				return err
