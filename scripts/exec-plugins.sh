@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+if [[ ${DEBUG} -gt 0 ]]; then set -x; fi
+
 NETCONFPATH=${NETCONFPATH-/etc/cni/net.d}
 
 function exec_plugins() {

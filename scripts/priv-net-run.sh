@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+if [[ ${DEBUG} -gt 0 ]]; then set -x; fi
 
 # Run a command in a private network namespace
 # set up by CNI plugins
