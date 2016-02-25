@@ -39,12 +39,12 @@ type IPAMArgs struct {
 }
 
 type Net struct {
-	Name string      `json:"name"`
-	IPAM *IPAMConfig `json:"ipam"`
+	Name string       `json:"name"`
+	IPAM []IPAMConfig `json:"ipam"`
 }
 
 // NewIPAMConfig creates a NetworkConfig from the given network name.
-func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, error) {
+func LoadIPAMConfig(bytes []byte, args string) ([]IPAMConfig, error) {
 	n := Net{}
 	if err := json.Unmarshal(bytes, &n); err != nil {
 		return nil, err
@@ -61,9 +61,9 @@ func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, error) {
 	if n.IPAM == nil {
 		return nil, fmt.Errorf("%q missing 'ipam' key")
 	}
-
-	// Copy net name into IPAM so not to drag Net struct around
-	n.IPAM.Name = n.Name
+	if len(n.IPAM) > 2 {
+		return nil, fmt.Errorf("Found more than two IPAM blocks")
+	}
 
 	return n.IPAM, nil
 }
