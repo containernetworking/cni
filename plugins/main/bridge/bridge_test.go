@@ -408,9 +408,9 @@ var _ = Describe("bridge Operations", func() {
 	})
 
 	It("ensure bridge address", func() {
-		const IFNAME = "bridge0"
-		const EXPECTED_IP = "10.0.0.0/8"
-		const CHANGED_EXPECTED_IP = "10.1.2.3/16"
+		const IfName = "bridge0"
+		const ExpectedIP = "10.0.0.0/8"
+		const ChangedExpectedIP = "10.1.2.3/16"
 
 		conf := &NetConf{
 			NetConf: types.NetConf{
@@ -418,7 +418,7 @@ var _ = Describe("bridge Operations", func() {
 				Name:       "testConfig",
 				Type:       "bridge",
 			},
-			BrName: IFNAME,
+			BrName: IfName,
 			IsGW:   true,
 			IPMasq: false,
 			MTU:    5000,
@@ -449,7 +449,7 @@ var _ = Describe("bridge Operations", func() {
 			addrs, err := netlink.AddrList(bridge, syscall.AF_INET)
 			Expect(len(addrs)).To(Equal(1))
 			addr := addrs[0].IPNet.String()
-			Expect(addr).To(Equal(EXPECTED_IP))
+			Expect(addr).To(Equal(ExpectedIP))
 
 			//The bridge IP address has been changed. Error expected when ForceAddress is set to false.
 			err = ensureBridgeAddr(bridge, gwnSecond, false)
@@ -459,7 +459,7 @@ var _ = Describe("bridge Operations", func() {
 			addrs, err = netlink.AddrList(bridge, syscall.AF_INET)
 			Expect(len(addrs)).To(Equal(1))
 			addr = addrs[0].IPNet.String()
-			Expect(addr).To(Equal(EXPECTED_IP))
+			Expect(addr).To(Equal(ExpectedIP))
 
 			//Reconfigure IP when ForceAddress is set to true and IP address has been changed.
 			err = ensureBridgeAddr(bridge, gwnSecond, true)
@@ -469,7 +469,7 @@ var _ = Describe("bridge Operations", func() {
 			addrs, err = netlink.AddrList(bridge, syscall.AF_INET)
 			Expect(len(addrs)).To(Equal(1))
 			addr = addrs[0].IPNet.String()
-			Expect(addr).To(Equal(CHANGED_EXPECTED_IP))
+			Expect(addr).To(Equal(ChangedExpectedIP))
 
 			return nil
 		})

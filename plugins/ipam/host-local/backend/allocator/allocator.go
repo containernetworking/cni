@@ -25,6 +25,7 @@ import (
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
 
+// IPAllocator represents a mechanism for IP allocation.
 type IPAllocator struct {
 	// start is inclusive and may be allocated
 	start net.IP
@@ -34,6 +35,7 @@ type IPAllocator struct {
 	store backend.Store
 }
 
+// NewIPAllocator returns an IPAllocator from configuration.
 func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error) {
 	// Can't create an allocator for a network with no addresses, eg
 	// a /32 or /31
@@ -129,7 +131,7 @@ func validateRangeIP(ip net.IP, ipnet *net.IPNet, start net.IP, end net.IP) erro
 	return nil
 }
 
-// Returns newly allocated IP along with its config
+// Get returns a newly allocated IP along with its config.
 func (a *IPAllocator) Get(id string) (*current.IPConfig, []*types.Route, error) {
 	a.store.Lock()
 	defer a.store.Unlock()
@@ -203,7 +205,7 @@ func (a *IPAllocator) Get(id string) (*current.IPConfig, []*types.Route, error) 
 	return nil, nil, fmt.Errorf("no IP addresses available in network: %s", a.conf.Name)
 }
 
-// Releases all IPs allocated for the container with given ID
+// Release releases all IPs allocated for the container with given ID.
 func (a *IPAllocator) Release(id string) error {
 	a.store.Lock()
 	defer a.store.Unlock()
@@ -212,7 +214,7 @@ func (a *IPAllocator) Release(id string) error {
 }
 
 // Return the start and end IP addresses of a given subnet, excluding
-// the broadcast address (eg, 192.168.1.255)
+// the broadcast address (eg, 192.168.1.255).
 func networkRange(ipnet *net.IPNet) (net.IP, net.IP, error) {
 	if ipnet.IP == nil {
 		return nil, nil, fmt.Errorf("missing field %q in IPAM configuration", "subnet")
