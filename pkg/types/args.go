@@ -21,6 +21,7 @@ import (
 	"strings"
 )
 
+// LoadArgs parses args for specified plugin
 func LoadArgs(args string, container interface{}) error {
 	if args == "" {
 		return nil

@@ -48,6 +48,7 @@ const (
 // namespace for network ops and using fewer threads. However, this
 // needs to be done carefully as dhcp4client ops are blocking.
 
+// DHCPLease is a struct for ipaddr lease based on dhcp protocol
 type DHCPLease struct {
 	clientID      string
 	ack           *dhcp4.Packet
@@ -276,6 +277,7 @@ func (l *DHCPLease) release() error {
 	return nil
 }
 
+// IPNet returns IP address information
 func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	mask := parseSubnetMask(l.opts)
 	if mask == nil {
@@ -288,10 +290,12 @@ func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	}, nil
 }
 
+// Gateway returns the IP address of gateway
 func (l *DHCPLease) Gateway() net.IP {
 	return parseRouter(l.opts)
 }
 
+// Routes returns routing table entries
 func (l *DHCPLease) Routes() []types.Route {
 	routes := parseRoutes(l.opts)
 	return append(routes, parseCIDRRoutes(l.opts)...)
@@ -303,7 +307,7 @@ func jitter(span time.Duration) time.Duration {
 }
 
 func backoffRetry(f func() (*dhcp4.Packet, error)) (*dhcp4.Packet, error) {
-	var baseDelay time.Duration = resendDelay0
+	var baseDelay = resendDelay0
 
 	for i := 0; i < resendCount; i++ {
 		pkt, err := f()

@@ -25,10 +25,12 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+// ExecAdd invokes the given plugin with the given configuration to add a container to a network
 func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
 	return invoke.DelegateAdd(plugin, netconf)
 }
 
+// ExecDel invoke the plugin to delete a container from a network
 func ExecDel(plugin string, netconf []byte) error {
 	return invoke.DelegateDel(plugin, netconf)
 }

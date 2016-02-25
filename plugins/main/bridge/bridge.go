@@ -33,6 +33,7 @@ import (
 
 const defaultBrName = "cni0"
 
+// NetConf contains configurations for creating a bridge
 type NetConf struct {
 	types.NetConf
 	BrName string `json:"bridge"`
