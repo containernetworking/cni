@@ -22,6 +22,9 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 	"ipam": {
 		"type": "host-local",
 		"subnet": "10.10.0.0/16"
+	},
+	"firewalld": {
+		"zone": "trusted"
 	}
 }
 ```
@@ -35,3 +38,4 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 * `ipMasq` (boolean, optional): set up IP Masquerade on the host for traffic originating from this network and destined outside of it. Defaults to false.
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to the value chosen by the kernel.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
+* `firewalld` (dictionary, optional): [FirewallD](https://fedoraproject.org/wiki/FirewallD)'s configuration to be used for this network.

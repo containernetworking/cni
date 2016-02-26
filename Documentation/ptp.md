@@ -17,6 +17,9 @@ The traffic of the container interface will be routed through the interface of t
 	},
 	"dns": {
 		"nameservers": [ "10.1.1.1", "8.8.8.8" ]
+	},
+	"firewalld": {
+		"zone": "trusted"
 	}
 }
 
@@ -28,3 +31,4 @@ The traffic of the container interface will be routed through the interface of t
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to value chosen by the kernel.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
 * `dns` (dictionary, optional): DNS information to return as described in the [Result](/SPEC.md#result).
+* `firewalld` (dictionary, optional): [FirewallD](https://fedoraproject.org/wiki/FirewallD)'s configuration to be used for this network.
