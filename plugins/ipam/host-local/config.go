@@ -40,31 +40,29 @@ type IPAMArgs struct {
 }
 
 type Net struct {
-	Name string      `json:"name"`
-	IPAM *IPAMConfig `json:"ipam"`
+	Name  string      `json:"name"`
+	IPAM  *IPAMConfig `json:"ipam"`
+	IPAM6 *IPAMConfig `json:"ipam6"`
 }
 
-// NewIPAMConfig creates a NetworkConfig from the given network name.
-func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, error) {
+// LoadIPAMConfig unmarshals a given byte slice to a Net object
+func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, *IPAMConfig, error) {
 	n := Net{}
 	if err := json.Unmarshal(bytes, &n); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if args != "" {
 		n.IPAM.Args = &IPAMArgs{}
 		err := types.LoadArgs(args, n.IPAM.Args)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	if n.IPAM == nil {
-		return nil, fmt.Errorf("%q missing 'ipam' key")
+	if n.IPAM == nil && n.IPAM6 == nil {
+		return nil, nil, fmt.Errorf("Need at least one of ipam or ipam6 key")
 	}
 
-	// Copy net name into IPAM so not to drag Net struct around
-	n.IPAM.Name = n.Name
-
-	return n.IPAM, nil
+	return n.IPAM, n.IPAM6, nil
 }
