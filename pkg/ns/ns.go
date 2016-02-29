@@ -52,10 +52,11 @@ func SetNS(f *os.File, flags uintptr) error {
 // locked to an OS thread. If lockThread arg is true, this function
 // locks the goroutine prior to change namespace and unlocks before
 // returning
-func WithNetNSPath(nspath string, lockThread bool, f func(*os.File) error) error {
+func WithNetNSPath(nsname string, lockThread bool, f func(*os.File) error) error {
+	nspath := fmt.Sprintf("/var/run/netns/%s", nsname)
 	ns, err := os.Open(nspath)
 	if err != nil {
-		return fmt.Errorf("Failed to open %v: %v", nspath, err)
+		return fmt.Errorf("Failed to open namespace at %v: %v", nspath, err)
 	}
 	defer ns.Close()
 	return WithNetNS(ns, lockThread, f)
