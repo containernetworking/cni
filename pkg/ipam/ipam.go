@@ -17,7 +17,6 @@ package ipam
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/appc/cni/pkg/invoke"
 	"github.com/appc/cni/pkg/ip"
@@ -27,33 +26,11 @@ import (
 )
 
 func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
-	if os.Getenv("CNI_COMMAND") != "ADD" {
-		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
-	}
-
-	paths := strings.Split(os.Getenv("CNI_PATH"), ":")
-
-	pluginPath, err := invoke.FindInPath(plugin, paths)
-	if err != nil {
-		return nil, err
-	}
-
-	return invoke.ExecPluginWithResult(pluginPath, netconf, invoke.ArgsFromEnv())
+	return invoke.DelegateAdd(plugin, netconf)
 }
 
 func ExecDel(plugin string, netconf []byte) error {
-	if os.Getenv("CNI_COMMAND") != "DEL" {
-		return fmt.Errorf("CNI_COMMAND is not DEL")
-	}
-
-	paths := strings.Split(os.Getenv("CNI_PATH"), ":")
-
-	pluginPath, err := invoke.FindInPath(plugin, paths)
-	if err != nil {
-		return err
-	}
-
-	return invoke.ExecPluginWithoutResult(pluginPath, netconf, invoke.ArgsFromEnv())
+	return invoke.DelegateDel(plugin, netconf)
 }
 
 // ConfigureIface takes the result of IPAM plugin and
