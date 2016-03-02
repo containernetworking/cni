@@ -43,12 +43,20 @@ type CNIConfig struct {
 }
 
 func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error) {
-	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
+	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return nil, err
+	}
+
 	return invoke.ExecPluginWithResult(pluginPath, net.Bytes, c.args("ADD", rt))
 }
 
 func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
-	pluginPath := invoke.FindInPath(net.Network.Type, c.Path)
+	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return err
+	}
+
 	return invoke.ExecPluginWithoutResult(pluginPath, net.Bytes, c.args("DEL", rt))
 }
 
