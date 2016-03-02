@@ -24,7 +24,9 @@ This repository includes a number of common plugins that can be found in plugins
 Please see Documentation/ folder for documentation about particular plugins.
 
 ## Running the plugins
-The scripts/ directory contains two scripts, priv-net-run.sh and docker-run.sh, that can be used to exercise the plugins.
+The scripts/ directory contains two scripts, `priv-net-run.sh` and `docker-run.sh`, that can be used to exercise the plugins.
+
+**note - priv-net-run.sh depends on `jq`**
 
 Start out by creating a netconf file to describe a network:
 
@@ -44,6 +46,11 @@ $ cat >/etc/cni/net.d/10-mynet.conf <<EOF
 			{ "dst": "0.0.0.0/0" }
 		]
 	}
+}
+EOF
+$ cat >/etc/cni/net.d/99-loopback.conf <<EOF
+{
+	"type": "loopback"
 }
 EOF
 ```

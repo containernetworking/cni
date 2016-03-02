@@ -8,7 +8,6 @@ contid=$(printf '%x%x%x%x' $RANDOM $RANDOM $RANDOM $RANDOM)
 netnspath=/var/run/netns/$contid
 
 ip netns add $contid
-ip netns exec $contid ip link set lo up
 ./exec-plugins.sh add $contid $netnspath
 
 
