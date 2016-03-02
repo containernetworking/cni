@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/appc/cni.svg?branch=master)](https://travis-ci.org/appc/cni)
+
 # cni - the Container Network Interface
 
 ## What is CNI?
