@@ -5,6 +5,7 @@ import (
 
 	"github.com/appc/cni/pkg/ns"
 	"github.com/appc/cni/pkg/skel"
+	"github.com/appc/cni/pkg/types"
 	"github.com/vishvananda/netlink"
 )
 
@@ -27,7 +28,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err // not tested
 	}
 
-	return nil
+	result := types.Result{}
+	return result.Print()
 }
 
 func cmdDel(args *skel.CmdArgs) error {
