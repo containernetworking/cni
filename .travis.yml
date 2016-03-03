@@ -1,5 +1,6 @@
 language: go
 sudo: required
+dist: trusty
 
 go:
   - 1.4
