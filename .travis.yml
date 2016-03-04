@@ -7,13 +7,18 @@ go:
   - 1.6
 
 env:
-  - TOOLS_CMD=golang.org/x/tools/cmd
+  global:
+    - TOOLS_CMD=golang.org/x/tools/cmd
+    - PATH=$GOROOT/bin:$PATH
 
 install:
  - go get ${TOOLS_CMD}/vet
+ - go get ${TOOLS_CMD}/cover
+ - go get github.com/modocache/gover
+ - go get github.com/mattn/goveralls
 
 script:
- - sudo -E /bin/bash -c 'PATH=$GOROOT/bin:$PATH ./test'
+ - ./test
 
 notifications:
   email: false
