@@ -33,8 +33,23 @@ fi
 split=(${TEST// / })
 TEST=${split[@]/#/${REPO_PATH}/}
 
-echo "Running tests..."
-go test ${COVER} $@ ${TEST}
+echo -n "Running tests "
+function testrun {
+    sudo -E bash -c "umask 0; PATH=\$GOROOT/bin:\$PATH go test -covermode set $@"
+}
+if [ ! -z "${COVERALLS}" ]; then
+    echo "with coverage profile generation..."
+    i=0
+    for t in ${TEST}; do 
+        testrun "-coverprofile ${i}.coverprofile ${t}"
+        i=$((i+1))
+    done 
+    gover
+    goveralls -service=travis-ci -coverprofile=gover.coverprofile -repotoken=$COVERALLS_TOKEN
+else 
+    echo "without coverage profile generation..."
+    testrun "${TEST}"
+fi
 
 echo "Checking gofmt..."
 fmtRes=$(gofmt -l $FMT)
