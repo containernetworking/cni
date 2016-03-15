@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Run all CNI tests 
+# Run all CNI tests
 #   ./test
 #   ./test -v
 #
@@ -11,7 +11,7 @@ set -e
 
 source ./build
 
-TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke"
+TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke pkg/ns"
 FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ns pkg/types pkg/ipam pkg/skel plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel plugins/meta/tuning"
 
 # user has not provided PKG override
