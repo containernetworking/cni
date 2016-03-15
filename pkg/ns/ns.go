@@ -66,7 +66,8 @@ func WithNetNSPath(nspath string, lockThread bool, f func(*os.File) error) error
 // Changing namespaces must be done on a goroutine that has been
 // locked to an OS thread. If lockThread arg is true, this function
 // locks the goroutine prior to change namespace and unlocks before
-// returning
+// returning.  If the closure returns an error, WithNetNS attempts to
+// restore the original namespace before returning.
 func WithNetNS(ns *os.File, lockThread bool, f func(*os.File) error) error {
 	if lockThread {
 		runtime.LockOSThread()
