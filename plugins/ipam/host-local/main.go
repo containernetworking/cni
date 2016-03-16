@@ -37,11 +37,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		IP6: nil,
 	}
 
-	allocator, err := NewIPAllocator(ipamConf, store)
-	if err != nil {
-		return err
-	}
-
 	if ipamConf != nil {
 		store, err := disk.New(ipamConf.Name)
 		if err != nil {
@@ -67,7 +62,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 		defer store.Close()
-		ipamConf6.Args = &ipamArgs
 
 		allocator, err := NewIPAllocator(ipamConf6, store)
 		if err != nil {
@@ -121,8 +115,10 @@ func cmdDel(args *skel.CmdArgs) error {
 			result[1] = e
 		}
 	}
-	if len(result) == 2 {
-		return fmt.Errorf("%v, %v", result[0], result[1])
+	if result[0] != nil {
+		if result[1] != nil {
+			return fmt.Errorf("%v, %v", result[0], result[1])
+		}
 	}
 	return result[0]
 }

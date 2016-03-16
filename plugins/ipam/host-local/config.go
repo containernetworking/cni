@@ -41,8 +41,8 @@ type IPAMArgs struct {
 
 type Net struct {
 	Name  string      `json:"name"`
-	IPAM  *IPAMConfig `json:"ipam"`
-	IPAM6 *IPAMConfig `json:"ipam6"`
+	IPAM  *IPAMConfig `json:"ipam,omitempty"`
+	IPAM6 *IPAMConfig `json:"ipam6,omitempty"`
 }
 
 // LoadIPAMConfig unmarshals a given byte slice to a Net object
@@ -53,10 +53,19 @@ func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, *IPAMConfig, error)
 	}
 
 	if args != "" {
-		n.IPAM.Args = &IPAMArgs{}
-		err := types.LoadArgs(args, n.IPAM.Args)
-		if err != nil {
-			return nil, nil, err
+		if n.IPAM != nil {
+			n.IPAM.Args = &IPAMArgs{}
+			err := types.LoadArgs(args, n.IPAM.Args)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		if n.IPAM6 != nil {
+			n.IPAM6.Args = &IPAMArgs{}
+			err := types.LoadArgs(args, n.IPAM6.Args)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 

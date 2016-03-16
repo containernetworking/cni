@@ -40,13 +40,13 @@ function testrun {
 if [ ! -z "${COVERALLS}" ]; then
     echo "with coverage profile generation..."
     i=0
-    for t in ${TEST}; do 
+    for t in ${TEST}; do
         testrun "-coverprofile ${i}.coverprofile ${t}"
         i=$((i+1))
-    done 
+    done
     gover
     goveralls -service=travis-ci -coverprofile=gover.coverprofile -repotoken=$COVERALLS_TOKEN
-else 
+else
     echo "without coverage profile generation..."
     testrun "${TEST}"
 fi
