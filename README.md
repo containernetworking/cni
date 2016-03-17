@@ -20,7 +20,10 @@ Hence we are proposing this specification, along with an initial set of plugins 
 ## How do I use CNI?
 
 ## Requirements
-CNI requires Go 1.4+ to build.
+CNI requires Go 1.5+ to build.
+
+Go 1.5 users will need to set GO15VENDOREXPERIMENT=1 to get vendored
+dependencies. This flag is set by default in 1.6.
 
 ## Included Plugins
 This repository includes a number of common plugins that can be found in plugins/ directory.
