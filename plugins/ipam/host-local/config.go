@@ -35,6 +35,7 @@ type IPAMConfig struct {
 }
 
 type IPAMArgs struct {
+	types.CommonArgs
 	IP net.IP `json:"ip,omitempty"`
 }
 
