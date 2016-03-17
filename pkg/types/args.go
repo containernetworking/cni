@@ -47,9 +47,9 @@ type CommonArgs struct {
 	IgnoreUnknown UnmarshallableBool `json:"ignoreunknown,omitempty"`
 }
 
-// getKeyField is a helper function to receive Values
+// GetKeyField is a helper function to receive Values
 // Values that represent a pointer to a struct
-func getKeyField(keyString string, v reflect.Value) reflect.Value {
+func GetKeyField(keyString string, v reflect.Value) reflect.Value {
 	return v.Elem().FieldByName(keyString)
 }
 
