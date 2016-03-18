@@ -11,8 +11,8 @@ set -e
 
 source ./build
 
-TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke pkg/ns"
-FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ns pkg/types pkg/ipam pkg/skel plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel plugins/meta/tuning"
+TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke pkg/ns pkg/skel"
+FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ns pkg/types pkg/ipam plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel plugins/meta/tuning"
 
 # user has not provided PKG override
 if [ -z "$PKG" ]; then
