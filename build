@@ -10,7 +10,7 @@ if [ ! -h gopath/src/${REPO_PATH} ]; then
 fi
 
 export GOBIN=${PWD}/bin
-export GOPATH=${PWD}/gopath:$(pwd)/Godeps/_workspace
+export GOPATH=${PWD}/gopath
 
 echo "Building API"
 go build ${REPO_PATH}/libcni
