@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/appc/cni",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v58",
 	"Packages": [
 		"./..."
 	],
