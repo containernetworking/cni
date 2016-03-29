@@ -20,6 +20,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/ip"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/types"
 
 	"github.com/vishvananda/netlink"
@@ -35,19 +36,19 @@ func ExecDel(plugin string, netconf []byte) error {
 
 // ConfigureIface takes the result of IPAM plugin and
 // applies to the ifName interface
-func ConfigureIface(ifName string, res *types.Result) error {
-	link, err := netlink.LinkByName(ifName)
+func ConfigureIface(netops ops.NetOps, ifName string, res *types.Result) error {
+	link, err := netops.LinkByName(ifName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup %q: %v", ifName, err)
 	}
 
-	if err := netlink.LinkSetUp(link); err != nil {
+	if err := netops.LinkSetUp(link); err != nil {
 		return fmt.Errorf("failed to set %q UP: %v", ifName, err)
 	}
 
 	// TODO(eyakubovich): IPv6
 	addr := &netlink.Addr{IPNet: &res.IP4.IP, Label: ""}
-	if err = netlink.AddrAdd(link, addr); err != nil {
+	if err = netops.AddrAdd(link, addr); err != nil {
 		return fmt.Errorf("failed to add IP addr to %q: %v", ifName, err)
 	}
 
@@ -56,7 +57,7 @@ func ConfigureIface(ifName string, res *types.Result) error {
 		if gw == nil {
 			gw = res.IP4.Gateway
 		}
-		if err = ip.AddRoute(&r.Dst, gw, link); err != nil {
+		if err = ip.AddRoute(netops, &r.Dst, gw, link); err != nil {
 			// we skip over duplicate routes as we assume the first one wins
 			if !os.IsExist(err) {
 				return fmt.Errorf("failed to add route '%v via %v dev %v': %v", r.Dst, gw, ifName, err)

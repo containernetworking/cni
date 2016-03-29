@@ -25,6 +25,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/ipam"
 	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/utils"
@@ -58,8 +59,8 @@ func loadNetConf(bytes []byte) (*NetConf, error) {
 	return n, nil
 }
 
-func ensureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
-	addrs, err := netlink.AddrList(br, syscall.AF_INET)
+func ensureBridgeAddr(netops ops.NetOps, br *netlink.Bridge, ipn *net.IPNet) error {
+	addrs, err := netops.AddrList(br, syscall.AF_INET)
 	if err != nil && err != syscall.ENOENT {
 		return fmt.Errorf("could not get list of IP addresses: %v", err)
 	}
@@ -77,14 +78,14 @@ func ensureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
 	}
 
 	addr := &netlink.Addr{IPNet: ipn, Label: ""}
-	if err := netlink.AddrAdd(br, addr); err != nil {
+	if err := netops.AddrAdd(br, addr); err != nil {
 		return fmt.Errorf("could not add IP address to %q: %v", br.Name, err)
 	}
 	return nil
 }
 
-func bridgeByName(name string) (*netlink.Bridge, error) {
-	l, err := netlink.LinkByName(name)
+func bridgeByName(netops ops.NetOps, name string) (*netlink.Bridge, error) {
+	l, err := netops.LinkByName(name)
 	if err != nil {
 		return nil, fmt.Errorf("could not lookup %q: %v", name, err)
 	}
@@ -95,7 +96,7 @@ func bridgeByName(name string) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
+func ensureBridge(netops ops.NetOps, brName string, mtu int) (*netlink.Bridge, error) {
 	br := &netlink.Bridge{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: brName,
@@ -103,31 +104,31 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 		},
 	}
 
-	if err := netlink.LinkAdd(br); err != nil {
+	if err := netops.LinkAdd(br); err != nil {
 		if err != syscall.EEXIST {
 			return nil, fmt.Errorf("could not add %q: %v", brName, err)
 		}
 
 		// it's ok if the device already exists as long as config is similar
-		br, err = bridgeByName(brName)
+		br, err = bridgeByName(netops, brName)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if err := netlink.LinkSetUp(br); err != nil {
+	if err := netops.LinkSetUp(br); err != nil {
 		return nil, err
 	}
 
 	return br, nil
 }
 
-func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int) error {
+func setupVeth(netops ops.NetOps, netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int) error {
 	var hostVethName string
 
 	err := netns.Do(func(hostNS ns.NetNS) error {
 		// create the veth pair in the container and move host end into host netns
-		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
+		hostVeth, _, err := ip.SetupVeth(netops, ifName, mtu, hostNS)
 		if err != nil {
 			return err
 		}
@@ -140,13 +141,13 @@ func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int) error
 	}
 
 	// need to lookup hostVeth again as its index has changed during ns move
-	hostVeth, err := netlink.LinkByName(hostVethName)
+	hostVeth, err := netops.LinkByName(hostVethName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup %q: %v", hostVethName, err)
 	}
 
 	// connect host veth end to the bridge
-	if err = netlink.LinkSetMaster(hostVeth, br); err != nil {
+	if err = netops.LinkSetMaster(hostVeth, br); err != nil {
 		return fmt.Errorf("failed to connect %q to bridge %v: %v", hostVethName, br.Attrs().Name, err)
 	}
 
@@ -158,9 +159,9 @@ func calcGatewayIP(ipn *net.IPNet) net.IP {
 	return ip.NextIP(nid)
 }
 
-func setupBridge(n *NetConf) (*netlink.Bridge, error) {
+func setupBridge(netops ops.NetOps, n *NetConf) (*netlink.Bridge, error) {
 	// create bridge if necessary
-	br, err := ensureBridge(n.BrName, n.MTU)
+	br, err := ensureBridge(netops, n.BrName, n.MTU)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bridge %q: %v", n.BrName, err)
 	}
@@ -169,23 +170,27 @@ func setupBridge(n *NetConf) (*netlink.Bridge, error) {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	return cmdAddInternal(ops.NewNetOps(), args)
+}
+
+func cmdAddInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	n, err := loadNetConf(args.StdinData)
 	if err != nil {
 		return err
 	}
 
-	br, err := setupBridge(n)
+	br, err := setupBridge(netops, n)
 	if err != nil {
 		return err
 	}
 
-	netns, err := ns.GetNS(args.Netns)
+	netns, err := netops.GetNS(args.Netns)
 	if err != nil {
 		return fmt.Errorf("failed to open netns %q: %v", args.Netns, err)
 	}
 	defer netns.Close()
 
-	if err = setupVeth(netns, br, args.IfName, n.MTU); err != nil {
+	if err = setupVeth(netops, netns, br, args.IfName, n.MTU); err != nil {
 		return err
 	}
 
@@ -204,7 +209,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
-		return ipam.ConfigureIface(args.IfName, result)
+		return ipam.ConfigureIface(netops, args.IfName, result)
 	})
 	if err != nil {
 		return err
@@ -216,7 +221,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			Mask: result.IP4.IP.Mask,
 		}
 
-		if err = ensureBridgeAddr(br, gwn); err != nil {
+		if err = ensureBridgeAddr(netops, br, gwn); err != nil {
 			return err
 		}
 
@@ -238,6 +243,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	return cmdDelInternal(ops.NewNetOps(), args)
+}
+
+func cmdDelInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	n, err := loadNetConf(args.StdinData)
 	if err != nil {
 		return err
@@ -248,9 +257,9 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	var ipn *net.IPNet
-	err = ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+	err = netops.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		var err error
-		ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
+		ipn, err = ip.DelLinkByNameAddr(netops, args.IfName, netlink.FAMILY_V4)
 		return err
 	})
 	if err != nil {

@@ -17,18 +17,20 @@ package ip
 import (
 	"net"
 
+	"github.com/containernetworking/cni/pkg/ops"
+
 	"github.com/vishvananda/netlink"
 )
 
 // AddDefaultRoute sets the default route on the given gateway.
-func AddDefaultRoute(gw net.IP, dev netlink.Link) error {
+func AddDefaultRoute(netops ops.NetOps, gw net.IP, dev netlink.Link) error {
 	_, defNet, _ := net.ParseCIDR("0.0.0.0/0")
-	return AddRoute(defNet, gw, dev)
+	return AddRoute(netops, defNet, gw, dev)
 }
 
 // AddRoute adds a universally-scoped route to a device.
-func AddRoute(ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
-	return netlink.RouteAdd(&netlink.Route{
+func AddRoute(netops ops.NetOps, ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
+	return netops.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
 		Scope:     netlink.SCOPE_UNIVERSE,
 		Dst:       ipn,
@@ -37,8 +39,8 @@ func AddRoute(ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
 }
 
 // AddHostRoute adds a host-scoped route to a device.
-func AddHostRoute(ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
-	return netlink.RouteAdd(&netlink.Route{
+func AddHostRoute(netops ops.NetOps, ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
+	return netops.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
 		Scope:     netlink.SCOPE_HOST,
 		Dst:       ipn,
