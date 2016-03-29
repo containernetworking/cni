@@ -11,7 +11,7 @@ set -e
 
 source ./build
 
-TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke pkg/ns pkg/skel pkg/types pkg/utils"
+TESTABLE="plugins/ipam/dhcp plugins/main/loopback pkg/invoke pkg/ns pkg/skel pkg/types pkg/utils plugins/main/ipvlan"
 FORMATTABLE="$TESTABLE libcni pkg/ip pkg/ipam pkg/testutils plugins/ipam/host-local plugins/main/bridge plugins/meta/flannel plugins/meta/tuning"
 
 # user has not provided PKG override
@@ -35,7 +35,7 @@ TEST=${split[@]/#/${REPO_PATH}/}
 
 echo -n "Running tests "
 function testrun {
-    sudo -E bash -c "umask 0; PATH=\$GOROOT/bin:\$PATH go test -covermode set $@"
+    sudo -E bash -c "umask 0; PATH=\$GOBIN:\$GOROOT/bin:\$PATH go test -covermode set $@"
 }
 if [ ! -z "${COVERALLS}" ]; then
     echo "with coverage profile generation..."
