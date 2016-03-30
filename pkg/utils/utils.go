@@ -9,7 +9,7 @@ const ChainCNIPrefix = ("CNI-")
 const MaxChainLength = 29 - len(ChainCNIPrefix)
 
 // Generates a chain name to be used with iptables.
-// Ensures that the generated name is less than
+// Ensures that the generated chain name is less than
 // 29 chars in length
 func FormatChainName(name string, id string) string {
 	chain := fmt.Sprintf("%x", sha512.Sum512([]byte(name+id)))
