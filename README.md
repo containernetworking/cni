@@ -17,6 +17,13 @@ We believe that every container runtime will seek to solve the same problem of m
 In order to avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution.
 Hence we are proposing this specification, along with an initial set of plugins that can be used by different container runtime systems.
 
+## Who is using CNI?
+
+- [rkt - container engine](https://coreos.com/blog/rkt-cni-networking.html)
+- [Kurma - container runtime](http://kurma.io/)
+- [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
+- [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
+
 ## How do I use CNI?
 
 ## Requirements
