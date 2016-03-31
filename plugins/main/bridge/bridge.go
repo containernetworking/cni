@@ -28,6 +28,7 @@ import (
 	"github.com/appc/cni/pkg/ns"
 	"github.com/appc/cni/pkg/skel"
 	"github.com/appc/cni/pkg/types"
+	"github.com/appc/cni/pkg/utils"
 	"github.com/vishvananda/netlink"
 )
 
@@ -220,7 +221,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	if n.IPMasq {
-		chain := "CNI-" + n.Name
+		chain := utils.FormatChainName(n.Name, args.ContainerID)
 		if err = ip.SetupIPMasq(ip.Network(&result.IP4.IP), chain); err != nil {
 			return err
 		}
