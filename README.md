@@ -23,6 +23,8 @@ Hence we are proposing this specification, along with an initial set of plugins 
 - [Kurma - container runtime](http://kurma.io/)
 - [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
+- [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
+- [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
 
 ## How do I use CNI?
 
