@@ -5,16 +5,17 @@ import (
 	"fmt"
 )
 
-const ChainCNIPrefix = ("CNI-")
-const MaxChainLength = 29 - len(ChainCNIPrefix)
+const (
+	maxChainLength = 28
+	chainPrefix    = "CNI-"
+	prefixLength   = len(chainPrefix)
+)
 
 // Generates a chain name to be used with iptables.
 // Ensures that the generated chain name is less than
-// 29 chars in length
+// maxChainLength chars in length
 func FormatChainName(name string, id string) string {
-	chain := fmt.Sprintf("%x", sha512.Sum512([]byte(name+id)))
-	if len(chain) > MaxChainLength {
-		chain = chain[:MaxChainLength]
-	}
-	return fmt.Sprintf("%s%s", ChainCNIPrefix, chain)
+	chainBytes := sha512.Sum512([]byte(name + id))
+	chain := fmt.Sprintf("%s%x", chainPrefix, chainBytes)
+	return chain[:maxChainLength]
 }
