@@ -19,3 +19,9 @@ func FormatChainName(name string, id string) string {
 	chain := fmt.Sprintf("%s%x", chainPrefix, chainBytes)
 	return chain[:maxChainLength]
 }
+
+// FormatComment returns a comment used for easier
+// rule identification within iptables.
+func FormatComment(name string, id string) string {
+	return fmt.Sprintf("name: %q id: %q", name, id)
+}

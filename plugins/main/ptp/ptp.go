@@ -179,7 +179,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if conf.IPMasq {
 		chain := utils.FormatChainName(conf.Name, args.ContainerID)
-		if err = ip.SetupIPMasq(&result.IP4.IP, chain); err != nil {
+		comment := utils.FormatComment(conf.Name, args.ContainerID)
+		if err = ip.SetupIPMasq(&result.IP4.IP, chain, comment); err != nil {
 			return err
 		}
 	}
@@ -206,7 +207,8 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	if conf.IPMasq {
 		chain := utils.FormatChainName(conf.Name, args.ContainerID)
-		if err = ip.TeardownIPMasq(ipn, chain); err != nil {
+		comment := utils.FormatComment(conf.Name, args.ContainerID)
+		if err = ip.TeardownIPMasq(ipn, chain, comment); err != nil {
 			return err
 		}
 	}

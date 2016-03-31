@@ -222,7 +222,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if n.IPMasq {
 		chain := utils.FormatChainName(n.Name, args.ContainerID)
-		if err = ip.SetupIPMasq(ip.Network(&result.IP4.IP), chain); err != nil {
+		comment := utils.FormatComment(n.Name, args.ContainerID)
+		if err = ip.SetupIPMasq(ip.Network(&result.IP4.IP), chain, comment); err != nil {
 			return err
 		}
 	}
