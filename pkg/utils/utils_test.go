@@ -32,7 +32,6 @@ var _ = Describe("Utils", func() {
 		Expect(len(chain1)).To(Equal(maxChainLength))
 		Expect(len(chain2)).To(Equal(maxChainLength))
 		Expect(chain1).To(Equal("CNI-374f33fe84ab0ed84dcdebe38"))
-		Expect(chain2).NotTo(Equal("CNI-374f33fe84ab0ed84dcdebe38"))
 		Expect(chain1).NotTo(Equal(chain2))
 	})
 })
