@@ -27,6 +27,11 @@ Hence we are proposing this specification, along with an initial set of plugins 
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
 
+## Contributing to CNI
+
+We welcome contributions, including [bug reports](https://github.com/appc/cni/issues), and code and documentation improvements.
+If you intend to contribute to code or documentation, please read [CONTRIBUTING.md](CONTRIBUTING.md). Also see the [contact section](#contact) in this README.
+
 ## How do I use CNI?
 
 ### Requirements
