@@ -1,20 +1,21 @@
 [![Build Status](https://travis-ci.org/appc/cni.svg?branch=master)](https://travis-ci.org/appc/cni)
 [![Coverage Status](https://coveralls.io/repos/github/appc/cni/badge.svg?branch=master)](https://coveralls.io/github/appc/cni?branch=master)
 
-# cni - the Container Network Interface
+# CNI - the Container Network Interface
 
 ## What is CNI?
 
 CNI, the _Container Network Interface_, is a proposed standard for configuring network interfaces for Linux application containers.
 The standard consists of a simple specification for how executable plugins can be used to configure network namespaces; this repository also contains a go library implementing that specification.
 
-The specification itself is contained in [SPEC.md](SPEC.md)
+The specification itself is contained in [SPEC.md](SPEC.md).
 
 ## Why develop CNI?
 
 Application containers on Linux are a rapidly evolving area, and within this space networking is a particularly unsolved problem, as it is highly environment-specific.
 We believe that every container runtime will seek to solve the same problem of making the network layer pluggable.
-In order to avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution.
+
+To avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution.
 Hence we are proposing this specification, along with an initial set of plugins that can be used by different container runtime systems.
 
 ## Who is using CNI?
@@ -28,17 +29,17 @@ Hence we are proposing this specification, along with an initial set of plugins 
 
 ## How do I use CNI?
 
-## Requirements
+### Requirements
 CNI requires Go 1.5+ to build.
 
 Go 1.5 users will need to set GO15VENDOREXPERIMENT=1 to get vendored
 dependencies. This flag is set by default in 1.6.
 
-## Included Plugins
-This repository includes a number of common plugins that can be found in plugins/ directory.
-Please see Documentation/ folder for documentation about particular plugins.
+### Included Plugins
+This repository includes a number of common plugins in the `plugins/` directory.
+Please see the [Documentation/](Documentation/) directory for documentation about particular plugins.
 
-## Running the plugins
+### Running the plugins
 The scripts/ directory contains two scripts, `priv-net-run.sh` and `docker-run.sh`, that can be used to exercise the plugins.
 
 **note - priv-net-run.sh depends on `jq`**
@@ -78,7 +79,7 @@ Next, build the plugins:
 $ ./build
 ```
 
-Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined `mynet` network:
+Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined the `mynet` network:
 
 ```bash
 $ CNI_PATH=`pwd`/bin
@@ -107,8 +108,8 @@ The environment variable `CNI_PATH` tells the scripts and library where to look 
 
 ## Running a Docker container with network namespace set up by CNI plugins
 
-Use instructions in the previous section to define a netconf and build the plugins.
-Next, docker-run.sh script wraps `docker run` command to execute the plugins prior to entering the container:
+Use the instructions in the previous section to define a netconf and build the plugins.
+Next, docker-run.sh script wraps `docker run`, to execute the plugins prior to entering the container:
 
 ```bash
 $ CNI_PATH=`pwd`/bin
