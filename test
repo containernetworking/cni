@@ -65,4 +65,16 @@ if [ -n "${vetRes}" ]; then
 	exit 255
 fi
 
+echo "Checking license header..."
+licRes=$(
+       for file in $(find . -type f -iname '*.go' ! -path './vendor/*'); do
+               head -n1 "${file}" | grep -Eq "(Copyright|generated)" || echo -e "  ${file}"
+       done
+)
+if [ -n "${licRes}" ]; then
+       echo -e "license header checking failed:\n${licRes}"
+       exit 255
+fi
+
+
 echo "Success"
