@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"runtime"
 	"syscall"
 
@@ -123,10 +122,10 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-func setupVeth(netns string, br *netlink.Bridge, ifName string, mtu int) error {
+func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int) error {
 	var hostVethName string
 
-	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
+	err := netns.Do(func(hostNS ns.NetNS) error {
 		// create the veth pair in the container and move host end into host netns
 		hostVeth, _, err := ip.SetupVeth(ifName, mtu, hostNS)
 		if err != nil {
@@ -180,7 +179,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	if err = setupVeth(args.Netns, br, args.IfName, n.MTU); err != nil {
+	netns, err := ns.GetNS(args.Netns)
+	if err != nil {
+		return fmt.Errorf("failed to open netns %q: %v", args.Netns, err)
+	}
+	defer netns.Close()
+
+	if err = setupVeth(netns, br, args.IfName, n.MTU); err != nil {
 		return err
 	}
 
@@ -198,7 +203,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		result.IP4.Gateway = calcGatewayIP(&result.IP4.IP)
 	}
 
-	err = ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+	err = netns.Do(func(_ ns.NetNS) error {
 		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
@@ -243,7 +248,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	var ipn *net.IPNet
-	err = ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+	err = ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		var err error
 		ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
 		return err

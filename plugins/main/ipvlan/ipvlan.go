@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/ip"
@@ -65,7 +64,7 @@ func modeFromString(s string) (netlink.IPVlanMode, error) {
 	}
 }
 
-func createIpvlan(conf *NetConf, ifName string, netns *os.File) error {
+func createIpvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 	mode, err := modeFromString(conf.Mode)
 	if err != nil {
 		return err
@@ -97,7 +96,7 @@ func createIpvlan(conf *NetConf, ifName string, netns *os.File) error {
 		return fmt.Errorf("failed to create ipvlan: %v", err)
 	}
 
-	return ns.WithNetNS(netns, false, func(_ *os.File) error {
+	return netns.Do(func(_ ns.NetNS) error {
 		err := renameLink(tmpName, ifName)
 		if err != nil {
 			return fmt.Errorf("failed to rename ipvlan to %q: %v", ifName, err)
@@ -112,9 +111,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	netns, err := os.Open(args.Netns)
+	netns, err := ns.GetNS(args.Netns)
 	if err != nil {
-		return fmt.Errorf("failed to open netns %q: %v", netns, err)
+		return fmt.Errorf("failed to open netns %q: %v", args.Netns, err)
 	}
 	defer netns.Close()
 
@@ -131,7 +130,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	err = ns.WithNetNS(netns, false, func(_ *os.File) error {
+	err = netns.Do(func(_ ns.NetNS) error {
 		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
@@ -153,7 +152,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+	return ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		return ip.DelLinkByName(args.IfName)
 	})
 }

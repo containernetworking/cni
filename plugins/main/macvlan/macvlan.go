@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/ip"
@@ -74,7 +73,7 @@ func modeFromString(s string) (netlink.MacvlanMode, error) {
 	}
 }
 
-func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
+func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 	mode, err := modeFromString(conf.Mode)
 	if err != nil {
 		return err
@@ -106,7 +105,7 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 		return fmt.Errorf("failed to create macvlan: %v", err)
 	}
 
-	return ns.WithNetNS(netns, false, func(_ *os.File) error {
+	return netns.Do(func(_ ns.NetNS) error {
 		// TODO: duplicate following lines for ipv6 support, when it will be added in other places
 		ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, tmpName)
 		if _, err := sysctl.Sysctl(ipv4SysctlValueName, "1"); err != nil {
@@ -130,7 +129,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	netns, err := os.Open(args.Netns)
+	netns, err := ns.GetNS(args.Netns)
 	if err != nil {
 		return fmt.Errorf("failed to open netns %q: %v", netns, err)
 	}
@@ -149,7 +148,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	err = ns.WithNetNS(netns, false, func(_ *os.File) error {
+	err = netns.Do(func(_ ns.NetNS) error {
 		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {
@@ -171,7 +170,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+	return ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		return ip.DelLinkByName(args.IfName)
 	})
 }
