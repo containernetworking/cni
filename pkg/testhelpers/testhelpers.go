@@ -27,6 +27,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func getCurrentThreadNetNSPath() string {
+	pid := unix.Getpid()
+	tid := unix.Gettid()
+	return fmt.Sprintf("/proc/%d/task/%d/ns/net", pid, tid)
+}
+
+func GetInodeCurNetNS() (uint64, error) {
+	return GetInode(getCurrentThreadNetNSPath())
+}
+
 func GetInode(path string) (uint64, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -68,9 +78,7 @@ func MakeNetworkNS(containerID string) string {
 		defer GinkgoRecover()
 
 		// capture current thread's original netns
-		pid := unix.Getpid()
-		tid := unix.Gettid()
-		currentThreadNetNSPath := fmt.Sprintf("/proc/%d/task/%d/ns/net", pid, tid)
+		currentThreadNetNSPath := getCurrentThreadNetNSPath()
 		originalNetNS, err := unix.Open(currentThreadNetNSPath, unix.O_RDONLY, 0)
 		Expect(err).NotTo(HaveOccurred())
 		defer unix.Close(originalNetNS)
