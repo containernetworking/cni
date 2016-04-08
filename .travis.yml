@@ -18,7 +18,6 @@ env:
     - GO15VENDOREXPERIMENT=1
 
 install:
- - go get ${TOOLS_CMD}/vet
  - go get ${TOOLS_CMD}/cover
  - go get github.com/modocache/gover
  - go get github.com/mattn/goveralls
