@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/appc/cni/plugins/ipam/host-local/backend/disk"
 
 	"github.com/appc/cni/pkg/skel"
@@ -26,49 +27,98 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
-	if err != nil {
-		return err
-	}
-
-	store, err := disk.New(ipamConf.Name)
-	if err != nil {
-		return err
-	}
-	defer store.Close()
-
-	allocator, err := NewIPAllocator(ipamConf, store)
-	if err != nil {
-		return err
-	}
-
-	ipConf, err := allocator.Get(args.ContainerID)
+	ipamConf, ipamConf6, err := LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
 	r := &types.Result{
-		IP4: ipConf,
+		IP4: nil,
+		IP6: nil,
+	}
+
+	if ipamConf != nil {
+		store, err := disk.New(ipamConf.Name)
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+
+		allocator, err := NewIPAllocator(ipamConf, store)
+		if err != nil {
+			return err
+		}
+
+		ipConf, err := allocator.Get(args.ContainerID)
+		if err != nil {
+			return err
+		}
+		r.IP4 = ipConf
+	}
+
+	if ipamConf6 != nil {
+		store, err := disk.New(ipamConf6.Name)
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+
+		allocator, err := NewIPAllocator(ipamConf6, store)
+		if err != nil {
+			return err
+		}
+		ipConf6, err := allocator.Get(args.ContainerID)
+		if err != nil {
+			return err
+		}
+		r.IP6 = ipConf6
 	}
 	return r.Print()
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	var result [2]error
+	ipamConf, ipamConf6, err := LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
-	if err != nil {
-		return err
-	}
-	defer store.Close()
+	if ipamConf != nil {
+		store, err := disk.New(ipamConf.Name)
+		if err != nil {
+			return err
+		}
+		defer store.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
-	if err != nil {
-		return err
+		allocator, err := NewIPAllocator(ipamConf, store)
+		if err != nil {
+			return err
+		}
+
+		e := allocator.Release(args.ContainerID)
+		if e != nil {
+			result[0] = e
+		}
 	}
 
-	return allocator.Release(args.ContainerID)
+	if ipamConf6 != nil {
+		store, err := disk.New(ipamConf6.Name)
+		if err != nil {
+			return err
+		}
+		allocator, err := NewIPAllocator(ipamConf6, store)
+		if err != nil {
+			return err
+		}
+		e := allocator.Release(args.ContainerID)
+		if e != nil {
+			result[1] = e
+		}
+	}
+	if result[0] != nil {
+		if result[1] != nil {
+			return fmt.Errorf("%v, %v", result[0], result[1])
+		}
+	}
+	return result[0]
 }
