@@ -142,6 +142,16 @@ lo        Link encap:Local Loopback
           RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 ```
 
+## What might CNI do in the future?
+
+CNI currently covers a wide range of needs for network configuration due to it simple model and API.
+However, in the future CNI might want to branch out into other directions:
+
+- Dynamic updates to existing network configuration
+- Dynamic policies for network bandwidth and firewall rules
+
+If these topics of are interest please contact the team via the mailing list or IRC and find some like minded people in the community to put a proposal together.
+
 ## Contact
 
 For any questions about CNI, please reach out on the mailing list or IRC:
