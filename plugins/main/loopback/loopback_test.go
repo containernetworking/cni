@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/appc/cni/pkg/ns"
+	"github.com/appc/cni/pkg/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -39,7 +40,7 @@ var _ = Describe("Loopback", func() {
 	BeforeEach(func() {
 		command = exec.Command(pathToLoPlugin)
 		containerID = "some-container-id"
-		networkNS = makeNetworkNS(containerID)
+		networkNS = testhelpers.MakeNetworkNS(containerID)
 
 		environ = []string{
 			fmt.Sprintf("CNI_CONTAINERID=%s", containerID),
@@ -52,7 +53,7 @@ var _ = Describe("Loopback", func() {
 	})
 
 	AfterEach(func() {
-		Expect(removeNetworkNS(networkNS)).To(Succeed())
+		Expect(testhelpers.RemoveNetworkNS(networkNS)).To(Succeed())
 	})
 
 	Context("when given a network namespace", func() {

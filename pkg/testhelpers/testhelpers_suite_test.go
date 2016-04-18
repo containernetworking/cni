@@ -12,30 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main_test
+package testhelpers_test
 
 import (
-	"github.com/onsi/gomega/gexec"
+	"math/rand"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 
 	"testing"
 )
 
-var pathToLoPlugin string
-
-func TestLoopback(t *testing.T) {
+func TestTesthelpers(t *testing.T) {
+	rand.Seed(config.GinkgoConfig.RandomSeed)
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Loopback Suite")
+	RunSpecs(t, "Testhelpers Suite")
 }
-
-var _ = BeforeSuite(func() {
-	var err error
-	pathToLoPlugin, err = gexec.Build("github.com/appc/cni/plugins/main/loopback")
-	Expect(err).NotTo(HaveOccurred())
-})
-
-var _ = AfterSuite(func() {
-	gexec.CleanupBuildArtifacts()
-})
