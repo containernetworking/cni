@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sync"
 
 	"golang.org/x/sys/unix"
 
@@ -43,37 +44,51 @@ func GetInodeF(file *os.File) (uint64, error) {
 
 func MakeNetworkNS(containerID string) string {
 	namespace := "/var/run/netns/" + containerID
-	pid := unix.Getpid()
-	tid := unix.Gettid()
 
 	err := os.MkdirAll("/var/run/netns", 0600)
 	Expect(err).NotTo(HaveOccurred())
 
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+	// create an empty file at the mount point
+	mountPointFd, err := os.Create(namespace)
+	Expect(err).NotTo(HaveOccurred())
+	mountPointFd.Close()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// do namespace work in a dedicated goroutine, so that we can safely
+	// Lock/Unlock OSThread without upsetting the lock/unlock state of
+	// the caller of this function
 	go (func() {
+		defer wg.Done()
+
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
 		defer GinkgoRecover()
 
+		// capture current thread's original netns
+		pid := unix.Getpid()
+		tid := unix.Gettid()
+		currentThreadNetNSPath := fmt.Sprintf("/proc/%d/task/%d/ns/net", pid, tid)
+		originalNetNS, err := unix.Open(currentThreadNetNSPath, unix.O_RDONLY, 0)
+		Expect(err).NotTo(HaveOccurred())
+		defer unix.Close(originalNetNS)
+
+		// create a new netns on the current thread
 		err = unix.Unshare(unix.CLONE_NEWNET)
 		Expect(err).NotTo(HaveOccurred())
 
-		fd, err := os.Create(namespace)
+		// bind mount the new netns from the current thread onto the mount point
+		err = unix.Mount(currentThreadNetNSPath, namespace, "none", unix.MS_BIND, "")
 		Expect(err).NotTo(HaveOccurred())
-		defer fd.Close()
 
-		err = unix.Mount("/proc/self/ns/net", namespace, "none", unix.MS_BIND, "")
-		Expect(err).NotTo(HaveOccurred())
+		// reset current thread's netns to the original
+		_, _, e1 := unix.Syscall(unix.SYS_SETNS, uintptr(originalNetNS), uintptr(unix.CLONE_NEWNET), 0)
+		Expect(e1).To(BeZero())
 	})()
 
-	Eventually(namespace).Should(BeAnExistingFile())
-
-	fd, err := unix.Open(fmt.Sprintf("/proc/%d/task/%d/ns/net", pid, tid), unix.O_RDONLY, 0)
-	Expect(err).NotTo(HaveOccurred())
-
-	defer unix.Close(fd)
-
-	_, _, e1 := unix.Syscall(unix.SYS_SETNS, uintptr(fd), uintptr(unix.CLONE_NEWNET), 0)
-	Expect(e1).To(BeZero())
+	wg.Wait()
 
 	return namespace
 }
