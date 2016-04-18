@@ -22,27 +22,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/appc/cni/pkg/ns"
+	"github.com/appc/cni/pkg/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func getInode(path string) (uint64, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-	return getInodeF(file)
-}
-
-func getInodeF(file *os.File) (uint64, error) {
-	stat := &unix.Stat_t{}
-	err := unix.Fstat(int(file.Fd()), stat)
-	return stat.Ino, err
-}
 
 const CurrentNetNS = "/proc/self/ns/net"
 
@@ -81,13 +65,13 @@ var _ = Describe("Linux namespace operations", func() {
 		})
 
 		It("executes the callback within the target network namespace", func() {
-			expectedInode, err := getInode(targetNetNSPath)
+			expectedInode, err := testhelpers.GetInode(targetNetNSPath)
 			Expect(err).NotTo(HaveOccurred())
 
 			var actualInode uint64
 			var innerErr error
 			err = ns.WithNetNS(targetNetNS, false, func(*os.File) error {
-				actualInode, innerErr = getInode(CurrentNetNS)
+				actualInode, innerErr = testhelpers.GetInode(CurrentNetNS)
 				return nil
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -97,13 +81,13 @@ var _ = Describe("Linux namespace operations", func() {
 		})
 
 		It("provides the original namespace as the argument to the callback", func() {
-			hostNSInode, err := getInode(CurrentNetNS)
+			hostNSInode, err := testhelpers.GetInode(CurrentNetNS)
 			Expect(err).NotTo(HaveOccurred())
 
 			var inputNSInode uint64
 			var innerErr error
 			err = ns.WithNetNS(targetNetNS, false, func(inputNS *os.File) error {
-				inputNSInode, err = getInodeF(inputNS)
+				inputNSInode, err = testhelpers.GetInodeF(inputNS)
 				return nil
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -113,7 +97,7 @@ var _ = Describe("Linux namespace operations", func() {
 		})
 
 		It("restores the calling thread to the original network namespace", func() {
-			preTestInode, err := getInode(CurrentNetNS)
+			preTestInode, err := testhelpers.GetInode(CurrentNetNS)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = ns.WithNetNS(targetNetNS, false, func(*os.File) error {
@@ -121,7 +105,7 @@ var _ = Describe("Linux namespace operations", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			postTestInode, err := getInode(CurrentNetNS)
+			postTestInode, err := testhelpers.GetInode(CurrentNetNS)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(postTestInode).To(Equal(preTestInode))
@@ -129,14 +113,14 @@ var _ = Describe("Linux namespace operations", func() {
 
 		Context("when the callback returns an error", func() {
 			It("restores the calling thread to the original namespace before returning", func() {
-				preTestInode, err := getInode(CurrentNetNS)
+				preTestInode, err := testhelpers.GetInode(CurrentNetNS)
 				Expect(err).NotTo(HaveOccurred())
 
 				_ = ns.WithNetNS(targetNetNS, false, func(*os.File) error {
 					return errors.New("potato")
 				})
 
-				postTestInode, err := getInode(CurrentNetNS)
+				postTestInode, err := testhelpers.GetInode(CurrentNetNS)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(postTestInode).To(Equal(preTestInode))
@@ -152,10 +136,10 @@ var _ = Describe("Linux namespace operations", func() {
 
 		Describe("validating inode mapping to namespaces", func() {
 			It("checks that different namespaces have different inodes", func() {
-				hostNSInode, err := getInode(CurrentNetNS)
+				hostNSInode, err := testhelpers.GetInode(CurrentNetNS)
 				Expect(err).NotTo(HaveOccurred())
 
-				testNsInode, err := getInode(targetNetNSPath)
+				testNsInode, err := testhelpers.GetInode(targetNetNSPath)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(hostNSInode).NotTo(Equal(0))

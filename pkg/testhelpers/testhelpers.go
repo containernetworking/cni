@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package testhelpers provides common support behavior for tests
 package testhelpers
 
 import (
@@ -23,6 +25,21 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func GetInode(path string) (uint64, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	return GetInodeF(file)
+}
+
+func GetInodeF(file *os.File) (uint64, error) {
+	stat := &unix.Stat_t{}
+	err := unix.Fstat(int(file.Fd()), stat)
+	return stat.Ino, err
+}
 
 func MakeNetworkNS(containerID string) string {
 	namespace := "/var/run/netns/" + containerID
