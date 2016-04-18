@@ -52,6 +52,33 @@ func GetInodeF(file *os.File) (uint64, error) {
 	return stat.Ino, err
 }
 
+/*
+A note about goroutines, Linux namespaces and runtime.LockOSThread
+
+In Linux, network namespaces have thread affinity.
+
+In the Go language runtime, goroutines do not have affinity for OS threads.
+The Go runtime scheduler moves goroutines around amongst OS threads.  It
+is supposed to be transparent to the Go programmer.
+
+In order to address cases where the programmer needs thread affinity, Go
+provides runtime.LockOSThread and runtime.UnlockOSThread()
+
+However, the Go runtime does not reference count the Lock and Unlock calls.
+Repeated calls to Lock will succeed, but the first call to Unlock will unlock
+everything.  Therefore, it is dangerous to hide a Lock/Unlock in a library
+function, such as in this package.
+
+The code below, in MakeNetworkNS, avoids this problem by spinning up a new
+Go routine specifically so that LockOSThread can be called on it.  Thus
+goroutine-thread affinity is maintained long enough to perform all the required
+namespace operations.
+
+Because the LockOSThread call is performed inside this short-lived goroutine,
+there is no effect either way on the caller's goroutine-thread affinity.
+
+* */
+
 func MakeNetworkNS(containerID string) string {
 	namespace := "/var/run/netns/" + containerID
 
@@ -68,7 +95,7 @@ func MakeNetworkNS(containerID string) string {
 
 	// do namespace work in a dedicated goroutine, so that we can safely
 	// Lock/Unlock OSThread without upsetting the lock/unlock state of
-	// the caller of this function
+	// the caller of this function.  See block comment above.
 	go (func() {
 		defer wg.Done()
 
