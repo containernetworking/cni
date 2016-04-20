@@ -5,13 +5,15 @@
 
 ## What is CNI?
 
-CNI, the _Container Network Interface_, is a proposed standard for configuring network interfaces for Linux application containers.
-The standard consists of a simple specification for how executable plugins can be used to configure network namespaces; this repository also contains a go library implementing that specification.
-
+CNI, the _Container Network Interface_, is a project to help configure network interfaces for Linux application containers.
 CNI concerns itself with setting up network connectivity of containers and removing allocated resources when the container is deleted.
 Because of this focus CNI has a wide range of support and the specification is simple to implement.
 
-The specification itself is contained in [SPEC.md](SPEC.md).
+The project repository contains a [simple specification](SPEC.md) for how executable plugins can be used to configure network namespaces, and a number of plugins, libraries and utilities written in Go that can be used to get started with CNI.
+
+The specification and the plugin architecture form a template system with perfectly clear interfaces.
+This allows developers to integrate their existing container networking solutions with a thin CNI wrapper plugin.
+It also gives a good framework to create new container networking solutions from scratch.
 
 ## Why develop CNI?
 
