@@ -5,8 +5,6 @@ pull requests. This document outlines some of the conventions on development
 workflow, commit message formatting, contact points and other resources to make
 it easier to get your contribution accepted.
 
-For more information on the policy for accepting contributions, see [POLICY](POLICY.md)
-
 # Certificate of Origin
 
 By contributing to this project you agree to the Developer Certificate of
