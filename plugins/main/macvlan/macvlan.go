@@ -26,7 +26,12 @@ import (
 	"github.com/appc/cni/pkg/ns"
 	"github.com/appc/cni/pkg/skel"
 	"github.com/appc/cni/pkg/types"
+	"github.com/appc/cni/pkg/utils/sysctl"
 	"github.com/vishvananda/netlink"
+)
+
+const (
+	IPv4InterfaceArpProxySysctlTemplate = "net.ipv4.conf.%s.proxy_arp"
 )
 
 type NetConf struct {
@@ -80,7 +85,7 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 		return fmt.Errorf("failed to lookup master %q: %v", conf.Master, err)
 	}
 
-	// due to kernel bug we have to create with tmpname or it might
+	// due to kernel bug we have to create with tmpName or it might
 	// collide with the name on the host and error out
 	tmpName, err := ip.RandomVethName()
 	if err != nil {
@@ -99,6 +104,14 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 
 	if err := netlink.LinkAdd(mv); err != nil {
 		return fmt.Errorf("failed to create macvlan: %v", err)
+	}
+
+	// TODO: duplicate following lines for ipv6 support, when it will be added in other places
+	ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, tmpName)
+	if _, err := sysctl.Sysctl(ipv4SysctlValueName, "1"); err != nil {
+		// remove the newly added link and ignore errors, because we already are in a failed state
+		_ = netlink.LinkDel(mv)
+		return fmt.Errorf("failed to set proxy_arp on newly added interface %q: %v", tmpName, err)
 	}
 
 	return ns.WithNetNS(netns, false, func(_ *os.File) error {
