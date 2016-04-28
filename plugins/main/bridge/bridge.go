@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/appc/cni/pkg/firewalld"
 	"github.com/appc/cni/pkg/ip"
 	"github.com/appc/cni/pkg/ipam"
 	"github.com/appc/cni/pkg/ns"
@@ -220,6 +221,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
+	if n.FirewallD.Zone != "" {
+		if err = firewalld.AddTrustedSource(result.IP4.IP.IP, n.FirewallD.Zone); err != nil {
+			return err
+		}
+	}
+
 	if n.IPMasq {
 		chain := utils.FormatChainName(n.Name, args.ContainerID)
 		comment := utils.FormatComment(n.Name, args.ContainerID)
@@ -243,9 +250,20 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
-		return ip.DelLinkByName(args.IfName)
+	var ipn *net.IPNet
+	err = ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+		var err error
+		ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
+		return err
 	})
+
+	if n.FirewallD.Zone != "" {
+		if err = firewalld.RemoveTrustedSource(ipn.IP, n.FirewallD.Zone); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 func main() {

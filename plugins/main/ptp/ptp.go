@@ -24,6 +24,7 @@ import (
 
 	"github.com/vishvananda/netlink"
 
+	"github.com/appc/cni/pkg/firewalld"
 	"github.com/appc/cni/pkg/ip"
 	"github.com/appc/cni/pkg/ipam"
 	"github.com/appc/cni/pkg/ns"
@@ -177,6 +178,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
+	if conf.FirewallD.Zone != "" {
+		if err = firewalld.AddTrustedSource(result.IP4.IP.IP, conf.FirewallD.Zone); err != nil {
+			return err
+		}
+	}
+
 	if conf.IPMasq {
 		chain := utils.FormatChainName(conf.Name, args.ContainerID)
 		comment := utils.FormatComment(conf.Name, args.ContainerID)
@@ -209,6 +216,12 @@ func cmdDel(args *skel.CmdArgs) error {
 		chain := utils.FormatChainName(conf.Name, args.ContainerID)
 		comment := utils.FormatComment(conf.Name, args.ContainerID)
 		if err = ip.TeardownIPMasq(ipn, chain, comment); err != nil {
+			return err
+		}
+	}
+
+	if conf.FirewallD.Zone != "" {
+		if err = firewalld.RemoveTrustedSource(ipn.IP, conf.FirewallD.Zone); err != nil {
 			return err
 		}
 	}

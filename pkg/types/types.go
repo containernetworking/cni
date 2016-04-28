@@ -62,7 +62,10 @@ type NetConf struct {
 	IPAM struct {
 		Type string `json:"type,omitempty"`
 	} `json:"ipam,omitempty"`
-	DNS DNS `json:"dns"`
+	DNS       DNS `json:"dns"`
+	FirewallD struct {
+		Zone string `json:"zone,omitempty"`
+	} `json:"firewalld,omitempty"`
 }
 
 // Result is what gets returned from the plugin (via stdout) to the caller
