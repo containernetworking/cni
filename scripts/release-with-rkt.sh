@@ -7,6 +7,7 @@ FEDORA_INSTALL="dnf install -y golang tar xz bzip2 gzip sudo iproute wget"
 FEDORA_IMAGE="docker://fedora:23"
 ACBUILD_URL="https://github.com/appc/acbuild/releases/download/v0.2.2/acbuild.tar.gz"
 ACBUILD="acbuild --debug"
+BUILDFLAGS="-a --ldflags '-extldflags \"-static\"'"
 
 TAG=$(git describe --exact-match --abbrev=0) || TAG=$(git describe)
 RELEASE_DIR=release-${TAG}
@@ -25,7 +26,7 @@ sudo -E rkt run \
     ${FEDORA_IMAGE} \
     --exec /bin/bash \
     -- -xe -c "\
-    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; ./build-static; ./test || true; \
+    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; CGO_ENABLED=0 ./build ${BUILDFLAGS}; ./test || true; \
     for format in txz tbz2 tgz; do \
         FILENAME=cni-${TAG}.\$format; \
         FILEPATH=${RELEASE_DIR}/\$FILENAME; \
