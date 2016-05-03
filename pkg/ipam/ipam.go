@@ -23,6 +23,17 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 
 	"github.com/vishvananda/netlink"
+	"net"
+	"strconv"
+	"strings"
+)
+
+const (
+	// private mac prefix safe to use
+	privateMACPrefix = "0a:58"
+
+	// veth link dev type
+	vethLinkType = "veth"
 )
 
 func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
@@ -45,6 +56,17 @@ func ConfigureIface(ifName string, res *types.Result) error {
 		return fmt.Errorf("failed to set %q UP: %v", ifName, err)
 	}
 
+	// only set hardware address to veth when using ipv4
+	if link.Type() == vethLinkType && res.IP4 != nil {
+		hwAddr, err := generateHardwareAddr(res.IP4.IP.IP)
+		if err != nil {
+			return fmt.Errorf("failed to generate hardware addr: %v", err)
+		}
+		if err = netlink.LinkSetHardwareAddr(link, hwAddr); err != nil {
+			return fmt.Errorf("failed to add hardware addr to %q: %v", ifName, err)
+		}
+	}
+
 	// TODO(eyakubovich): IPv6
 	addr := &netlink.Addr{IPNet: &res.IP4.IP, Label: ""}
 	if err = netlink.AddrAdd(link, addr); err != nil {
@@ -65,4 +87,22 @@ func ConfigureIface(ifName string, res *types.Result) error {
 	}
 
 	return nil
+}
+
+// generateHardwareAddr generates 48 bit virtual mac addresses based on the IP input.
+func generateHardwareAddr(ip net.IP) (net.HardwareAddr, error) {
+	if ip.To4() == nil {
+		return nil, fmt.Errorf("generateHardwareAddr only support valid ipv4 address as input")
+	}
+	mac := privateMACPrefix
+	sections := strings.Split(ip.String(), ".")
+	for _, s := range sections {
+		i, _ := strconv.Atoi(s)
+		mac = mac + ":" + fmt.Sprintf("%02x", i)
+	}
+	hwAddr, err := net.ParseMAC(mac)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse mac address %s generated based on ip %s due to: %v", mac, ip, err)
+	}
+	return hwAddr, nil
 }
