@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/appc/cni/pkg/invoke"
+	"github.com/containernetworking/cni/pkg/invoke"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

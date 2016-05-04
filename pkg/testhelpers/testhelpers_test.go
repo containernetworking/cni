@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/appc/cni/pkg/testhelpers"
+	"github.com/containernetworking/cni/pkg/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
