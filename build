@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-ORG_PATH="github.com/appc"
+ORG_PATH="github.com/containernetworking"
 REPO_PATH="${ORG_PATH}/cni"
 
 if [ ! -h gopath/src/${REPO_PATH} ]; then

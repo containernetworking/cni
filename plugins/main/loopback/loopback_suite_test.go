@@ -32,7 +32,7 @@ func TestLoopback(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	var err error
-	pathToLoPlugin, err = gexec.Build("github.com/appc/cni/plugins/main/loopback")
+	pathToLoPlugin, err = gexec.Build("github.com/containernetworking/cni/plugins/main/loopback")
 	Expect(err).NotTo(HaveOccurred())
 })
 

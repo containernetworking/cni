@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/appc/cni.svg?branch=master)](https://travis-ci.org/appc/cni)
-[![Coverage Status](https://coveralls.io/repos/github/appc/cni/badge.svg?branch=master)](https://coveralls.io/github/appc/cni?branch=master)
+[![Build Status](https://travis-ci.org/containernetworking/cni.svg?branch=master)](https://travis-ci.org/containernetworking/cni)
+[![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
 
 # CNI - the Container Network Interface
 
@@ -34,7 +34,7 @@ Hence we are proposing this specification, along with an initial set of plugins 
 
 ## Contributing to CNI
 
-We welcome contributions, including [bug reports](https://github.com/appc/cni/issues), and code and documentation improvements.
+We welcome contributions, including [bug reports](https://github.com/containernetworking/cni/issues), and code and documentation improvements.
 If you intend to contribute to code or documentation, please read [CONTRIBUTING.md](CONTRIBUTING.md). Also see the [contact section](#contact) in this README.
 
 ## How do I use CNI?
@@ -156,6 +156,6 @@ If these topics of are interest please contact the team via the mailing list or 
 
 ## Contact
 
-For any questions about CNI, please reach out on the mailing list or IRC:
+For any questions about CNI, please reach out on the mailing list:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
-- IRC: #[appc](irc://irc.freenode.org:6667/#appc) IRC channel on freenode.org
+- IRC: #[containernetworking](irc://irc.freenode.org:6667/#containernetworking) channel on freenode.org

@@ -20,7 +20,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/appc/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/vishvananda/netlink"
 )
 

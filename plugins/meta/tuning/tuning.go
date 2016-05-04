@@ -25,9 +25,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/appc/cni/pkg/ns"
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // TuningConf represents the network tuning configuration.

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // IPAMConfig represents the IP related network configuration.

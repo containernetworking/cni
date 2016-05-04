@@ -27,8 +27,8 @@ import (
 	"github.com/d2g/dhcp4client"
 	"github.com/vishvananda/netlink"
 
-	"github.com/appc/cni/pkg/ns"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // RFC 2131 suggests using exponential backoff, starting with 4sec

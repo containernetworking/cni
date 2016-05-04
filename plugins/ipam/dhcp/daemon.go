@@ -27,8 +27,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/coreos/go-systemd/activation"
 )
 
