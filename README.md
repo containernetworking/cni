@@ -5,23 +5,21 @@
 
 ## What is CNI?
 
-CNI, the _Container Network Interface_, is a project to help configure network interfaces for Linux application containers.
-CNI concerns itself with setting up network connectivity of containers and removing allocated resources when the container is deleted.
+The CNI (_Container Network Interface_) project consists of a specification and libraries for writing plugins to configure network interfaces in Linux containers, along with a number of supported plugins.
+CNI concerns itself only with network connectivity of containers and removing allocated resources when the container is deleted.
 Because of this focus CNI has a wide range of support and the specification is simple to implement.
 
-The project repository contains a [simple specification](SPEC.md) for how executable plugins can be used to configure network namespaces, and a number of plugins, libraries and utilities written in Go that can be used to get started with CNI.
+As well as the [specification](SPEC.md), this repository contains the Go source code of a library for integrating CNI into applications, an example command-line tool, a template for making new plugins, and the supported plugins.
 
-The specification and the plugin architecture form a template system with perfectly clear interfaces.
-This allows developers to integrate their existing container networking solutions with a thin CNI wrapper plugin.
-It also gives a good framework to create new container networking solutions from scratch.
+The template code makes it straight-forward to create a CNI plugin for an existing container networking project.
+CNI also makes a good framework for creating a new container networking project from scratch.
 
 ## Why develop CNI?
 
-Application containers on Linux are a rapidly evolving area, and within this space networking is a particularly unsolved problem, as it is highly environment-specific.
-We believe that every container runtime will seek to solve the same problem of making the network layer pluggable.
+Application containers on Linux are a rapidly evolving area, and within this area networking is not well addressed as it is highly environment-specific.
+We believe that many container runtimes and orchestrators will seek to solve the same problem of making the network layer pluggable.
 
-To avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution.
-Hence we are proposing this specification, along with an initial set of plugins that can be used by different container runtime systems.
+To avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution: hence we put forward this specification, along with libraries for Go and a set of plugins.
 
 ## Who is using CNI?
 
@@ -41,16 +39,19 @@ If you intend to contribute to code or documentation, please read [CONTRIBUTING.
 ## How do I use CNI?
 
 ### Requirements
+
 CNI requires Go 1.5+ to build.
 
 Go 1.5 users will need to set GO15VENDOREXPERIMENT=1 to get vendored
 dependencies. This flag is set by default in 1.6.
 
 ### Included Plugins
+
 This repository includes a number of common plugins in the `plugins/` directory.
 Please see the [Documentation/](Documentation/) directory for documentation about particular plugins.
 
 ### Running the plugins
+
 The scripts/ directory contains two scripts, `priv-net-run.sh` and `docker-run.sh`, that can be used to exercise the plugins.
 
 **note - priv-net-run.sh depends on `jq`**
