@@ -31,6 +31,7 @@ Hence we are proposing this specification, along with an initial set of plugins 
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
+- [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 
 ## Contributing to CNI
 
