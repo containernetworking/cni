@@ -32,7 +32,7 @@ It stores the state locally on the host filesystem, therefore ensuring uniquenes
 * `routes` (string, optional): list of routes to add to the container namespace. Each route is a dictionary with "dst" and optional "gw" fields. If "gw" is omitted, value of "gateway" will be used.
 
 ## Supported arguments
-The following [CNI_ARGS](https://github.com/appc/cni/blob/master/SPEC.md#parameters) are supported:
+The following [CNI_ARGS](https://github.com/containernetworking/cni/blob/master/SPEC.md#parameters) are supported:
 
 * `ip`: request a specific IP address from the subnet. If it's not available, the plugin will exit with an error
 

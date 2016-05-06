@@ -29,9 +29,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appc/cni/pkg/invoke"
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/invoke"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 const (

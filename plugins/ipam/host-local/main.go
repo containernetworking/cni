@@ -15,10 +15,10 @@
 package main
 
 import (
-	"github.com/appc/cni/plugins/ipam/host-local/backend/disk"
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
 
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 func main() {

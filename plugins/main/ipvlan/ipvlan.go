@@ -21,11 +21,11 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/appc/cni/pkg/ip"
-	"github.com/appc/cni/pkg/ipam"
-	"github.com/appc/cni/pkg/ns"
-	"github.com/appc/cni/pkg/skel"
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/ip"
+	"github.com/containernetworking/cni/pkg/ipam"
+	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/vishvananda/netlink"
 )
 

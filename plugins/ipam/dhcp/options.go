@@ -20,7 +20,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/d2g/dhcp4"
 )
 

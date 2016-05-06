@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // CmdArgs captures all the arguments passed in to the plugin

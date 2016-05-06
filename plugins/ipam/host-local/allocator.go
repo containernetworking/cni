@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/appc/cni/pkg/ip"
-	"github.com/appc/cni/pkg/types"
-	"github.com/appc/cni/plugins/ipam/host-local/backend"
+	"github.com/containernetworking/cni/pkg/ip"
+	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
 
 type IPAllocator struct {
