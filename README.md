@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/appc/cni.svg?branch=master)](https://travis-ci.org/appc/cni)
-[![Coverage Status](https://coveralls.io/repos/github/appc/cni/badge.svg?branch=master)](https://coveralls.io/github/appc/cni?branch=master)
+[![Build Status](https://travis-ci.org/containernetworking/cni.svg?branch=master)](https://travis-ci.org/appc/cni)
+[![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/appc/cni?branch=master)
 
 # CNI - the Container Network Interface
 
