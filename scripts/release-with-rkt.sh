@@ -26,7 +26,7 @@ sudo -E rkt run \
     ${FEDORA_IMAGE} \
     --exec /bin/bash \
     -- -xe -c "\
-    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; CGO_ENABLED=0 ./build ${BUILDFLAGS}; ./test || true; \
+    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; CGO_ENABLED=0 ./build ${BUILDFLAGS}; \
     for format in txz tbz2 tgz; do \
         FILENAME=cni-${TAG}.\$format; \
         FILEPATH=${RELEASE_DIR}/\$FILENAME; \
