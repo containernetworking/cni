@@ -238,6 +238,10 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
+	if err := ipam.ExecDel(n.IPAM.Type, args.StdinData); err != nil {
+		return err
+	}
+
 	var ipn *net.IPNet
 	err = ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
 		var err error
@@ -256,7 +260,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		}
 	}
 
-	return ipam.ExecDel(n.IPAM.Type, args.StdinData)
+	return nil
 }
 
 func main() {
