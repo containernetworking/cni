@@ -24,7 +24,7 @@ import (
 var setNsMap = map[string]uintptr{
 	"386":   346,
 	"amd64": 308,
-	"arm":   374,
+	"arm":   375,
 }
 
 // SetNS sets the network namespace on a target file.
