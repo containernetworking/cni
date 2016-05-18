@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -45,7 +44,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	// The directory /proc/sys/net is per network namespace. Enter in the
 	// network namespace before writing on it.
 
-	err := ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
+	err := ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		for key, value := range tuningConf.SysCtl {
 			fileName := filepath.Join("/proc/sys", strings.Replace(key, ".", "/", -1))
 			fileName = filepath.Clean(fileName)

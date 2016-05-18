@@ -15,23 +15,25 @@
 package main
 
 import (
-	"os"
-
 	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/vishvananda/netlink"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
+	return cmdAddInternal(ops.NewNetOps(), args)
+}
+
+func cmdAddInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	args.IfName = "lo" // ignore config, this only works for loopback
-	err := ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
-		link, err := netlink.LinkByName(args.IfName)
+	err := netops.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+		link, err := netops.LinkByName(args.IfName)
 		if err != nil {
 			return err // not tested
 		}
 
-		err = netlink.LinkSetUp(link)
+		err = netops.LinkSetUp(link)
 		if err != nil {
 			return err // not tested
 		}
@@ -47,14 +49,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	return cmdDelInternal(ops.NewNetOps(), args)
+}
+
+func cmdDelInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	args.IfName = "lo" // ignore config, this only works for loopback
-	err := ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
-		link, err := netlink.LinkByName(args.IfName)
+	err := netops.WithNetNSPath(args.Netns, func(ns.NetNS) error {
+		link, err := netops.LinkByName(args.IfName)
 		if err != nil {
 			return err // not tested
 		}
 
-		err = netlink.LinkSetDown(link)
+		err = netops.LinkSetDown(link)
 		if err != nil {
 			return err // not tested
 		}

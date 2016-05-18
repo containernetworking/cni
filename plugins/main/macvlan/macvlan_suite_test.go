@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testhelpers_test
+package main
 
 import (
-	"math/rand"
-
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 
 	"testing"
 )
 
-func TestTesthelpers(t *testing.T) {
-	rand.Seed(config.GinkgoConfig.RandomSeed)
+func TestMacvlan(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Testhelpers Suite")
+	RunSpecs(t, "macvlan Suite")
 }

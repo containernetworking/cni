@@ -1,4 +1,4 @@
-// Copyright 2015 CNI authors
+// Copyright 2016 CNI authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ns
+package main
 
-const setNsNr = 375
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"testing"
+)
+
+func TestIpvlan(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "ipvlan Suite")
+}

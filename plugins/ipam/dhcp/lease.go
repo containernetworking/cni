@@ -19,7 +19,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"os"
 	"sync"
 	"time"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/types"
 )
 
@@ -63,7 +63,7 @@ type DHCPLease struct {
 // AcquireLease gets an DHCP lease and then maintains it in the background
 // by periodically renewing it. The acquired lease can be released by
 // calling DHCPLease.Stop()
-func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
+func AcquireLease(netops ops.NetOps, clientID, netns, ifName string) (*DHCPLease, error) {
 	errCh := make(chan error, 1)
 	l := &DHCPLease{
 		clientID: clientID,
@@ -74,17 +74,17 @@ func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 
 	l.wg.Add(1)
 	go func() {
-		errCh <- ns.WithNetNSPath(netns, true, func(_ *os.File) error {
+		errCh <- netops.WithNetNSPath(netns, func(_ ns.NetNS) error {
 			defer l.wg.Done()
 
-			link, err := netlink.LinkByName(ifName)
+			link, err := netops.LinkByName(ifName)
 			if err != nil {
 				return fmt.Errorf("error looking up %q: %v", ifName, err)
 			}
 
 			l.link = link
 
-			if err = l.acquire(); err != nil {
+			if err = l.acquire(netops); err != nil {
 				return err
 			}
 
@@ -92,7 +92,7 @@ func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 
 			errCh <- nil
 
-			l.maintain()
+			l.maintain(netops)
 			return nil
 		})
 	}()
@@ -111,7 +111,7 @@ func (l *DHCPLease) Stop() {
 	l.wg.Wait()
 }
 
-func (l *DHCPLease) acquire() error {
+func (l *DHCPLease) acquire(netops ops.NetOps) error {
 	c, err := newDHCPClient(l.link)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (l *DHCPLease) acquire() error {
 
 	if (l.link.Attrs().Flags & net.FlagUp) != net.FlagUp {
 		log.Printf("Link %q down. Attempting to set up", l.link.Attrs().Name)
-		if err = netlink.LinkSetUp(l.link); err != nil {
+		if err = netops.LinkSetUp(l.link); err != nil {
 			return err
 		}
 	}
@@ -173,7 +173,7 @@ func (l *DHCPLease) commit(ack *dhcp4.Packet) error {
 	return nil
 }
 
-func (l *DHCPLease) maintain() {
+func (l *DHCPLease) maintain(netops ops.NetOps) {
 	state := leaseStateBound
 
 	for {
@@ -202,12 +202,12 @@ func (l *DHCPLease) maintain() {
 			}
 
 		case leaseStateRebinding:
-			if err := l.acquire(); err != nil {
+			if err := l.acquire(netops); err != nil {
 				log.Printf("%v: %v", l.clientID, err)
 
 				if time.Now().After(l.expireTime) {
 					log.Printf("%v: lease expired, bringing interface DOWN", l.clientID)
-					l.downIface()
+					l.downIface(netops)
 					return
 				}
 			} else {
@@ -228,8 +228,8 @@ func (l *DHCPLease) maintain() {
 	}
 }
 
-func (l *DHCPLease) downIface() {
-	if err := netlink.LinkSetDown(l.link); err != nil {
+func (l *DHCPLease) downIface(netops ops.NetOps) {
+	if err := netops.LinkSetDown(l.link); err != nil {
 		log.Printf("%v: failed to bring %v interface DOWN: %v", l.clientID, l.link.Attrs().Name, err)
 	}
 }

@@ -27,6 +27,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/coreos/go-systemd/activation"
@@ -50,14 +51,14 @@ func newDHCP() *DHCP {
 
 // Allocate acquires an IP from a DHCP server for a specified container.
 // The acquired lease will be maintained until Release() is called.
-func (d *DHCP) Allocate(args *skel.CmdArgs, result *types.Result) error {
+func (d *DHCP) Allocate(netops ops.NetOps, args *skel.CmdArgs, result *types.Result) error {
 	conf := types.NetConf{}
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
 	clientID := args.ContainerID + "/" + conf.Name
-	l, err := AcquireLease(clientID, args.Netns, args.IfName)
+	l, err := AcquireLease(netops, clientID, args.Netns, args.IfName)
 	if err != nil {
 		return err
 	}

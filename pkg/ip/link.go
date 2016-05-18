@@ -21,10 +21,11 @@ import (
 	"os"
 
 	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/vishvananda/netlink"
 )
 
-func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {
+func makeVethPair(netops ops.NetOps, name, peer string, mtu int) (netlink.Link, error) {
 	veth := &netlink.Veth{
 		LinkAttrs: netlink.LinkAttrs{
 			Name:  name,
@@ -33,21 +34,21 @@ func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {
 		},
 		PeerName: peer,
 	}
-	if err := netlink.LinkAdd(veth); err != nil {
+	if err := netops.LinkAdd(veth); err != nil {
 		return nil, err
 	}
 
 	return veth, nil
 }
 
-func makeVeth(name string, mtu int) (peerName string, veth netlink.Link, err error) {
+func makeVeth(netops ops.NetOps, name string, mtu int) (peerName string, veth netlink.Link, err error) {
 	for i := 0; i < 10; i++ {
 		peerName, err = RandomVethName()
 		if err != nil {
 			return
 		}
 
-		veth, err = makeVethPair(name, peerName, mtu)
+		veth, err = makeVethPair(netops, name, peerName, mtu)
 		switch {
 		case err == nil:
 			return
@@ -81,36 +82,36 @@ func RandomVethName() (string, error) {
 // SetupVeth sets up a virtual ethernet link.
 // Should be in container netns, and will switch back to hostNS to set the host
 // veth end up.
-func SetupVeth(contVethName string, mtu int, hostNS *os.File) (hostVeth, contVeth netlink.Link, err error) {
+func SetupVeth(netops ops.NetOps, contVethName string, mtu int, hostNS ns.NetNS) (hostVeth, contVeth netlink.Link, err error) {
 	var hostVethName string
-	hostVethName, contVeth, err = makeVeth(contVethName, mtu)
+	hostVethName, contVeth, err = makeVeth(netops, contVethName, mtu)
 	if err != nil {
 		return
 	}
 
-	if err = netlink.LinkSetUp(contVeth); err != nil {
+	if err = netops.LinkSetUp(contVeth); err != nil {
 		err = fmt.Errorf("failed to set %q up: %v", contVethName, err)
 		return
 	}
 
-	hostVeth, err = netlink.LinkByName(hostVethName)
+	hostVeth, err = netops.LinkByName(hostVethName)
 	if err != nil {
 		err = fmt.Errorf("failed to lookup %q: %v", hostVethName, err)
 		return
 	}
 
-	if err = netlink.LinkSetNsFd(hostVeth, int(hostNS.Fd())); err != nil {
+	if err = netops.LinkSetNsFd(hostVeth, int(hostNS.Fd())); err != nil {
 		err = fmt.Errorf("failed to move veth to host netns: %v", err)
 		return
 	}
 
-	err = ns.WithNetNS(hostNS, false, func(_ *os.File) error {
-		hostVeth, err := netlink.LinkByName(hostVethName)
+	err = hostNS.Do(func(_ ns.NetNS) error {
+		hostVeth, err := netops.LinkByName(hostVethName)
 		if err != nil {
-			return fmt.Errorf("failed to lookup %q in %q: %v", hostVethName, hostNS.Name(), err)
+			return fmt.Errorf("failed to lookup %q in %q: %v", hostVethName, hostNS.Path(), err)
 		}
 
-		if err = netlink.LinkSetUp(hostVeth); err != nil {
+		if err = netops.LinkSetUp(hostVeth); err != nil {
 			return fmt.Errorf("failed to set %q up: %v", hostVethName, err)
 		}
 		return nil
@@ -119,13 +120,13 @@ func SetupVeth(contVethName string, mtu int, hostNS *os.File) (hostVeth, contVet
 }
 
 // DelLinkByName removes an interface link.
-func DelLinkByName(ifName string) error {
-	iface, err := netlink.LinkByName(ifName)
+func DelLinkByName(netops ops.NetOps, ifName string) error {
+	iface, err := netops.LinkByName(ifName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup %q: %v", ifName, err)
 	}
 
-	if err = netlink.LinkDel(iface); err != nil {
+	if err = netops.LinkDel(iface); err != nil {
 		return fmt.Errorf("failed to delete %q: %v", ifName, err)
 	}
 
@@ -134,18 +135,18 @@ func DelLinkByName(ifName string) error {
 
 // DelLinkByNameAddr remove an interface returns its IP address
 // of the specified family
-func DelLinkByNameAddr(ifName string, family int) (*net.IPNet, error) {
-	iface, err := netlink.LinkByName(ifName)
+func DelLinkByNameAddr(netops ops.NetOps, ifName string, family int) (*net.IPNet, error) {
+	iface, err := netops.LinkByName(ifName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup %q: %v", ifName, err)
 	}
 
-	addrs, err := netlink.AddrList(iface, family)
+	addrs, err := netops.AddrList(iface, family)
 	if err != nil || len(addrs) == 0 {
 		return nil, fmt.Errorf("failed to get IP addresses for %q: %v", ifName, err)
 	}
 
-	if err = netlink.LinkDel(iface); err != nil {
+	if err = netops.LinkDel(iface); err != nil {
 		return nil, fmt.Errorf("failed to delete %q: %v", ifName, err)
 	}
 

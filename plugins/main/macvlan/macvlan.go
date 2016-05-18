@@ -18,12 +18,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/ipam"
 	"github.com/containernetworking/cni/pkg/ns"
+	"github.com/containernetworking/cni/pkg/ops"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/utils/sysctl"
@@ -74,13 +74,13 @@ func modeFromString(s string) (netlink.MacvlanMode, error) {
 	}
 }
 
-func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
+func createMacvlan(netops ops.NetOps, conf *NetConf, ifName string, netns ns.NetNS) error {
 	mode, err := modeFromString(conf.Mode)
 	if err != nil {
 		return err
 	}
 
-	m, err := netlink.LinkByName(conf.Master)
+	m, err := netops.LinkByName(conf.Master)
 	if err != nil {
 		return fmt.Errorf("failed to lookup master %q: %v", conf.Master, err)
 	}
@@ -102,11 +102,11 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 		Mode: mode,
 	}
 
-	if err := netlink.LinkAdd(mv); err != nil {
+	if err := netops.LinkAdd(mv); err != nil {
 		return fmt.Errorf("failed to create macvlan: %v", err)
 	}
 
-	return ns.WithNetNS(netns, false, func(_ *os.File) error {
+	return netns.Do(func(_ ns.NetNS) error {
 		// TODO: duplicate following lines for ipv6 support, when it will be added in other places
 		ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, tmpName)
 		if _, err := sysctl.Sysctl(ipv4SysctlValueName, "1"); err != nil {
@@ -115,7 +115,7 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 			return fmt.Errorf("failed to set proxy_arp on newly added interface %q: %v", tmpName, err)
 		}
 
-		err := renameLink(tmpName, ifName)
+		err := renameLink(netops, tmpName, ifName)
 		if err != nil {
 			_ = netlink.LinkDel(mv)
 			return fmt.Errorf("failed to rename macvlan to %q: %v", ifName, err)
@@ -125,18 +125,22 @@ func createMacvlan(conf *NetConf, ifName string, netns *os.File) error {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	return cmdAddInternal(ops.NewNetOps(), args)
+}
+
+func cmdAddInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	n, err := loadConf(args.StdinData)
 	if err != nil {
 		return err
 	}
 
-	netns, err := os.Open(args.Netns)
+	netns, err := netops.GetNS(args.Netns)
 	if err != nil {
 		return fmt.Errorf("failed to open netns %q: %v", netns, err)
 	}
 	defer netns.Close()
 
-	if err = createMacvlan(n, args.IfName, netns); err != nil {
+	if err = createMacvlan(netops, n, args.IfName, netns); err != nil {
 		return err
 	}
 
@@ -149,8 +153,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	err = ns.WithNetNS(netns, false, func(_ *os.File) error {
-		return ipam.ConfigureIface(args.IfName, result)
+	err = netns.Do(func(_ ns.NetNS) error {
+		return ipam.ConfigureIface(netops, args.IfName, result)
 	})
 	if err != nil {
 		return err
@@ -161,6 +165,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	return cmdDelInternal(ops.NewNetOps(), args)
+}
+
+func cmdDelInternal(netops ops.NetOps, args *skel.CmdArgs) error {
 	n, err := loadConf(args.StdinData)
 	if err != nil {
 		return err
@@ -171,18 +179,18 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	return ns.WithNetNSPath(args.Netns, false, func(hostNS *os.File) error {
-		return ip.DelLinkByName(args.IfName)
+	return netops.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+		return ip.DelLinkByName(netops, args.IfName)
 	})
 }
 
-func renameLink(curName, newName string) error {
-	link, err := netlink.LinkByName(curName)
+func renameLink(netops ops.NetOps, curName, newName string) error {
+	link, err := netops.LinkByName(curName)
 	if err != nil {
 		return err
 	}
 
-	return netlink.LinkSetName(link, newName)
+	return netops.LinkSetName(link, newName)
 }
 
 func main() {
