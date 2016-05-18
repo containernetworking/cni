@@ -183,6 +183,10 @@ func (l *DHCPLease) addClientID(pkt *dhcp4.Packet) {
 		cid := bytes.NewBuffer([]byte{0})
 		cid.Write([]byte(l.clientID))
 		pkt.AddOption(dhcp4.OptionClientIdentifier, cid.Bytes())
+		// DHCP server implementations vary considerably. To ensure that our packets are
+		// identified using DHCP Client ID, zero out the chaddr field
+		chaddr := net.HardwareAddr{0, 0, 0, 0, 0, 0, 0}
+		pkt.SetCHAddr(chaddr)
 	}
 }
 
