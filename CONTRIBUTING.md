@@ -5,6 +5,8 @@ pull requests. This document outlines some of the conventions on development
 workflow, commit message formatting, contact points and other resources to make
 it easier to get your contribution accepted.
 
+We welcome improvements to documentation as well as to code.
+
 # Certificate of Origin
 
 By contributing to this project you agree to the Developer Certificate of
@@ -25,17 +27,18 @@ are very busy and read the mailing lists.
 
 - Fork the repository on GitHub
 - Read the [README](README.md) for build and test instructions
-- Play with the project, submit bugs, submit patches!
+- Play with the project, submit bugs, submit pull requests!
 
-## Contribution Flow
+## Contribution workflow
 
-This is a rough outline of what a contributor's workflow looks like:
+This is a rough outline of how to prepare a contribution:
 
-- Create a topic branch from where you want to base your work (usually master).
+- Create a topic branch from where you want to base your work (usually branched from master).
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.
-- Make sure the tests pass, and add any new tests as appropriate.
+- If you changed code, make sure the tests pass, and add any new tests as appropriate.
+- Make sure any new code files have a license header.
 - Submit a pull request to the original repository.
 
 Thanks for your contributions!
