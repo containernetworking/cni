@@ -36,10 +36,11 @@ const defaultBrName = "cni0"
 
 type NetConf struct {
 	types.NetConf
-	BrName string `json:"bridge"`
-	IsGW   bool   `json:"isGateway"`
-	IPMasq bool   `json:"ipMasq"`
-	MTU    int    `json:"mtu"`
+	BrName      string `json:"bridge"`
+	IsGW        bool   `json:"isGateway"`
+	IPMasq      bool   `json:"ipMasq"`
+	MTU         int    `json:"mtu"`
+	HairpinMode bool   `json:"hairpinMode"`
 }
 
 func init() {
@@ -123,7 +124,7 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-func setupVeth(netns string, br *netlink.Bridge, ifName string, mtu int) error {
+func setupVeth(netns string, br *netlink.Bridge, ifName string, mtu int, hairpinMode bool) error {
 	var hostVethName string
 
 	err := ns.WithNetNSPath(netns, false, func(hostNS *os.File) error {
@@ -149,6 +150,11 @@ func setupVeth(netns string, br *netlink.Bridge, ifName string, mtu int) error {
 	// connect host veth end to the bridge
 	if err = netlink.LinkSetMaster(hostVeth, br); err != nil {
 		return fmt.Errorf("failed to connect %q to bridge %v: %v", hostVethName, br.Attrs().Name, err)
+	}
+
+	// set hairpin mode
+	if err = netlink.LinkSetHairpin(hostVeth, hairpinMode); err != nil {
+		return fmt.Errorf("failed to setup hairpin mode for %v: %v", hostVethName, err)
 	}
 
 	return nil
@@ -180,7 +186,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	if err = setupVeth(args.Netns, br, args.IfName, n.MTU); err != nil {
+	if err = setupVeth(args.Netns, br, args.IfName, n.MTU, n.HairpinMode); err != nil {
 		return err
 	}
 
