@@ -102,6 +102,11 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 		LinkAttrs: netlink.LinkAttrs{
 			Name: brName,
 			MTU:  mtu,
+			// Let kernel use default txqueuelen; leaving it unset
+			// means 0, and a zero-length TX queue messes up FIFO
+			// traffic shapers which use TX queue length as the
+			// default packet limit
+			TxQLen: -1,
 		},
 	}
 
