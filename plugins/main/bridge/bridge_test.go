@@ -116,7 +116,7 @@ var _ = Describe("bridge Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	It("configures and deconfigures a bridge and veth with ADD/DEL", func() {
+	It("configures and deconfigures a bridge and veth with default route with ADD/DEL", func() {
 		const BRNAME = "cni0"
 		const IFNAME = "eth0"
 
@@ -127,7 +127,7 @@ var _ = Describe("bridge Operations", func() {
     "name": "mynet",
     "type": "bridge",
     "bridge": "%s",
-    "isGateway": true,
+    "isDefaultGateway": true,
     "ipMasq": false,
     "ipam": {
         "type": "host-local",
@@ -189,13 +189,27 @@ var _ = Describe("bridge Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		// Find the veth peer in the container namespace
+		// Find the veth peer in the container namespace and the default route
 		err = targetNs.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
 			link, err := netlink.LinkByName(IFNAME)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(IFNAME))
+
+			// Ensure the default route
+			routes, err := netlink.RouteList(link, 0)
+			Expect(err).NotTo(HaveOccurred())
+
+			var defaultRouteFound bool
+			for _, route := range routes {
+				defaultRouteFound = (route.Dst == nil && route.Src == nil && route.Gw.Equal(gwaddr))
+				if defaultRouteFound {
+					break
+				}
+			}
+			Expect(defaultRouteFound).To(Equal(true))
+
 			return nil
 		})
 		Expect(err).NotTo(HaveOccurred())
