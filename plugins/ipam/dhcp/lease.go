@@ -19,7 +19,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"os"
 	"sync"
 	"time"
 
@@ -74,7 +73,7 @@ func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 
 	l.wg.Add(1)
 	go func() {
-		errCh <- ns.WithNetNSPath(netns, true, func(_ *os.File) error {
+		errCh <- ns.WithNetNSPath(netns, func(_ ns.NetNS) error {
 			defer l.wg.Done()
 
 			link, err := netlink.LinkByName(ifName)
