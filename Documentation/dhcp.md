@@ -11,8 +11,6 @@ The same plugin binary can also be run in the daemon mode.
 To use the dhcp IPAM plugin, first launch the dhcp daemon:
 
 ```
-# Make sure the unix socket has been removed
-$ rm -f /run/cni/dhcp.sock
 $ ./dhcp daemon
 ```
 
