@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -xe
+set -e
 
 ORG_PATH="github.com/containernetworking"
 REPO_PATH="${ORG_PATH}/cni"
