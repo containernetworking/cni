@@ -37,6 +37,7 @@ type NetConf struct {
 	types.NetConf
 	BrName      string `json:"bridge"`
 	IsGW        bool   `json:"isGateway"`
+	IsDefaultGW bool   `json:"isDefaultGateway"`
 	IPMasq      bool   `json:"ipMasq"`
 	MTU         int    `json:"mtu"`
 	HairpinMode bool   `json:"hairpinMode"`
@@ -185,6 +186,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
+	if n.IsDefaultGW {
+		n.IsGW = true
+	}
+
 	br, err := setupBridge(n)
 	if err != nil {
 		return err
@@ -206,6 +211,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
+	// TODO: make this optional when IPv6 is supported
 	if result.IP4 == nil {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
@@ -214,10 +220,35 @@ func cmdAdd(args *skel.CmdArgs) error {
 		result.IP4.Gateway = calcGatewayIP(&result.IP4.IP)
 	}
 
-	err = netns.Do(func(_ ns.NetNS) error {
+	if err := netns.Do(func(_ ns.NetNS) error {
+		// set the default gateway if requested
+		if n.IsDefaultGW {
+			_, defaultNet, err := net.ParseCIDR("0.0.0.0/0")
+			if err != nil {
+				return err
+			}
+
+			for _, route := range result.IP4.Routes {
+				if defaultNet.String() == route.Dst.String() {
+					if route.GW != nil && !route.GW.Equal(result.IP4.Gateway) {
+						return fmt.Errorf(
+							"isDefaultGateway ineffective because IPAM sets default route via %q",
+							route.GW,
+						)
+					}
+				}
+			}
+
+			result.IP4.Routes = append(
+				result.IP4.Routes,
+				types.Route{Dst: *defaultNet, GW: result.IP4.Gateway},
+			)
+
+			// TODO: IPV6
+		}
+
 		return ipam.ConfigureIface(args.IfName, result)
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
