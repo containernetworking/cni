@@ -15,7 +15,9 @@
 package main
 
 import (
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/consul"
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
+	"github.com/containernetworking/cni/plugins/ipam/host-local/config"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -26,18 +28,25 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := config.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store_disk, err := disk.New(ipamConf.Name)
+
 	if err != nil {
 		return err
 	}
-	defer store.Close()
+	defer store_disk.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	var allocator *IPAllocator
+
+	if allocator, err = NewIPAllocator(ipamConf, store_disk); ipamConf.Backend == "consul" {
+		store_consul, _ := consul.New(ipamConf)
+		allocator, err = NewIPAllocator(ipamConf, store_consul)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -54,18 +63,25 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := config.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store_disk, err := disk.New(ipamConf.Name)
+
 	if err != nil {
 		return err
 	}
-	defer store.Close()
+	defer store_disk.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	var allocator *IPAllocator
+
+	if allocator, err = NewIPAllocator(ipamConf, store_disk); ipamConf.Backend == "consul" {
+		store_consul, _ := consul.New(ipamConf)
+		allocator, err = NewIPAllocator(ipamConf, store_consul)
+	}
+
 	if err != nil {
 		return err
 	}

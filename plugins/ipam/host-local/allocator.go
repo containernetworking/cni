@@ -22,16 +22,17 @@ import (
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
+	"github.com/containernetworking/cni/plugins/ipam/host-local/config"
 )
 
 type IPAllocator struct {
 	start net.IP
 	end   net.IP
-	conf  *IPAMConfig
+	conf  *config.IPAMConfig
 	store backend.Store
 }
 
-func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error) {
+func NewIPAllocator(conf *config.IPAMConfig, store backend.Store) (*IPAllocator, error) {
 	var (
 		start net.IP
 		end   net.IP

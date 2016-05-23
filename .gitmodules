@@ -1,0 +1,3 @@
+[submodule "vendor/github.com/hashicorp/consul"]
+	path = vendor/github.com/hashicorp/consul
+	url = git://github.com/hashicorp/consul
