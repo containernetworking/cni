@@ -211,6 +211,28 @@ var _ = Describe("Linux namespace operations", func() {
 			})
 		})
 	})
+
+	Describe("IsNSFS", func() {
+		It("should detect a namespace", func() {
+			createdNetNS, err := ns.NewNS()
+			isNSFS, err := ns.IsNSFS(createdNetNS.Path())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(isNSFS).To(Equal(true))
+		})
+
+		It("should refuse other paths", func() {
+			tempFile, err := ioutil.TempFile("", "nstest")
+			Expect(err).NotTo(HaveOccurred())
+			defer tempFile.Close()
+
+			nspath := tempFile.Name()
+			defer os.Remove(nspath)
+
+			isNSFS, err := ns.IsNSFS(nspath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(isNSFS).To(Equal(false))
+		})
+	})
 })
 
 func allNetNSInCurrentProcess() []string {
