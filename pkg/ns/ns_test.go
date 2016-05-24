@@ -17,6 +17,7 @@ package ns_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -168,6 +169,18 @@ var _ = Describe("Linux namespace operations", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(netnsInode).NotTo(Equal(createdNetNSInode))
 				}
+			})
+
+			It("fails when the path is not a namespace", func() {
+				tempFile, err := ioutil.TempFile("", "nstest")
+				Expect(err).NotTo(HaveOccurred())
+				defer tempFile.Close()
+
+				nspath := tempFile.Name()
+				defer os.Remove(nspath)
+
+				_, err = ns.GetNS(nspath)
+				Expect(err).To(MatchError(fmt.Sprintf("%v is not of type NSFS", nspath)))
 			})
 		})
 
