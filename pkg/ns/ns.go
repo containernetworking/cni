@@ -21,6 +21,7 @@ import (
 	"path"
 	"runtime"
 	"sync"
+	"syscall"
 
 	"golang.org/x/sys/unix"
 )
@@ -77,9 +78,32 @@ func GetCurrentNS() (NetNS, error) {
 func GetNS(nspath string) (NetNS, error) {
 	fd, err := os.Open(nspath)
 	if err != nil {
+		return nil, fmt.Errorf("Failed to open %v: %v", nspath, err)
+	}
+
+	isNSFS, err := IsNSFS(nspath)
+	if err != nil {
+		fd.Close()
 		return nil, err
 	}
+	if !isNSFS {
+		fd.Close()
+		return nil, fmt.Errorf("%v is not of type NSFS", nspath)
+	}
+
 	return &netNS{file: fd}, nil
+}
+
+// Returns whether or not the nspath argument points to a network namespace
+func IsNSFS(nspath string) (bool, error) {
+	const NSFS_MAGIC = 0x6e736673
+
+	stat := syscall.Statfs_t{}
+	if err := syscall.Statfs(nspath, &stat); err != nil {
+		return false, fmt.Errorf("failed to Statfs %q: %v", nspath, err)
+	}
+
+	return stat.Type == NSFS_MAGIC, nil
 }
 
 // Creates a new persistent network namespace and returns an object
@@ -255,7 +279,7 @@ func (ns *netNS) Set() error {
 func WithNetNSPath(nspath string, toRun func(NetNS) error) error {
 	ns, err := GetNS(nspath)
 	if err != nil {
-		return fmt.Errorf("Failed to open %v: %v", nspath, err)
+		return err
 	}
 	defer ns.Close()
 	return ns.Do(toRun)
