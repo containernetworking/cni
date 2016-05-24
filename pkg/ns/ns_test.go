@@ -170,6 +170,33 @@ var _ = Describe("Linux namespace operations", func() {
 				}
 			})
 		})
+
+		Describe("closing a network namespace", func() {
+			It("should prevent further operations", func() {
+				createdNetNS, err := ns.NewNS()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = createdNetNS.Close()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = createdNetNS.Do(func(ns.NetNS) error { return nil })
+				Expect(err).To(HaveOccurred())
+
+				err = createdNetNS.Set()
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("should only work once", func() {
+				createdNetNS, err := ns.NewNS()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = createdNetNS.Close()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = createdNetNS.Close()
+				Expect(err).To(HaveOccurred())
+			})
+		})
 	})
 })
 
