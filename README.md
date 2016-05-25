@@ -30,6 +30,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
+- [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 
 ## Contributing to CNI
 
