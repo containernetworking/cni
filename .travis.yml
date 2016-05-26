@@ -5,7 +5,7 @@ dist: trusty
 
 matrix:
   include:
-    - go: 1.5.3
+    - go: 1.5.4
       env: GO15VENDOREXPERIMENT=1
     - go: 1.6.2
     - go: tip
