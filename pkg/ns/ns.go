@@ -20,6 +20,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -74,36 +75,56 @@ func GetCurrentNS() (NetNS, error) {
 	return GetNS(getCurrentThreadNetNSPath())
 }
 
+const (
+	// https://github.com/torvalds/linux/blob/master/include/uapi/linux/magic.h
+	NSFS_MAGIC   = 0x6e736673
+	PROCFS_MAGIC = 0x9fa0
+)
+
+func IsNS(nspath string) (isNS bool, msg string, err error) {
+	stat := syscall.Statfs_t{}
+	if err = syscall.Statfs(nspath, &stat); err != nil {
+		err = fmt.Errorf("failed to Statfs %s: %v", nspath, err)
+		return
+	}
+
+	switch stat.Type {
+	case PROCFS_MAGIC:
+		// Kernel < 3.19
+
+		validPathContent := "ns/"
+		validName := strings.Contains(nspath, validPathContent)
+		if !validName {
+			msg = fmt.Sprintf("path doesn't contain %q", validPathContent)
+			return
+		}
+		isNS = true
+	case NSFS_MAGIC:
+		// Kernel >= 3.19
+
+		isNS = true
+	default:
+		msg = fmt.Sprintf("unknown FS magic: %x", stat.Type)
+	}
+	return
+}
+
 // Returns an object representing the namespace referred to by @path
 func GetNS(nspath string) (NetNS, error) {
+	isNS, msg, err := IsNS(nspath)
+	if err != nil {
+		return nil, err
+	}
+	if !isNS {
+		return nil, fmt.Errorf("no network namespace detected on %s: %s", nspath, msg)
+	}
+
 	fd, err := os.Open(nspath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open %v: %v", nspath, err)
 	}
 
-	isNSFS, err := IsNSFS(nspath)
-	if err != nil {
-		fd.Close()
-		return nil, err
-	}
-	if !isNSFS {
-		fd.Close()
-		return nil, fmt.Errorf("%v is not of type NSFS", nspath)
-	}
-
 	return &netNS{file: fd}, nil
-}
-
-// Returns whether or not the nspath argument points to a network namespace
-func IsNSFS(nspath string) (bool, error) {
-	const NSFS_MAGIC = 0x6e736673
-
-	stat := syscall.Statfs_t{}
-	if err := syscall.Statfs(nspath, &stat); err != nil {
-		return false, fmt.Errorf("failed to Statfs %q: %v", nspath, err)
-	}
-
-	return stat.Type == NSFS_MAGIC, nil
 }
 
 // Creates a new persistent network namespace and returns an object

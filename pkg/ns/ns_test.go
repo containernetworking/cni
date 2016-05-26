@@ -180,7 +180,9 @@ var _ = Describe("Linux namespace operations", func() {
 				defer os.Remove(nspath)
 
 				_, err = ns.GetNS(nspath)
-				Expect(err).To(MatchError(fmt.Sprintf("%v is not of type NSFS", nspath)))
+				Expect(err).To(HaveOccurred())
+				errString := fmt.Sprintf("%v", err)
+				Expect(errString).To(HavePrefix("no network namespace detected on %s", nspath))
 			})
 		})
 
@@ -212,11 +214,12 @@ var _ = Describe("Linux namespace operations", func() {
 		})
 	})
 
-	Describe("IsNSFS", func() {
+	Describe("IsNS", func() {
 		It("should detect a namespace", func() {
 			createdNetNS, err := ns.NewNS()
-			isNSFS, err := ns.IsNSFS(createdNetNS.Path())
+			isNSFS, msg, err := ns.IsNS(createdNetNS.Path())
 			Expect(err).NotTo(HaveOccurred())
+			Expect(msg).To(Equal(""))
 			Expect(isNSFS).To(Equal(true))
 		})
 
@@ -228,7 +231,7 @@ var _ = Describe("Linux namespace operations", func() {
 			nspath := tempFile.Name()
 			defer os.Remove(nspath)
 
-			isNSFS, err := ns.IsNSFS(nspath)
+			isNSFS, _, err := ns.IsNS(nspath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(isNSFS).To(Equal(false))
 		})
