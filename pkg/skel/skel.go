@@ -69,7 +69,7 @@ func PluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) {
 			&netns,
 			reqForCmdEntry{
 				"ADD": true,
-				"DEL": true,
+				"DEL": false,
 			},
 		},
 		{

@@ -152,6 +152,10 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
+	if args.Netns == "" {
+		return nil
+	}
+
 	return ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		return ip.DelLinkByName(args.IfName)
 	})
