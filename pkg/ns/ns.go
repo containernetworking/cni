@@ -81,11 +81,23 @@ const (
 	PROCFS_MAGIC = 0x9fa0
 )
 
-func IsNS(nspath string) (isNS bool, msg string, err error) {
+type NSPathNotExistErr struct{ msg string }
+
+func (e NSPathNotExistErr) Error() string { return e.msg }
+
+type NSPathNotNSErr struct{ msg string }
+
+func (e NSPathNotNSErr) Error() string { return e.msg }
+
+func IsNSorErr(nspath string) error {
 	stat := syscall.Statfs_t{}
-	if err = syscall.Statfs(nspath, &stat); err != nil {
-		err = fmt.Errorf("failed to Statfs %s: %v", nspath, err)
-		return
+	if err := syscall.Statfs(nspath, &stat); err != nil {
+		if os.IsNotExist(err) {
+			err = NSPathNotExistErr{msg: fmt.Sprintf("failed to Statfs %q: %v", nspath, err)}
+		} else {
+			err = fmt.Errorf("failed to Statfs %q: %v", nspath, err)
+		}
+		return err
 	}
 
 	switch stat.Type {
@@ -95,33 +107,29 @@ func IsNS(nspath string) (isNS bool, msg string, err error) {
 		validPathContent := "ns/"
 		validName := strings.Contains(nspath, validPathContent)
 		if !validName {
-			msg = fmt.Sprintf("path doesn't contain %q", validPathContent)
-			return
+			return NSPathNotNSErr{msg: fmt.Sprintf("path %q doesn't contain %q", nspath, validPathContent)}
 		}
-		isNS = true
+
+		return nil
 	case NSFS_MAGIC:
 		// Kernel >= 3.19
 
-		isNS = true
+		return nil
 	default:
-		msg = fmt.Sprintf("unknown FS magic: %x", stat.Type)
+		return NSPathNotNSErr{msg: fmt.Sprintf("unknown FS magic on %q: %x", nspath, stat.Type)}
 	}
-	return
 }
 
 // Returns an object representing the namespace referred to by @path
 func GetNS(nspath string) (NetNS, error) {
-	isNS, msg, err := IsNS(nspath)
+	err := IsNSorErr(nspath)
 	if err != nil {
 		return nil, err
-	}
-	if !isNS {
-		return nil, fmt.Errorf("no network namespace detected on %s: %s", nspath, msg)
 	}
 
 	fd, err := os.Open(nspath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open %v: %v", nspath, err)
+		return nil, err
 	}
 
 	return &netNS{file: fd}, nil

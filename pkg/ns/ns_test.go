@@ -181,8 +181,8 @@ var _ = Describe("Linux namespace operations", func() {
 
 				_, err = ns.GetNS(nspath)
 				Expect(err).To(HaveOccurred())
-				errString := fmt.Sprintf("%v", err)
-				Expect(errString).To(HavePrefix("no network namespace detected on %s", nspath))
+				Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
+				Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
 			})
 		})
 
@@ -214,13 +214,11 @@ var _ = Describe("Linux namespace operations", func() {
 		})
 	})
 
-	Describe("IsNS", func() {
+	Describe("IsNSorErr", func() {
 		It("should detect a namespace", func() {
 			createdNetNS, err := ns.NewNS()
-			isNSFS, msg, err := ns.IsNS(createdNetNS.Path())
+			err = ns.IsNSorErr(createdNetNS.Path())
 			Expect(err).NotTo(HaveOccurred())
-			Expect(msg).To(Equal(""))
-			Expect(isNSFS).To(Equal(true))
 		})
 
 		It("should refuse other paths", func() {
@@ -231,9 +229,17 @@ var _ = Describe("Linux namespace operations", func() {
 			nspath := tempFile.Name()
 			defer os.Remove(nspath)
 
-			isNSFS, _, err := ns.IsNS(nspath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(isNSFS).To(Equal(false))
+			err = ns.IsNSorErr(nspath)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
+			Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
+		})
+
+		It("should error on non-existing paths", func() {
+			err := ns.IsNSorErr("/tmp/IDoNotExist")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
+			Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
 		})
 	})
 })
