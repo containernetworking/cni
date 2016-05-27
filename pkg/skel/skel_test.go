@@ -71,5 +71,14 @@ var _ = Describe("Skel", func() {
 		// 	Expect(err).NotTo(HaveOccurred())
 		// 	PluginMain(fErr, nil)
 		// })
+
+		It("should not fail with DEL and no NETNS and noop callback", func() {
+			err := os.Setenv("CNI_COMMAND", "DEL")
+			Expect(err).NotTo(HaveOccurred())
+			err = os.Unsetenv("CNI_NETNS")
+			Expect(err).NotTo(HaveOccurred())
+			PluginMain(nil, fNoop)
+		})
+
 	})
 })

@@ -199,6 +199,10 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
+	if args.Netns == "" {
+		return nil
+	}
+
 	var ipn *net.IPNet
 	err := ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		var err error
