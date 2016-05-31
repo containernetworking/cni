@@ -15,11 +15,14 @@
 package disk
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 )
+
+const lastIPFile = "last_reserved_ip"
 
 var defaultDataDir = "/var/lib/cni/networks"
 
@@ -59,7 +62,23 @@ func (s *Store) Reserve(id string, ip net.IP) (bool, error) {
 		os.Remove(f.Name())
 		return false, err
 	}
+	// store the reserved ip in lastIPFile
+	ipfile := filepath.Join(s.dataDir, lastIPFile)
+	err = ioutil.WriteFile(ipfile, []byte(ip.String()), 0644)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
+}
+
+// LastReservedIP returns the last reserved IP if exists
+func (s *Store) LastReservedIP() (net.IP, error) {
+	ipfile := filepath.Join(s.dataDir, lastIPFile)
+	data, err := ioutil.ReadFile(ipfile)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to retrieve last reserved ip: %v", err)
+	}
+	return net.ParseIP(string(data)), nil
 }
 
 func (s *Store) Release(ip net.IP) error {
