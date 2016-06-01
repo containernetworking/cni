@@ -1,11 +1,11 @@
 # How to Contribute
 
-cni is [Apache 2.0 licensed](LICENSE) and accepts contributions via GitHub
+CNI is [Apache 2.0 licensed](LICENSE) and accepts contributions via GitHub
 pull requests. This document outlines some of the conventions on development
 workflow, commit message formatting, contact points and other resources to make
 it easier to get your contribution accepted.
 
-We welcome improvements to documentation as well as to code.
+We gratefully welcome improvements to documentation as well as to code.
 
 # Certificate of Origin
 
@@ -41,7 +41,19 @@ This is a rough outline of how to prepare a contribution:
 - Make sure any new code files have a license header.
 - Submit a pull request to the original repository.
 
-Thanks for your contributions!
+# Acceptance policy
+
+These things will make a PR more likely to be accepted:
+
+ * a well-described requirement
+ * tests for new code
+ * tests for old code!
+ * new code follows the conventions in old code
+ * a good commit message (see below)
+
+In general, we will merge a PR once two maintainers have endorsed it.
+Trivial changes (e.g., corrections to spelling) may get waved through.
+For substantial changes, more people may become involved, and you might get asked to resubmit the PR or divide the changes into more than one PR.
 
 ### Format of the Commit Message
 
