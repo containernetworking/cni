@@ -1,4 +1,4 @@
-// Copyright 2015 CNI authors
+// Copyright 2016 CNI authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package main_test
 
-import "net"
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-type Store interface {
-	Lock() error
-	Unlock() error
-	Close() error
-	Reserve(id string, ip net.IP) (bool, error)
-	LastReservedIP() (net.IP, error)
-	Release(ip net.IP) error
-	ReleaseByID(id string) error
+	"testing"
+)
+
+func TestHostLocal(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "HostLocal Suite")
 }
