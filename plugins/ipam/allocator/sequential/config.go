@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package sequential
 
 import (
 	"encoding/json"
@@ -30,17 +30,16 @@ type IPAMConfig struct {
 	RangeEnd   net.IP        `json:"rangeEnd"`
 	Subnet     types.IPNet   `json:"subnet"`
 	Gateway    net.IP        `json:"gateway"`
-	ConsulAddr string        `json:"consul_addr"`
-	ConsulPort string        `json:"consul_port"`
-	ConsulDC   string        `json:"dc"`
-	Backend    string        `json:"backend"`
 	Routes     []types.Route `json:"routes"`
 	Args       *IPAMArgs     `json:"-"`
 }
 
 type IPAMArgs struct {
 	types.CommonArgs
-	IP net.IP `json:"ip,omitempty"`
+	IP        net.IP                     `json:"ip,omitempty"`
+	StoreAddr types.UnmarshallableString `json:"store_addr,omitempty"`
+	StorePort types.UnmarshallableString `json:"store_port,omitempty"`
+	StoreNS   types.UnmarshallableString `json:"store_ns,omitempty"`
 }
 
 type Net struct {

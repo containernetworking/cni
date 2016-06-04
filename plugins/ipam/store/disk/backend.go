@@ -20,6 +20,8 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+
+	"github.com/containernetworking/cni/plugins/ipam/allocator/sequential"
 )
 
 const lastIPFile = "last_reserved_ip"
@@ -31,7 +33,8 @@ type Store struct {
 	dataDir string
 }
 
-func New(network string) (*Store, error) {
+func New(n *sequential.IPAMConfig) (*Store, error) {
+	network := n.Name
 	dir := filepath.Join(defaultDataDir, network)
 	if err := os.MkdirAll(dir, 0644); err != nil {
 		return nil, err
@@ -41,6 +44,7 @@ func New(network string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Store{*lk, dir}, nil
 }
 
