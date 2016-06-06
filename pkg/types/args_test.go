@@ -47,6 +47,21 @@ var _ = Describe("UnmarshallableBool UnmarshalText", func() {
 	})
 })
 
+var _ = Describe("UnmarshallableString UnmarshalText", func() {
+	DescribeTable("string to string detection should succeed in all cases",
+		func(inputs []string, expected string) {
+			for _, s := range inputs {
+				var us UnmarshallableString
+				err := us.UnmarshalText([]byte(s))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(us)).To(Equal(expected))
+			}
+		},
+		Entry("parse empty string", []string{""}, ""),
+		Entry("parse non-empty string", []string{"notempty"}, "notempty"),
+	)
+})
+
 var _ = Describe("GetKeyField", func() {
 	type testcontainer struct {
 		Valid string `json:"valid,omitempty"`
