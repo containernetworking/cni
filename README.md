@@ -7,7 +7,7 @@
 
 The CNI (_Container Network Interface_) project consists of a specification and libraries for writing plugins to configure network interfaces in Linux containers, along with a number of supported plugins.
 CNI concerns itself only with network connectivity of containers and removing allocated resources when the container is deleted.
-Because of this focus CNI has a wide range of support and the specification is simple to implement.
+Because of this focus, CNI has a wide range of support and the specification is simple to implement.
 
 As well as the [specification](SPEC.md), this repository contains the Go source code of a library for integrating CNI into applications, an example command-line tool, a template for making new plugins, and the supported plugins.
 
@@ -155,7 +155,7 @@ However, in the future CNI might want to branch out into other directions:
 - Dynamic updates to existing network configuration
 - Dynamic policies for network bandwidth and firewall rules
 
-If these topics of are interest please contact the team via the mailing list or IRC and find some like minded people in the community to put a proposal together.
+If these topics of are interest, please contact the team via the mailing list or IRC and find some like-minded people in the community to put a proposal together.
 
 ## Contact
 
