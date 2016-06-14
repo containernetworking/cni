@@ -29,7 +29,7 @@ import (
 
 type NetNS interface {
 	// Executes the passed closure in this object's network namespace,
-	// attemtping to restore the original namespace before returning.
+	// attempting to restore the original namespace before returning.
 	// However, since each OS thread can have a different network namespace,
 	// and Go's thread scheduling is highly variable, callers cannot
 	// guarantee any specific namespace is set unless operations that
