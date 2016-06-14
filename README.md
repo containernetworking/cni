@@ -26,6 +26,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [rkt - container engine](https://coreos.com/blog/rkt-cni-networking.html)
 - [Kurma - container runtime](http://kurma.io/)
 - [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
+- [OpenShift - a platform for building and deploying containerized applications](https://github.com/openshift/openshift-sdn/pull/320)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
