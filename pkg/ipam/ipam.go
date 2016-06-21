@@ -30,7 +30,7 @@ import (
 
 const (
 	// private mac prefix safe to use
-	privateMACPrefix = "0a:58"
+	PrivateMACPrefix = "0a:58"
 
 	// veth link dev type
 	vethLinkType = "veth"
@@ -58,7 +58,7 @@ func ConfigureIface(ifName string, res *types.Result) error {
 
 	// only set hardware address to veth when using ipv4
 	if link.Type() == vethLinkType && res.IP4 != nil {
-		hwAddr, err := generateHardwareAddr(res.IP4.IP.IP)
+		hwAddr, err := GenerateHardwareAddr4(res.IP4.IP.IP, PrivateMACPrefix)
 		if err != nil {
 			return fmt.Errorf("failed to generate hardware addr: %v", err)
 		}
@@ -89,20 +89,43 @@ func ConfigureIface(ifName string, res *types.Result) error {
 	return nil
 }
 
-// generateHardwareAddr generates 48 bit virtual mac addresses based on the IP input.
-func generateHardwareAddr(ip net.IP) (net.HardwareAddr, error) {
-	if ip.To4() == nil {
-		return nil, fmt.Errorf("generateHardwareAddr only support valid ipv4 address as input")
+type SupportIp4OnlyErr struct{ msg string }
+
+func (e SupportIp4OnlyErr) Error() string { return e.msg }
+
+type MacParseErr struct{ msg string }
+
+func (e MacParseErr) Error() string { return e.msg }
+
+type InvalidPrefixLengthErr struct{ msg string }
+
+func (e InvalidPrefixLengthErr) Error() string { return e.msg }
+
+// GenerateHardwareAddr4 generates 48 bit virtual mac addresses based on the IP4 input.
+func GenerateHardwareAddr4(ip net.IP, prefix string) (net.HardwareAddr, error) {
+	switch {
+
+	case ip.To4() == nil:
+		return nil, SupportIp4OnlyErr{msg: "GenerateHardwareAddr4 only supports valid IPv4 address as input"}
+
+	case len(prefix) != len(PrivateMACPrefix):
+		return nil, InvalidPrefixLengthErr{msg: fmt.Sprintf(
+			"Prefix has length %d instead  of %d", len(prefix), len(PrivateMACPrefix)),
+		}
 	}
-	mac := privateMACPrefix
+
+	mac := prefix
 	sections := strings.Split(ip.String(), ".")
 	for _, s := range sections {
 		i, _ := strconv.Atoi(s)
 		mac = mac + ":" + fmt.Sprintf("%02x", i)
 	}
+
 	hwAddr, err := net.ParseMAC(mac)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse mac address %s generated based on ip %s due to: %v", mac, ip, err)
+		return nil, MacParseErr{msg: fmt.Sprintf(
+			"Failed to parse mac address %q generated based on IP %q due to: %v", mac, ip, err),
+		}
 	}
 	return hwAddr, nil
 }

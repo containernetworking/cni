@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ipam
+package ipam_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net"
+
+	"github.com/containernetworking/cni/pkg/ipam"
 )
 
 var _ = Describe("ipam utils", func() {
-	Context("Generate Hardware Addrress", func() {
+	Context("Generate Hardware Address", func() {
 		It("generate hardware address based on ipv4 address", func() {
 			testCases := []struct {
 				ip          net.IP
@@ -29,20 +31,20 @@ var _ = Describe("ipam utils", func() {
 			}{
 				{
 					ip:          net.ParseIP("10.0.0.2"),
-					expectedMAC: privateMACPrefix + ":0a:00:00:02",
+					expectedMAC: ipam.PrivateMACPrefix + ":0a:00:00:02",
 				},
 				{
 					ip:          net.ParseIP("10.250.0.244"),
-					expectedMAC: privateMACPrefix + ":0a:fa:00:f4",
+					expectedMAC: ipam.PrivateMACPrefix + ":0a:fa:00:f4",
 				},
 				{
 					ip:          net.ParseIP("172.17.0.2"),
-					expectedMAC: privateMACPrefix + ":ac:11:00:02",
+					expectedMAC: ipam.PrivateMACPrefix + ":ac:11:00:02",
 				},
 			}
 
 			for _, tc := range testCases {
-				mac, err := generateHardwareAddr(tc.ip)
+				mac, err := ipam.GenerateHardwareAddr4(tc.ip, ipam.PrivateMACPrefix)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mac.String()).To(Equal(tc.expectedMAC))
 			}
@@ -54,9 +56,14 @@ var _ = Describe("ipam utils", func() {
 				net.ParseIP("2001:db8:0:1:1:1:1:1"),
 			}
 			for _, tc := range testCases {
-				_, err := generateHardwareAddr(tc)
-				Expect(err.Error()).To(Equal("generateHardwareAddr only support valid ipv4 address as input"))
+				_, err := ipam.GenerateHardwareAddr4(tc, ipam.PrivateMACPrefix)
+				Expect(err).To(BeAssignableToTypeOf(ipam.SupportIp4OnlyErr{}))
 			}
+		})
+
+		It("return error if prefix is invalid", func() {
+			_, err := ipam.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), "")
+			Expect(err).To(BeAssignableToTypeOf(ipam.InvalidPrefixLengthErr{}))
 		})
 	})
 })
