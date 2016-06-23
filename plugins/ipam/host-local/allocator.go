@@ -119,12 +119,12 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 			continue
 		}
 
-                // don't allocate .0 or .255 IPv4
-                if ip4 := cur.To4(); ip4 != nil {
-                        if ip4[3] == 0 || ip4[3] == 255 {
-                                continue
-                        }
-                }
+		// don't allocate .0 or .255 IPv4
+		if ip4 := cur.To4(); ip4 != nil {
+			if ip4[3] == 0 || ip4[3] == 255 {
+				continue
+			}
+		}
 
 		reserved, err := a.store.Reserve(id, cur)
 		if err != nil {
