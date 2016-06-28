@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ipam_test
+package hwaddr_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"net"
 
-	"github.com/containernetworking/cni/pkg/ipam"
+	"github.com/containernetworking/cni/pkg/utils/hwaddr"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ipam utils", func() {
+var _ = Describe("Hwaddr", func() {
 	Context("Generate Hardware Address", func() {
 		It("generate hardware address based on ipv4 address", func() {
 			testCases := []struct {
@@ -31,20 +32,20 @@ var _ = Describe("ipam utils", func() {
 			}{
 				{
 					ip:          net.ParseIP("10.0.0.2"),
-					expectedMAC: ipam.PrivateMACPrefix + ":0a:00:00:02",
+					expectedMAC: hwaddr.PrivateMACPrefix + ":0a:00:00:02",
 				},
 				{
 					ip:          net.ParseIP("10.250.0.244"),
-					expectedMAC: ipam.PrivateMACPrefix + ":0a:fa:00:f4",
+					expectedMAC: hwaddr.PrivateMACPrefix + ":0a:fa:00:f4",
 				},
 				{
 					ip:          net.ParseIP("172.17.0.2"),
-					expectedMAC: ipam.PrivateMACPrefix + ":ac:11:00:02",
+					expectedMAC: hwaddr.PrivateMACPrefix + ":ac:11:00:02",
 				},
 			}
 
 			for _, tc := range testCases {
-				mac, err := ipam.GenerateHardwareAddr4(tc.ip, ipam.PrivateMACPrefix)
+				mac, err := hwaddr.GenerateHardwareAddr4(tc.ip, hwaddr.PrivateMACPrefix)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mac.String()).To(Equal(tc.expectedMAC))
 			}
@@ -56,14 +57,14 @@ var _ = Describe("ipam utils", func() {
 				net.ParseIP("2001:db8:0:1:1:1:1:1"),
 			}
 			for _, tc := range testCases {
-				_, err := ipam.GenerateHardwareAddr4(tc, ipam.PrivateMACPrefix)
-				Expect(err).To(BeAssignableToTypeOf(ipam.SupportIp4OnlyErr{}))
+				_, err := hwaddr.GenerateHardwareAddr4(tc, hwaddr.PrivateMACPrefix)
+				Expect(err).To(BeAssignableToTypeOf(hwaddr.SupportIp4OnlyErr{}))
 			}
 		})
 
 		It("return error if prefix is invalid", func() {
-			_, err := ipam.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), "")
-			Expect(err).To(BeAssignableToTypeOf(ipam.InvalidPrefixLengthErr{}))
+			_, err := hwaddr.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), "")
+			Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidPrefixLengthErr{}))
 		})
 	})
 })
