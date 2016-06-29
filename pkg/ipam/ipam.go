@@ -21,14 +21,8 @@ import (
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/utils/hwaddr"
 
 	"github.com/vishvananda/netlink"
-)
-
-const (
-	// veth link dev type
-	vethLinkType = "veth"
 )
 
 func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
@@ -49,17 +43,6 @@ func ConfigureIface(ifName string, res *types.Result) error {
 
 	if err := netlink.LinkSetUp(link); err != nil {
 		return fmt.Errorf("failed to set %q UP: %v", ifName, err)
-	}
-
-	// only set hardware address to veth when using ipv4
-	if link.Type() == vethLinkType && res.IP4 != nil {
-		hwAddr, err := hwaddr.GenerateHardwareAddr4(res.IP4.IP.IP, hwaddr.PrivateMACPrefix)
-		if err != nil {
-			return fmt.Errorf("failed to generate hardware addr: %v", err)
-		}
-		if err = netlink.LinkSetHardwareAddr(link, hwAddr); err != nil {
-			return fmt.Errorf("failed to add hardware addr to %q: %v", ifName, err)
-		}
 	}
 
 	// TODO(eyakubovich): IPv6

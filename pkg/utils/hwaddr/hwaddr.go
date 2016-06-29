@@ -17,13 +17,16 @@ package hwaddr
 import (
 	"fmt"
 	"net"
-	"strconv"
-	"strings"
 )
 
 const (
+	ipRelevantByteLen      = 4
+	PrivateMACPrefixString = "0a:58"
+)
+
+var (
 	// private mac prefix safe to use
-	PrivateMACPrefix = "0a:58"
+	PrivateMACPrefix = []byte{0x0a, 0x58}
 )
 
 type SupportIp4OnlyErr struct{ msg string }
@@ -39,7 +42,7 @@ type InvalidPrefixLengthErr struct{ msg string }
 func (e InvalidPrefixLengthErr) Error() string { return e.msg }
 
 // GenerateHardwareAddr4 generates 48 bit virtual mac addresses based on the IP4 input.
-func GenerateHardwareAddr4(ip net.IP, prefix string) (net.HardwareAddr, error) {
+func GenerateHardwareAddr4(ip net.IP, prefix []byte) (net.HardwareAddr, error) {
 	switch {
 
 	case ip.To4() == nil:
@@ -51,18 +54,10 @@ func GenerateHardwareAddr4(ip net.IP, prefix string) (net.HardwareAddr, error) {
 		}
 	}
 
-	mac := prefix
-	sections := strings.Split(ip.String(), ".")
-	for _, s := range sections {
-		i, _ := strconv.Atoi(s)
-		mac += fmt.Sprintf(":%02x", i)
-	}
-
-	hwAddr, err := net.ParseMAC(mac)
-	if err != nil {
-		return nil, MacParseErr{msg: fmt.Sprintf(
-			"Failed to parse mac address %q generated based on IP %q due to: %v", mac, ip, err),
-		}
-	}
-	return hwAddr, nil
+	ipByteLen := len(ip)
+	return (net.HardwareAddr)(
+		append(
+			prefix,
+			ip[ipByteLen-ipRelevantByteLen:ipByteLen]...),
+	), nil
 }

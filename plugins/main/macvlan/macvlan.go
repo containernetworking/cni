@@ -149,6 +149,14 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
+		contVethLink, err := netlink.LinkByName(args.IfName)
+		if err != nil {
+			return fmt.Errorf("failed to lookup %q: %v", args.IfName, err)
+		}
+		if err := ip.SetHWAddrByIP(contVethLink, result.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return err
+		}
+
 		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {

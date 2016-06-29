@@ -247,7 +247,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 			// TODO: IPV6
 		}
 
-		return ipam.ConfigureIface(args.IfName, result)
+		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+			return err
+		}
+
+		contVethLink, err := netlink.LinkByName(args.IfName)
+		if err != nil {
+			return fmt.Errorf("failed to lookup %q: %v", args.IfName, err)
+		}
+		if err := ip.SetHWAddrByIP(contVethLink, result.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return err
+		}
+
+		return nil
 	}); err != nil {
 		return err
 	}
@@ -259,6 +271,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 
 		if err = ensureBridgeAddr(br, gwn); err != nil {
+			return err
+		}
+
+		if err := ip.SetHWAddrByIP(br, gwn.IP, nil /* TODO IPv6 */); err != nil {
 			return err
 		}
 

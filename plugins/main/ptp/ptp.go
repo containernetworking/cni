@@ -64,6 +64,10 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return err
 		}
 
+		if err := ip.SetHWAddrByIP(hostVeth, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
+		}
+
 		if err = ipam.ConfigureIface(ifName, pr); err != nil {
 			return err
 		}
@@ -71,6 +75,10 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 		contVeth, err := netlink.LinkByName(ifName)
 		if err != nil {
 			return fmt.Errorf("failed to look up %q: %v", ifName, err)
+		}
+
+		if err := ip.SetHWAddrByIP(contVeth, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
 		// Delete the route that was automatically added

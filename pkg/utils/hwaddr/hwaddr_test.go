@@ -28,26 +28,26 @@ var _ = Describe("Hwaddr", func() {
 		It("generate hardware address based on ipv4 address", func() {
 			testCases := []struct {
 				ip          net.IP
-				expectedMAC string
+				expectedMAC net.HardwareAddr
 			}{
 				{
 					ip:          net.ParseIP("10.0.0.2"),
-					expectedMAC: hwaddr.PrivateMACPrefix + ":0a:00:00:02",
+					expectedMAC: (net.HardwareAddr)(append(hwaddr.PrivateMACPrefix, 0x0a, 0x00, 0x00, 0x02)),
 				},
 				{
 					ip:          net.ParseIP("10.250.0.244"),
-					expectedMAC: hwaddr.PrivateMACPrefix + ":0a:fa:00:f4",
+					expectedMAC: (net.HardwareAddr)(append(hwaddr.PrivateMACPrefix, 0x0a, 0xfa, 0x00, 0xf4)),
 				},
 				{
 					ip:          net.ParseIP("172.17.0.2"),
-					expectedMAC: hwaddr.PrivateMACPrefix + ":ac:11:00:02",
+					expectedMAC: (net.HardwareAddr)(append(hwaddr.PrivateMACPrefix, 0xac, 0x11, 0x00, 0x02)),
 				},
 			}
 
 			for _, tc := range testCases {
 				mac, err := hwaddr.GenerateHardwareAddr4(tc.ip, hwaddr.PrivateMACPrefix)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mac.String()).To(Equal(tc.expectedMAC))
+				Expect(mac).To(Equal(tc.expectedMAC))
 			}
 		})
 
@@ -63,7 +63,7 @@ var _ = Describe("Hwaddr", func() {
 		})
 
 		It("return error if prefix is invalid", func() {
-			_, err := hwaddr.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), "")
+			_, err := hwaddr.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), []byte{0x58})
 			Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidPrefixLengthErr{}))
 		})
 	})
