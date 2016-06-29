@@ -64,11 +64,14 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return err
 		}
 
-		hostVethName = hostVeth.Attrs().Name
+		hostNS.Do(func(_ ns.NetNS) error {
+			hostVethName = hostVeth.Attrs().Name
+			if err := ip.SetHWAddrByIP(hostVethName, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+				return fmt.Errorf("failed to set hardware addr by IP: %v", err)
+			}
 
-		if err := ip.SetHWAddrByIP(hostVethName, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
-			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
-		}
+			return nil
+		})
 
 		if err = ipam.ConfigureIface(ifName, pr); err != nil {
 			return err
