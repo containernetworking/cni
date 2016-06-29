@@ -153,18 +153,29 @@ func DelLinkByNameAddr(ifName string, family int) (*net.IPNet, error) {
 	return addrs[0].IPNet, nil
 }
 
-func SetHWAddrByIP(link netlink.Link, ip4 net.IP, ip6 net.IP) error {
-	if ip4 != nil {
-		hwAddr, err := hwaddr.GenerateHardwareAddr4(ip4, hwaddr.PrivateMACPrefix)
-		if err != nil {
-			return fmt.Errorf("failed to generate hardware addr: %v", err)
-		}
-		if err = netlink.LinkSetHardwareAddr(link, hwAddr); err != nil {
-			return fmt.Errorf("failed to add hardware addr to %q: %v", link.Attrs().Name, err)
-		}
+func SetHWAddrByIP(ifName string, ip4 net.IP, ip6 net.IP) error {
+	iface, err := netlink.LinkByName(ifName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup %q: %v", ifName, err)
 	}
 
-	// TODO: IPv6
+	switch {
+	case ip4 == nil && ip6 == nil:
+		return fmt.Errorf("neither ip4 or ip6 specified")
+
+	case ip4 != nil:
+		{
+			hwAddr, err := hwaddr.GenerateHardwareAddr4(ip4, hwaddr.PrivateMACPrefix)
+			if err != nil {
+				return fmt.Errorf("failed to generate hardware addr: %v", err)
+			}
+			if err = netlink.LinkSetHardwareAddr(iface, hwAddr); err != nil {
+				return fmt.Errorf("failed to add hardware addr to %q: %v", ifName, err)
+			}
+		}
+	case ip6 != nil:
+		// TODO: IPv6
+	}
 
 	return nil
 }

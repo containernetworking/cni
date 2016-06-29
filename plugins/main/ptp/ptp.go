@@ -64,7 +64,9 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return err
 		}
 
-		if err := ip.SetHWAddrByIP(hostVeth, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+		hostVethName = hostVeth.Attrs().Name
+
+		if err := ip.SetHWAddrByIP(hostVethName, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
 			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
@@ -77,7 +79,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return fmt.Errorf("failed to look up %q: %v", ifName, err)
 		}
 
-		if err := ip.SetHWAddrByIP(contVeth, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+		if err := ip.SetHWAddrByIP(contVeth.Attrs().Name, pr.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
 			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
@@ -120,8 +122,6 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 				return fmt.Errorf("failed to add route %v: %v", r, err)
 			}
 		}
-
-		hostVethName = hostVeth.Attrs().Name
 
 		return nil
 	})
