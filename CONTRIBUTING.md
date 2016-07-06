@@ -37,9 +37,34 @@ This is a rough outline of how to prepare a contribution:
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.
-- If you changed code, make sure the tests pass, and add any new tests as appropriate.
-- Make sure any new code files have a license header.
+- If you changed code:
+   - add automated tests to cover your changes, using the [Ginkgo](http://onsi.github.io/ginkgo/) & [Gomega](http://onsi.github.io/gomega/) style
+   - if the package did not previously have any test coverage, add it to the list
+   of `TESTABLE` packages in the `test` script.
+   - run the full test script and ensure it passes
+- Make sure any new code files have a license header (this is now enforced by automated tests)
 - Submit a pull request to the original repository.
+
+## How to run the test suite
+We generally require test coverage of any new features or bug fixes.
+
+Here's how you can run the test suite on any system (even Mac or Windows) using
+ [Vagrant](https://www.vagrantup.com/) and a hypervisor of your choice:
+
+```bash
+vagrant up
+vagrant ssh
+# you're now in a shell in a virtual machine
+sudo su
+cd /go/src/github.com/containernetworking/cni
+
+# to run the full test suite
+./test
+
+# to focus on a particular test suite
+cd plugins/main/loopback
+go test
+```
 
 # Acceptance policy
 
@@ -48,7 +73,7 @@ These things will make a PR more likely to be accepted:
  * a well-described requirement
  * tests for new code
  * tests for old code!
- * new code follows the conventions in old code
+ * new code and tests follow the conventions in old code and tests
  * a good commit message (see below)
 
 In general, we will merge a PR once two maintainers have endorsed it.
