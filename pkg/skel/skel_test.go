@@ -15,70 +15,216 @@
 package skel
 
 import (
-	"os"
+	"errors"
+	"io"
+	"strings"
 
+	"github.com/containernetworking/cni/pkg/types"
+
+	"github.com/containernetworking/cni/pkg/testutils"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Skel", func() {
+type fakeCmd struct {
+	CallCount int
+	Returns   struct {
+		Error error
+	}
+	Received struct {
+		CmdArgs *CmdArgs
+	}
+}
+
+func (c *fakeCmd) Func(args *CmdArgs) error {
+	c.CallCount++
+	c.Received.CmdArgs = args
+	return c.Returns.Error
+}
+
+var _ = Describe("dispatching to the correct callback", func() {
 	var (
-		fNoop = func(_ *CmdArgs) error { return nil }
-		// fErr    = func(_ *CmdArgs) error { return errors.New("dummy") }
-		envVars = []struct {
-			name string
-			val  string
-		}{
-			{"CNI_CONTAINERID", "dummy"},
-			{"CNI_NETNS", "dummy"},
-			{"CNI_IFNAME", "dummy"},
-			{"CNI_ARGS", "dummy"},
-			{"CNI_PATH", "dummy"},
-		}
+		environment     map[string]string
+		stdin           io.Reader
+		cmdAdd, cmdDel  *fakeCmd
+		dispatch        *dispatcher
+		expectedCmdArgs *CmdArgs
 	)
 
-	It("Must be possible to set the env vars", func() {
-		for _, v := range envVars {
-			err := os.Setenv(v.name, v.val)
-			Expect(err).NotTo(HaveOccurred())
+	BeforeEach(func() {
+		environment = map[string]string{
+			"CNI_COMMAND":     "ADD",
+			"CNI_CONTAINERID": "some-container-id",
+			"CNI_NETNS":       "/some/netns/path",
+			"CNI_IFNAME":      "eth0",
+			"CNI_ARGS":        "some;extra;args",
+			"CNI_PATH":        "/some/cni/path",
+		}
+		stdin = strings.NewReader(`{ "some": "config" }`)
+		dispatch = &dispatcher{
+			Getenv: func(key string) string { return environment[key] },
+			Stdin:  stdin,
+		}
+		cmdAdd = &fakeCmd{}
+		cmdDel = &fakeCmd{}
+		expectedCmdArgs = &CmdArgs{
+			ContainerID: "some-container-id",
+			Netns:       "/some/netns/path",
+			IfName:      "eth0",
+			Args:        "some;extra;args",
+			Path:        "/some/cni/path",
+			StdinData:   []byte(`{ "some": "config" }`),
 		}
 	})
 
-	Context("When dummy environment variables are passed", func() {
+	var envVarChecker = func(envVar string, isRequired bool) {
+		delete(environment, envVar)
 
-		It("should not fail with ADD and noop callback", func() {
-			err := os.Setenv("CNI_COMMAND", "ADD")
+		err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+		if isRequired {
+			Expect(err).To(Equal(&types.Error{
+				Code: 100,
+				Msg:  "required env variables missing",
+			}))
+		} else {
 			Expect(err).NotTo(HaveOccurred())
-			PluginMain(fNoop, nil)
+		}
+	}
+
+	Context("when the CNI_COMMAND is ADD", func() {
+		It("extracts env vars and stdin data and calls cmdAdd", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdAdd.CallCount).To(Equal(1))
+			Expect(cmdDel.CallCount).To(Equal(0))
+			Expect(cmdAdd.Received.CmdArgs).To(Equal(expectedCmdArgs))
 		})
 
-		// TODO: figure out howto mock printing and os.Exit()
-		// It("should fail with ADD and error callback", func() {
-		// 	err := os.Setenv("CNI_COMMAND", "ADD")
-		// 	Expect(err).NotTo(HaveOccurred())
-		// 	PluginMain(fErr, nil)
-		// })
+		It("does not call cmdDel", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
 
-		It("should not fail with DEL and noop callback", func() {
-			err := os.Setenv("CNI_COMMAND", "DEL")
 			Expect(err).NotTo(HaveOccurred())
-			PluginMain(nil, fNoop)
+			Expect(cmdDel.CallCount).To(Equal(0))
 		})
 
-		// TODO: figure out howto mock printing and os.Exit()
-		// It("should fail with DEL and error callback", func() {
-		// 	err := os.Setenv("CNI_COMMAND", "DEL")
-		// 	Expect(err).NotTo(HaveOccurred())
-		// 	PluginMain(fErr, nil)
-		// })
+		DescribeTable("required / optional env vars", envVarChecker,
+			// TODO: Entry("command", "CNI_COMMAND", true),
+			Entry("container id", "CNI_CONTAINER_ID", false),
+			Entry("net ns", "CNI_NETNS", true),
+			Entry("if name", "CNI_IFNAME", true),
+			Entry("args", "CNI_ARGS", false),
+			Entry("path", "CNI_PATH", true),
+		)
+	})
 
-		It("should not fail with DEL and no NETNS and noop callback", func() {
-			err := os.Setenv("CNI_COMMAND", "DEL")
-			Expect(err).NotTo(HaveOccurred())
-			err = os.Unsetenv("CNI_NETNS")
-			Expect(err).NotTo(HaveOccurred())
-			PluginMain(nil, fNoop)
+	Context("when the CNI_COMMAND is DEL", func() {
+		BeforeEach(func() {
+			environment["CNI_COMMAND"] = "DEL"
 		})
 
+		It("calls cmdDel with the env vars and stdin data", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdDel.CallCount).To(Equal(1))
+			Expect(cmdDel.Received.CmdArgs).To(Equal(expectedCmdArgs))
+		})
+
+		It("does not call cmdAdd", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdAdd.CallCount).To(Equal(0))
+		})
+
+		DescribeTable("required / optional env vars", envVarChecker,
+			// TODO: Entry("command", "CNI_COMMAND", true),
+			Entry("container id", "CNI_CONTAINER_ID", false),
+			Entry("net ns", "CNI_NETNS", false),
+			Entry("if name", "CNI_IFNAME", true),
+			Entry("args", "CNI_ARGS", false),
+			Entry("path", "CNI_PATH", true),
+		)
+	})
+
+	Context("when the CNI_COMMAND is unrecognized", func() {
+		BeforeEach(func() {
+			environment["CNI_COMMAND"] = "NOPE"
+		})
+
+		It("does not call any cmd callback", func() {
+			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(cmdAdd.CallCount).To(Equal(0))
+			Expect(cmdDel.CallCount).To(Equal(0))
+		})
+
+		It("returns an error", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).To(Equal(&types.Error{
+				Code: 100,
+				Msg:  "unknown CNI_COMMAND: NOPE",
+			}))
+		})
+	})
+
+	Context("when stdin cannot be read", func() {
+		BeforeEach(func() {
+			dispatch.Stdin = &testutils.BadReader{}
+		})
+
+		It("does not call any cmd callback", func() {
+			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(cmdAdd.CallCount).To(Equal(0))
+			Expect(cmdDel.CallCount).To(Equal(0))
+		})
+
+		It("wraps and returns the error", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).To(Equal(&types.Error{
+				Code: 100,
+				Msg:  "error reading from stdin: banana",
+			}))
+		})
+	})
+
+	Context("when the callback returns an error", func() {
+		Context("when it is a typed Error", func() {
+			BeforeEach(func() {
+				cmdAdd.Returns.Error = &types.Error{
+					Code: 1234,
+					Msg:  "insufficient something",
+				}
+			})
+
+			It("returns the error as-is", func() {
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+				Expect(err).To(Equal(&types.Error{
+					Code: 1234,
+					Msg:  "insufficient something",
+				}))
+			})
+		})
+
+		Context("when it is an unknown error", func() {
+			BeforeEach(func() {
+				cmdAdd.Returns.Error = errors.New("potato")
+			})
+
+			It("wraps and returns the error", func() {
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+				Expect(err).To(Equal(&types.Error{
+					Code: 100,
+					Msg:  "potato",
+				}))
+			})
+		})
 	})
 })
