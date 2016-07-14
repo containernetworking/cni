@@ -40,6 +40,7 @@ type CmdArgs struct {
 type dispatcher struct {
 	Getenv func(string) string
 	Stdin  io.Reader
+	Stderr io.Writer
 }
 
 type reqForCmdEntry map[string]bool
@@ -106,8 +107,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 	for _, v := range vars {
 		*v.val = t.Getenv(v.name)
 		if v.reqForCmd[cmd] && *v.val == "" {
-			log.Printf("%v env variable missing", v.name)
-			// TODO: test this logging ^^^  and log to stderr instead of stdout
+			fmt.Fprintf(t.Stderr, "%v env variable missing\n", v.name)
 			argsMissing = true
 		}
 	}
@@ -172,6 +172,7 @@ func PluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) {
 	caller := dispatcher{
 		Getenv: os.Getenv,
 		Stdin:  os.Stdin,
+		Stderr: os.Stderr,
 	}
 
 	err := caller.pluginMain(cmdAdd, cmdDel)

@@ -15,6 +15,7 @@
 package skel
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"strings"
@@ -47,6 +48,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 	var (
 		environment     map[string]string
 		stdin           io.Reader
+		stderr          *bytes.Buffer
 		cmdAdd, cmdDel  *fakeCmd
 		dispatch        *dispatcher
 		expectedCmdArgs *CmdArgs
@@ -62,9 +64,11 @@ var _ = Describe("dispatching to the correct callback", func() {
 			"CNI_PATH":        "/some/cni/path",
 		}
 		stdin = strings.NewReader(`{ "some": "config" }`)
+		stderr = &bytes.Buffer{}
 		dispatch = &dispatcher{
 			Getenv: func(key string) string { return environment[key] },
 			Stdin:  stdin,
+			Stderr: stderr,
 		}
 		cmdAdd = &fakeCmd{}
 		cmdDel = &fakeCmd{}
@@ -87,6 +91,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 				Code: 100,
 				Msg:  "required env variables missing",
 			}))
+			Expect(stderr.String()).To(ContainSubstring(envVar + " env variable missing\n"))
 		} else {
 			Expect(err).NotTo(HaveOccurred())
 		}
@@ -117,6 +122,23 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Entry("args", "CNI_ARGS", false),
 			Entry("path", "CNI_PATH", true),
 		)
+
+		Context("when multiple required env vars are missing", func() {
+			BeforeEach(func() {
+				delete(environment, "CNI_NETNS")
+				delete(environment, "CNI_IFNAME")
+				delete(environment, "CNI_PATH")
+			})
+
+			It("reports that all of them are missing, not just the first", func() {
+				Expect(dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)).NotTo(Succeed())
+				log := stderr.String()
+				Expect(log).To(ContainSubstring("CNI_NETNS env variable missing\n"))
+				Expect(log).To(ContainSubstring("CNI_IFNAME env variable missing\n"))
+				Expect(log).To(ContainSubstring("CNI_PATH env variable missing\n"))
+
+			})
+		})
 	})
 
 	Context("when the CNI_COMMAND is DEL", func() {
