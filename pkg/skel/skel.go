@@ -106,9 +106,11 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 	argsMissing := false
 	for _, v := range vars {
 		*v.val = t.Getenv(v.name)
-		if v.reqForCmd[cmd] && *v.val == "" {
-			fmt.Fprintf(t.Stderr, "%v env variable missing\n", v.name)
-			argsMissing = true
+		if *v.val == "" {
+			if v.reqForCmd[cmd] || v.name == "CNI_COMMAND" {
+				fmt.Fprintf(t.Stderr, "%v env variable missing\n", v.name)
+				argsMissing = true
+			}
 		}
 	}
 

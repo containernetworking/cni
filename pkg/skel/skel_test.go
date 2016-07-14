@@ -115,7 +115,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		DescribeTable("required / optional env vars", envVarChecker,
-			// TODO: Entry("command", "CNI_COMMAND", true),
+			Entry("command", "CNI_COMMAND", true),
 			Entry("container id", "CNI_CONTAINER_ID", false),
 			Entry("net ns", "CNI_NETNS", true),
 			Entry("if name", "CNI_IFNAME", true),
@@ -162,7 +162,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		DescribeTable("required / optional env vars", envVarChecker,
-			// TODO: Entry("command", "CNI_COMMAND", true),
+			Entry("command", "CNI_COMMAND", true),
 			Entry("container id", "CNI_CONTAINER_ID", false),
 			Entry("net ns", "CNI_NETNS", false),
 			Entry("if name", "CNI_IFNAME", true),
