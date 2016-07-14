@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 
 	"github.com/containernetworking/cni/pkg/testutils"
 	. "github.com/onsi/ginkgo"
@@ -48,7 +49,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 	var (
 		environment     map[string]string
 		stdin           io.Reader
-		stderr          *bytes.Buffer
+		stdout, stderr  *bytes.Buffer
 		cmdAdd, cmdDel  *fakeCmd
 		dispatch        *dispatcher
 		expectedCmdArgs *CmdArgs
@@ -64,11 +65,15 @@ var _ = Describe("dispatching to the correct callback", func() {
 			"CNI_PATH":        "/some/cni/path",
 		}
 		stdin = strings.NewReader(`{ "some": "config" }`)
+		stdout = &bytes.Buffer{}
 		stderr = &bytes.Buffer{}
+		versioner := &version.BasicVersioner{CNIVersion: "9.8.7"}
 		dispatch = &dispatcher{
-			Getenv: func(key string) string { return environment[key] },
-			Stdin:  stdin,
-			Stderr: stderr,
+			Getenv:    func(key string) string { return environment[key] },
+			Stdin:     stdin,
+			Stdout:    stdout,
+			Stderr:    stderr,
+			Versioner: versioner,
 		}
 		cmdAdd = &fakeCmd{}
 		cmdDel = &fakeCmd{}
@@ -168,6 +173,36 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Entry("if name", "CNI_IFNAME", true),
 			Entry("args", "CNI_ARGS", false),
 			Entry("path", "CNI_PATH", true),
+		)
+	})
+
+	Context("when the CNI_COMMAND is VERSION", func() {
+		BeforeEach(func() {
+			environment["CNI_COMMAND"] = "VERSION"
+		})
+
+		It("prints the version to stdout", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout).To(MatchJSON(`{ "cniVersion": "9.8.7" }`))
+		})
+
+		It("does not call cmdAdd or cmdDel", func() {
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cmdAdd.CallCount).To(Equal(0))
+			Expect(cmdDel.CallCount).To(Equal(0))
+		})
+
+		DescribeTable("VERSION does not need the usual env vars", envVarChecker,
+			Entry("command", "CNI_COMMAND", true),
+			Entry("container id", "CNI_CONTAINER_ID", false),
+			Entry("net ns", "CNI_NETNS", false),
+			Entry("if name", "CNI_IFNAME", false),
+			Entry("args", "CNI_ARGS", false),
+			Entry("path", "CNI_PATH", false),
 		)
 	})
 

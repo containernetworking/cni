@@ -24,6 +24,7 @@ import (
 	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 // CmdArgs captures all the arguments passed in to the plugin
@@ -38,9 +39,11 @@ type CmdArgs struct {
 }
 
 type dispatcher struct {
-	Getenv func(string) string
-	Stdin  io.Reader
-	Stderr io.Writer
+	Getenv    func(string) string
+	Stdin     io.Reader
+	Stdout    io.Writer
+	Stderr    io.Writer
+	Versioner version.PluginVersioner
 }
 
 type reqForCmdEntry map[string]bool
@@ -154,6 +157,9 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) *types.Er
 	case "DEL":
 		err = cmdDel(cmdArgs)
 
+	case "VERSION":
+		err = t.Versioner.Encode(t.Stdout)
+
 	default:
 		return createTypedError("unknown CNI_COMMAND: %v", cmd)
 	}
@@ -172,9 +178,11 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) *types.Er
 // two callback functions for add and del commands.
 func PluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) {
 	caller := dispatcher{
-		Getenv: os.Getenv,
-		Stdin:  os.Stdin,
-		Stderr: os.Stderr,
+		Getenv:    os.Getenv,
+		Stdin:     os.Stdin,
+		Stdout:    os.Stdout,
+		Stderr:    os.Stderr,
+		Versioner: version.DefaultPluginVersioner,
 	}
 
 	err := caller.pluginMain(cmdAdd, cmdDel)
