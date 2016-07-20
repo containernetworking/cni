@@ -64,7 +64,6 @@ The operations that the CNI plugin needs to support are:
 
 The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
 It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
-- `CNI_VERSION`:  [Semantic Version 2.0](http://semver.org) of CNI specification. This effectively versions the CNI_XXX environment variables.
 - `CNI_COMMAND`: indicates the desired operation; either `ADD` or `DEL`
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
