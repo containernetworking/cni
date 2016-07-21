@@ -105,21 +105,60 @@ func setupVF(conf *NetConf, ifName string, netns ns.NetNS) error {
 	}
 
 	if err = netlink.LinkSetUp(vfDev); err != nil {
-		return fmt.Errorf("failed to setup vf device: %v", err)
+		return fmt.Errorf("failed to setup vf %d device: %v", conf.VF, err)
 	}
 
-	// move vf device to ns
+	// move VF device to ns
 	if err = netlink.LinkSetNsFd(vfDev, int(netns.Fd())); err != nil {
-		return fmt.Errorf("failed to move vf %d to netnamespace: %v", conf.VF, err)
+		return fmt.Errorf("failed to move vf %d to netns: %v", conf.VF, err)
 	}
 
 	return netns.Do(func(_ ns.NetNS) error {
 		err := renameLink(vfDevName, ifName)
 		if err != nil {
-			return fmt.Errorf("failed to rename vf device %q to %q: %v", vfDevName, ifName, err)
+			return fmt.Errorf("failed to rename vf %d device %q to %q: %v", conf.VF, vfDevName, ifName, err)
 		}
 		return nil
 	})
+}
+
+func releaseVF(conf *NetConf, ifName string, netns ns.NetNS) error {
+	initns, err := ns.GetCurrentNS()
+	if err != nil {
+		return fmt.Errorf("failed to get init netns: %v", err)
+	}
+
+	if err = netns.Set(); err != nil {
+		return fmt.Errorf("failed to enter netns %q: %v", netns, err)
+	}
+
+	// get VF device
+	vfDev, err := netlink.LinkByName(ifName)
+	if err != nil {
+		return fmt.Errorf("failed to lookup vf %d device %q: %v", conf.VF, ifName, err)
+	}
+
+	// device name in init netns
+	index := vfDev.Attrs().Index
+	devName := fmt.Sprintf("dev%d", index)
+
+	// shutdown VF device
+	if err = netlink.LinkSetDown(vfDev); err != nil {
+		return fmt.Errorf("failed to down vf % device: %v", conf.VF, err)
+	}
+
+	// rename VF device
+	err = renameLink(ifName, devName)
+	if err != nil {
+		return fmt.Errorf("failed to rename vf %d evice %q to %q: %v", conf.VF, ifName, devName, err)
+	}
+
+	// move VF device to init netns
+	if err = netlink.LinkSetNsFd(vfDev, int(initns.Fd())); err != nil {
+		return fmt.Errorf("failed to move vf %d to init netns: %v", conf.VF, err)
+	}
+
+	return nil
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -161,6 +200,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 func cmdDel(args *skel.CmdArgs) error {
 	n, err := loadConf(args.StdinData)
 	if err != nil {
+		return err
+	}
+
+	netns, err := ns.GetNS(args.Netns)
+	if err != nil {
+		return fmt.Errorf("failed to open netns %q: %v", netns, err)
+	}
+	defer netns.Close()
+
+	if err = releaseVF(n, args.IfName, netns); err != nil {
 		return err
 	}
 
