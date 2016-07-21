@@ -22,9 +22,7 @@ Other sysctls can be modified as long as they belong to the network namespace (`
 
 A successful result would simply be:
 ```
-{
-  "cniVersion": "0.1.0"
-}
+{ }
 ```
 
 ## Network sysctls documentation
