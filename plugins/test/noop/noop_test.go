@@ -29,15 +29,16 @@ import (
 
 var _ = Describe("No-op plugin", func() {
 	var (
-		cmd           *exec.Cmd
-		debugFileName string
-		debug         *noop_debug.Debug
+		cmd             *exec.Cmd
+		debugFileName   string
+		debug           *noop_debug.Debug
+		expectedCmdArgs skel.CmdArgs
 	)
 
+	const reportResult = `{ "ip4": { "ip": "10.1.2.3/24" }, "dns": {} }`
+
 	BeforeEach(func() {
-		debug = &noop_debug.Debug{
-			ReportResult: `{ "ip4": { "ip": "10.1.2.3/24" }, "dns": {} }`,
-		}
+		debug = &noop_debug.Debug{ReportResult: reportResult}
 
 		debugFile, err := ioutil.TempFile("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
@@ -50,12 +51,20 @@ var _ = Describe("No-op plugin", func() {
 		cmd.Env = []string{
 			"CNI_COMMAND=ADD",
 			"CNI_CONTAINERID=some-container-id",
-			"CNI_ARGS=DEBUG=" + debugFile.Name(),
+			"CNI_ARGS=DEBUG=" + debugFileName,
 			"CNI_NETNS=/some/netns/path",
 			"CNI_IFNAME=some-eth0",
 			"CNI_PATH=/some/bin/path",
 		}
 		cmd.Stdin = strings.NewReader(`{"some":"stdin-json"}`)
+		expectedCmdArgs = skel.CmdArgs{
+			ContainerID: "some-container-id",
+			Netns:       "/some/netns/path",
+			IfName:      "some-eth0",
+			Args:        "DEBUG=" + debugFileName,
+			Path:        "/some/bin/path",
+			StdinData:   []byte(`{"some":"stdin-json"}`),
+		}
 	})
 
 	AfterEach(func() {
@@ -66,10 +75,7 @@ var _ = Describe("No-op plugin", func() {
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(MatchJSON(`{
-				 "ip4": { "ip": "10.1.2.3/24" },
-				 "dns": {}
-      }`))
+		Expect(session.Out.Contents()).To(MatchJSON(reportResult))
 	})
 
 	It("records all the args provided by skel.PluginMain", func() {
@@ -80,14 +86,7 @@ var _ = Describe("No-op plugin", func() {
 		debug, err := noop_debug.ReadDebug(debugFileName)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(debug.Command).To(Equal("ADD"))
-		Expect(debug.CmdArgs).To(Equal(skel.CmdArgs{
-			ContainerID: "some-container-id",
-			Netns:       "/some/netns/path",
-			IfName:      "some-eth0",
-			Args:        "DEBUG=" + debugFileName,
-			Path:        "/some/bin/path",
-			StdinData:   []byte(`{"some":"stdin-json"}`),
-		}))
+		Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 	})
 
 	Context("when the ReportError debug field is set", func() {
@@ -121,14 +120,7 @@ var _ = Describe("No-op plugin", func() {
 			debug, err := noop_debug.ReadDebug(debugFileName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(debug.Command).To(Equal("DEL"))
-			Expect(debug.CmdArgs).To(Equal(skel.CmdArgs{
-				ContainerID: "some-container-id",
-				Netns:       "/some/netns/path",
-				IfName:      "some-eth0",
-				Args:        "DEBUG=" + debugFileName,
-				Path:        "/some/bin/path",
-				StdinData:   []byte(`{"some":"stdin-json"}`),
-			}))
+			Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 		})
 
 	})
