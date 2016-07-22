@@ -16,6 +16,7 @@ package testutils
 
 import "errors"
 
+// BadReader is an io.Reader which always errors
 type BadReader struct {
 	Error error
 }
