@@ -22,15 +22,21 @@ We believe that many container runtimes and orchestrators will seek to solve the
 To avoid duplication, we think it is prudent to define a common interface between the network plugins and container execution: hence we put forward this specification, along with libraries for Go and a set of plugins.
 
 ## Who is using CNI?
-
+### Container runtimes
 - [rkt - container engine](https://coreos.com/blog/rkt-cni-networking.html)
 - [Kurma - container runtime](http://kurma.io/)
 - [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
-- [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
-- [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
-- [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 - [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
+
+### 3rd Party Network plugins
+- [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
+- [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
+- [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
+- [SR-IOV](https://github.com/hustcat/sriov-cni)
+
+The CNI team also maintains some [core plugins](plugins).
+
 
 ## Contributing to CNI
 
