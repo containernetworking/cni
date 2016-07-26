@@ -162,27 +162,12 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 
 // setupTapDevice creates persistent tap device
 // and returns a newly created netlink.Link structure
-func setupTapDevice(podID string, mtu int, pr *types.Result) error {
+func setupTapDevice(mtu int, pr *types.Result) error {
 	// network device names are limited to 16 characters
 	// the suffix %d will be replaced by the kernel with a suitable number
-	ifName := fmt.Sprintf("rkt-%s-tap%d", podID[0:4], 0)
-	la := netlink.NewLinkAttrs()
-	la.Name = ifName
-	la.MTU = mtu
-	mode := netlink.TUNTAP_MODE_TAP
-	flags := netlink.TUNTAP_NO_PI | netlink.TUNTAP_VNET_HDR
-	tunDesc := &netlink.Tuntap{la, mode, flags}
-	if err := netlink.LinkAdd(tunDesc); err != nil {
-		return fmt.Errorf("%v", err)
-	}
-
-	link, err := netlink.LinkByName(tunDesc.Name)
+	link, err := ip.SetupTap(mtu)
 	if err != nil {
-		return fmt.Errorf("cannot find link %v %v", tunDesc.Name, err)
-	}
-
-	if err := netlink.LinkSetUp(link); err != nil {
-		return fmt.Errorf("cannot set link up %q", ifName)
+		return err
 	}
 
 	ipn := &net.IPNet{
@@ -227,7 +212,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	if args.UsesTapDevice == "" {
+	if !args.UsesTapDevice {
 		// veth pair
 		// regular network configuration for containers
 		hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
@@ -241,7 +226,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	} else {
 		// tap device
 		// for vm based containers
-		if err := setupTapDevice(args.ContainerID, conf.MTU, result); err != nil {
+		if err := setupTapDevice(conf.MTU, result); err != nil {
 			return err
 		}
 	}

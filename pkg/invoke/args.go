@@ -45,6 +45,7 @@ type Args struct {
 	PluginArgsStr string
 	IfName        string
 	Path          string
+	UsesTapDevice string
 }
 
 func (args *Args) AsEnv() []string {
@@ -60,7 +61,8 @@ func (args *Args) AsEnv() []string {
 		"CNI_NETNS="+args.NetNS,
 		"CNI_ARGS="+pluginArgsStr,
 		"CNI_IFNAME="+args.IfName,
-		"CNI_PATH="+args.Path)
+		"CNI_PATH="+args.Path,
+		"CNI_USE_TAP="+args.UsesTapDevice)
 	return env
 }
 

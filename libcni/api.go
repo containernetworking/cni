@@ -15,6 +15,7 @@
 package libcni
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/invoke"
@@ -22,10 +23,11 @@ import (
 )
 
 type RuntimeConf struct {
-	ContainerID string
-	NetNS       string
-	IfName      string
-	Args        [][2]string
+	ContainerID   string
+	UsesTapDevice bool
+	NetNS         string
+	IfName        string
+	Args          [][2]string
 }
 
 type NetworkConfig struct {
@@ -63,11 +65,12 @@ func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 // =====
 func (c *CNIConfig) args(action string, rt *RuntimeConf) *invoke.Args {
 	return &invoke.Args{
-		Command:     action,
-		ContainerID: rt.ContainerID,
-		NetNS:       rt.NetNS,
-		PluginArgs:  rt.Args,
-		IfName:      rt.IfName,
-		Path:        strings.Join(c.Path, ":"),
+		Command:       action,
+		ContainerID:   rt.ContainerID,
+		NetNS:         rt.NetNS,
+		PluginArgs:    rt.Args,
+		IfName:        rt.IfName,
+		Path:          strings.Join(c.Path, ":"),
+		UsesTapDevice: strconv.FormatBool(rt.UsesTapDevice),
 	}
 }

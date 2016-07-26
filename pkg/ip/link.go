@@ -130,6 +130,44 @@ func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (hostVeth, contVet
 	return
 }
 
+func SetupTap(mtu int) (tap netlink.Link, err error) {
+	tapName, err := RandomTapName()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate random tap name: %v", err)
+	}
+	la := netlink.NewLinkAttrs()
+	la.Name = tapName
+	la.MTU = mtu
+	mode := netlink.TUNTAP_MODE_TAP
+	flags := netlink.TUNTAP_NO_PI | netlink.TUNTAP_VNET_HDR
+	tunDesc := &netlink.Tuntap{la, mode, flags}
+	if err := netlink.LinkAdd(tunDesc); err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+
+	link, err := netlink.LinkByName(tunDesc.Name)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find link %v %v", tunDesc.Name, err)
+	}
+
+	if err := netlink.LinkSetUp(link); err != nil {
+		return nil, fmt.Errorf("cannot set link up %q", tapName)
+	}
+
+	return link, nil
+}
+
+func RandomTapName() (string, error) {
+	entropy := make([]byte, 4)
+	_, err := rand.Reader.Read(entropy)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random veth name: %v", err)
+	}
+
+	// NetworkManager (recent versions) will ignore veth devices that start with "veth"
+	return fmt.Sprintf("tap%x", entropy), nil
+}
+
 // DelLinkByName removes an interface link.
 func DelLinkByName(ifName string) error {
 	iface, err := netlink.LinkByName(ifName)

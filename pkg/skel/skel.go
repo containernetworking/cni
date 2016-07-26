@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
@@ -35,7 +36,7 @@ type CmdArgs struct {
 	IfName        string
 	Args          string
 	Path          string
-	UsesTapDevice string
+	UsesTapDevice bool
 	StdinData     []byte
 }
 
@@ -106,7 +107,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 			},
 		},
 		{
-			"CNI_VIRT",
+			"CNI_USE_TAP",
 			&usesTapDevice,
 			reqForCmdEntry{
 				"ADD": false,
@@ -135,13 +136,23 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 		return "", nil, fmt.Errorf("error reading from stdin: %v", err)
 	}
 
+	var useTap bool
+	if usesTapDevice == "" {
+		useTap = false
+	} else {
+		useTap, err = strconv.ParseBool(usesTapDevice)
+		if err != nil {
+			return "", nil, fmt.Errorf("CNI_USE_TAP should only contain 'true' or 'false'")
+		}
+	}
+
 	cmdArgs := &CmdArgs{
 		ContainerID:   contID,
 		Netns:         netns,
 		IfName:        ifName,
 		Args:          args,
 		Path:          path,
-		UsesTapDevice: usesTapDevice,
+		UsesTapDevice: useTap,
 		StdinData:     stdinData,
 	}
 	return cmd, cmdArgs, nil
