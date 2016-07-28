@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package sequential
 
 import (
 	"encoding/json"
@@ -36,7 +36,10 @@ type IPAMConfig struct {
 
 type IPAMArgs struct {
 	types.CommonArgs
-	IP net.IP `json:"ip,omitempty"`
+	IP        net.IP                     `json:"ip,omitempty"`
+	StoreAddr types.UnmarshallableString `json:"store_addr,omitempty"`
+	StorePort types.UnmarshallableString `json:"store_port,omitempty"`
+	StoreNS   types.UnmarshallableString `json:"store_ns,omitempty"`
 }
 
 type Net struct {

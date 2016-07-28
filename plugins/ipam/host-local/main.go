@@ -15,7 +15,8 @@
 package main
 
 import (
-	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
+	"github.com/containernetworking/cni/plugins/ipam/allocator/sequential"
+	"github.com/containernetworking/cni/plugins/ipam/store/disk"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -26,18 +27,18 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := sequential.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store, err := disk.New(ipamConf)
 	if err != nil {
 		return err
 	}
 	defer store.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	allocator, err := sequential.NewIPAllocator(ipamConf, store)
 	if err != nil {
 		return err
 	}
@@ -54,18 +55,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := sequential.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store, err := disk.New(ipamConf)
 	if err != nil {
 		return err
 	}
 	defer store.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	allocator, err := sequential.NewIPAllocator(ipamConf, store)
 	if err != nil {
 		return err
 	}

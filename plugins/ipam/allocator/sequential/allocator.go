@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package sequential
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
+	"github.com/containernetworking/cni/plugins/ipam/store"
 )
 
 type IPAllocator struct {
