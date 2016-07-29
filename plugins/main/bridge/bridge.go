@@ -35,12 +35,13 @@ const defaultBrName = "cni0"
 
 type NetConf struct {
 	types.NetConf
-	BrName      string `json:"bridge"`
-	IsGW        bool   `json:"isGateway"`
-	IsDefaultGW bool   `json:"isDefaultGateway"`
-	IPMasq      bool   `json:"ipMasq"`
-	MTU         int    `json:"mtu"`
-	HairpinMode bool   `json:"hairpinMode"`
+	BrName       string `json:"bridge"`
+	IsGW         bool   `json:"isGateway"`
+	IsDefaultGW  bool   `json:"isDefaultGateway"`
+	ForceAddress bool   `json:"forceAddress"`
+	IPMasq       bool   `json:"ipMasq"`
+	MTU          int    `json:"mtu"`
+	HairpinMode  bool   `json:"hairpinMode"`
 }
 
 func init() {
@@ -60,7 +61,7 @@ func loadNetConf(bytes []byte) (*NetConf, error) {
 	return n, nil
 }
 
-func ensureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
+func ensureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet, forceAddress bool) error {
 	addrs, err := netlink.AddrList(br, syscall.AF_INET)
 	if err != nil && err != syscall.ENOENT {
 		return fmt.Errorf("could not get list of IP addresses: %v", err)
@@ -74,14 +75,40 @@ func ensureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
 			if a.IPNet.String() == ipnStr {
 				return nil
 			}
+
+			// If forceAddress is set to true then reconfigure IP address otherwise throw error
+			if forceAddress {
+				if err = deleteBridgeAddr(br, a.IPNet); err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("%q already has an IP address different from %v", br.Name, ipn.String())
+			}
 		}
-		return fmt.Errorf("%q already has an IP address different from %v", br.Name, ipn.String())
 	}
 
 	addr := &netlink.Addr{IPNet: ipn, Label: ""}
 	if err := netlink.AddrAdd(br, addr); err != nil {
 		return fmt.Errorf("could not add IP address to %q: %v", br.Name, err)
 	}
+	return nil
+}
+
+func deleteBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
+	addr := &netlink.Addr{IPNet: ipn, Label: ""}
+
+	if err := netlink.LinkSetDown(br); err != nil {
+		return fmt.Errorf("could not set down bridge %q: %v", br.Name, err)
+	}
+
+	if err := netlink.AddrDel(br, addr); err != nil {
+		return fmt.Errorf("could not remove IP address from %q: %v", br.Name, err)
+	}
+
+	if err := netlink.LinkSetUp(br); err != nil {
+		return fmt.Errorf("could not set up bridge %q: %v", br.Name, err)
+	}
+
 	return nil
 }
 
@@ -258,7 +285,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			Mask: result.IP4.IP.Mask,
 		}
 
-		if err = ensureBridgeAddr(br, gwn); err != nil {
+		if err = ensureBridgeAddr(br, gwn, n.ForceAddress); err != nil {
 			return err
 		}
 
