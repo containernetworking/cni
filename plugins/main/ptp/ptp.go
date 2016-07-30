@@ -73,12 +73,21 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			return fmt.Errorf("failed to look up %q: %v", ifName, err)
 		}
 
+		ipConfig := pr.IP6
+		cidrOnes := 128
+		cidrBits := 128
+		if ipConfig == nil {
+			ipConfig = pr.IP4
+			cidrOnes = 32
+			cidrBits = 32
+		}
+
 		// Delete the route that was automatically added
 		route := netlink.Route{
 			LinkIndex: contVeth.Attrs().Index,
 			Dst: &net.IPNet{
-				IP:   pr.IP4.IP.IP.Mask(pr.IP4.IP.Mask),
-				Mask: pr.IP4.IP.Mask,
+				IP:   ipConfig.IP.IP.Mask(ipConfig.IP.Mask),
+				Mask: ipConfig.IP.Mask,
 			},
 			Scope: netlink.SCOPE_NOWHERE,
 		}
@@ -91,25 +100,23 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 			netlink.Route{
 				LinkIndex: contVeth.Attrs().Index,
 				Dst: &net.IPNet{
-					IP:   pr.IP4.Gateway,
-					Mask: net.CIDRMask(32, 32),
+					IP:   ipConfig.Gateway,
+					Mask: net.CIDRMask(cidrOnes, cidrBits),
 				},
 				Scope: netlink.SCOPE_LINK,
-				Src:   pr.IP4.IP.IP,
 			},
 			netlink.Route{
 				LinkIndex: contVeth.Attrs().Index,
 				Dst: &net.IPNet{
-					IP:   pr.IP4.IP.IP.Mask(pr.IP4.IP.Mask),
-					Mask: pr.IP4.IP.Mask,
+					IP:   ipConfig.IP.IP.Mask(ipConfig.IP.Mask),
+					Mask: ipConfig.IP.Mask,
 				},
 				Scope: netlink.SCOPE_UNIVERSE,
-				Gw:    pr.IP4.Gateway,
-				Src:   pr.IP4.IP.IP,
+				Gw:    ipConfig.Gateway,
 			},
 		} {
 			if err := netlink.RouteAdd(&r); err != nil {
-				return fmt.Errorf("failed to add route %v: %v", r, err)
+				return fmt.Errorf("failed to add route %v: %v ipConfig=%v ipConfig.Gateway=%v", r, err, ipConfig, ipConfig.Gateway)
 			}
 		}
 
@@ -120,17 +127,24 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 	return hostVethName, err
 }
 
-func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
+func setupHostVeth(vethName string, ipamResult *types.Result) error {
 	// hostVeth moved namespaces and may have a new ifindex
 	veth, err := netlink.LinkByName(vethName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup %q: %v", vethName, err)
 	}
 
-	// TODO(eyakubovich): IPv6
+	ipConfig := ipamResult.IP6
+	cidrOnes := 128
+	cidrBits := 128
+	if ipConfig == nil {
+		ipConfig = ipamResult.IP4
+		cidrOnes = 32
+		cidrBits = 32
+	}
 	ipn := &net.IPNet{
-		IP:   ipConf.Gateway,
-		Mask: net.CIDRMask(32, 32),
+		IP:   ipConfig.Gateway,
+		Mask: net.CIDRMask(cidrOnes, cidrBits),
 	}
 	addr := &netlink.Addr{IPNet: ipn, Label: ""}
 	if err = netlink.AddrAdd(veth, addr); err != nil {
@@ -138,8 +152,8 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 	}
 
 	ipn = &net.IPNet{
-		IP:   ipConf.IP.IP,
-		Mask: net.CIDRMask(32, 32),
+		IP:   ipConfig.IP.IP,
+		Mask: net.CIDRMask(cidrOnes, cidrBits),
 	}
 	// dst happens to be the same as IP/net of host veth
 	if err = ip.AddHostRoute(ipn, nil, veth); err != nil && !os.IsExist(err) {
@@ -164,8 +178,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
-	if result.IP4 == nil {
-		return errors.New("IPAM plugin returned missing IPv4 config")
+	if result.IP4 == nil && result.IP6 == nil {
+		return errors.New("IPAM plugin returned neither IPv6 nor IPv4 config")
 	}
 
 	hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
@@ -173,7 +187,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	if err = setupHostVeth(hostVethName, result.IP4); err != nil {
+	if err = setupHostVeth(hostVethName, result); err != nil {
 		return err
 	}
 
