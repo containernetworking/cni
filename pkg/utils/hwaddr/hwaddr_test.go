@@ -42,6 +42,10 @@ var _ = Describe("Hwaddr", func() {
 					ip:          net.ParseIP("172.17.0.2"),
 					expectedMAC: (net.HardwareAddr)(append(hwaddr.PrivateMACPrefix, 0xac, 0x11, 0x00, 0x02)),
 				},
+				{
+					ip:          net.IPv4(byte(172), byte(17), byte(0), byte(2)),
+					expectedMAC: (net.HardwareAddr)(append(hwaddr.PrivateMACPrefix, 0xac, 0x11, 0x00, 0x02)),
+				},
 			}
 
 			for _, tc := range testCases {
