@@ -149,6 +149,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
+		if err := ip.SetHWAddrByIP(args.IfName, result.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return err
+		}
+
 		return ipam.ConfigureIface(args.IfName, result)
 	})
 	if err != nil {

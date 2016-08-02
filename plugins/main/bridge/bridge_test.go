@@ -24,6 +24,8 @@ import (
 	"github.com/containernetworking/cni/pkg/testutils"
 	"github.com/containernetworking/cni/pkg/types"
 
+	"github.com/containernetworking/cni/pkg/utils/hwaddr"
+
 	"github.com/vishvananda/netlink"
 
 	. "github.com/onsi/ginkgo"
@@ -179,9 +181,19 @@ var _ = Describe("bridge Operations", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(links)).To(Equal(3)) // Bridge, veth, and loopback
 			for _, l := range links {
-				if l.Attrs().Name != BRNAME && l.Attrs().Name != "lo" {
-					_, isVeth := l.(*netlink.Veth)
-					Expect(isVeth).To(Equal(true))
+				switch {
+				case l.Attrs().Name == BRNAME:
+					{
+						_, isBridge := l.(*netlink.Bridge)
+						Expect(isBridge).To(Equal(true))
+						hwAddr := fmt.Sprintf("%s", l.Attrs().HardwareAddr)
+						Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
+					}
+				case l.Attrs().Name != BRNAME && l.Attrs().Name != "lo":
+					{
+						_, isVeth := l.(*netlink.Veth)
+						Expect(isVeth).To(Equal(true))
+					}
 				}
 			}
 			Expect(err).NotTo(HaveOccurred())
@@ -196,6 +208,9 @@ var _ = Describe("bridge Operations", func() {
 			link, err := netlink.LinkByName(IFNAME)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(IFNAME))
+
+			hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
+			Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 			// Ensure the default route
 			routes, err := netlink.RouteList(link, 0)

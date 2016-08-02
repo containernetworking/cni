@@ -247,7 +247,15 @@ func cmdAdd(args *skel.CmdArgs) error {
 			// TODO: IPV6
 		}
 
-		return ipam.ConfigureIface(args.IfName, result)
+		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+			return err
+		}
+
+		if err := ip.SetHWAddrByIP(args.IfName, result.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+			return err
+		}
+
+		return nil
 	}); err != nil {
 		return err
 	}
@@ -259,6 +267,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 
 		if err = ensureBridgeAddr(br, gwn); err != nil {
+			return err
+		}
+
+		if err := ip.SetHWAddrByIP(n.BrName, gwn.IP, nil /* TODO IPv6 */); err != nil {
 			return err
 		}
 
