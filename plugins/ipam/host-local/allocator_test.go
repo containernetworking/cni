@@ -31,15 +31,26 @@ type AllocatorTestCase struct {
 
 func (t AllocatorTestCase) run() (*types.IPConfig, error) {
 	subnet, err := types.ParseCIDR(t.subnet)
+	if err != nil {
+		return nil, err
+	}
+
 	conf := IPAMConfig{
 		Name:   "test",
 		Type:   "host-local",
 		Subnet: types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
 	}
 	store := fakestore.NewFakeStore(t.ipmap, net.ParseIP(t.lastIP))
-	alloc, _ := NewIPAllocator(&conf, store)
+	alloc, err := NewIPAllocator(&conf, store)
+	if err != nil {
+		return nil, err
+	}
 	res, err := alloc.Get("ID")
-	return res, err
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 var _ = Describe("host-local ip allocator", func() {
@@ -102,6 +113,26 @@ var _ = Describe("host-local ip allocator", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(res.IP.IP.String()).To(Equal(tc.expectResult))
 			}
+		})
+
+		Context("when requesting a specific IP", func() {
+			It("must allocate the requested IP", func() {
+				subnet, err := types.ParseCIDR("10.0.0.0/29")
+				Expect(err).ToNot(HaveOccurred())
+				requestedIP := net.ParseIP("10.0.0.2")
+				ipmap := map[string]string{}
+				conf := IPAMConfig{
+					Name:   "test",
+					Type:   "host-local",
+					Subnet: types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+					Args:   &IPAMArgs{IP: requestedIP},
+				}
+				store := fakestore.NewFakeStore(ipmap, nil)
+				alloc, _ := NewIPAllocator(&conf, store)
+				res, err := alloc.Get("ID")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(res.IP.IP.String()).To(Equal(requestedIP.String()))
+			})
 		})
 	})
 
