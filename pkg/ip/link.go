@@ -164,7 +164,6 @@ func RandomTapName() (string, error) {
 		return "", fmt.Errorf("failed to generate random veth name: %v", err)
 	}
 
-	// NetworkManager (recent versions) will ignore veth devices that start with "veth"
 	return fmt.Sprintf("tap%x", entropy), nil
 }
 
