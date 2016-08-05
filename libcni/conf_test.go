@@ -27,8 +27,9 @@ import (
 
 var _ = Describe("Loading configuration from disk", func() {
 	var (
-		configDir    string
-		pluginConfig []byte
+		configDir     string
+		pluginConfig  []byte
+		testNetConfig *libcni.NetworkConfig
 	)
 
 	BeforeEach(func() {
@@ -38,6 +39,9 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
 		Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+
+		testNetConfig = &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
+			Bytes: []byte(`{ "name": "some-plugin" }`)}
 	})
 
 	AfterEach(func() {
@@ -104,6 +108,91 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("returns a useful error", func() {
 				_, err := libcni.ConfFromFile("/tmp/nope/not-here")
 				Expect(err).To(MatchError(HavePrefix(`error reading /tmp/nope/not-here: open /tmp/nope/not-here`)))
+			})
+		})
+	})
+
+	Describe("InjectConf", func() {
+		Context("when function parameters are incorrect", func() {
+			It("returns unmarshal error", func() {
+				conf := &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
+					Bytes: []byte(`{ cc cc cc}`)}
+
+				_, err := libcni.InjectConf(conf, "", nil)
+				Expect(err).To(MatchError(HavePrefix(`unmarshal existing network bytes`)))
+			})
+
+			It("returns key  error", func() {
+				_, err := libcni.InjectConf(testNetConfig, "", nil)
+				Expect(err).To(MatchError(HavePrefix(`key value can not be empty`)))
+			})
+
+			It("returns newValue  error", func() {
+				_, err := libcni.InjectConf(testNetConfig, "test", nil)
+				Expect(err).To(MatchError(HavePrefix(`newValue must be specified`)))
+			})
+		})
+
+		Context("when new string value added", func() {
+			It("adds the new key & value to the config", func() {
+				newPluginConfig := []byte(`{"name":"some-plugin","test":"test"}`)
+
+				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin"},
+					Bytes:   newPluginConfig,
+				}))
+			})
+
+			It("adds the new value for exiting key", func() {
+				newPluginConfig := []byte(`{"name":"some-plugin","test":"changedValue"}`)
+
+				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				Expect(err).NotTo(HaveOccurred())
+
+				resultConfig, err = libcni.InjectConf(resultConfig, "test", "changedValue")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin"},
+					Bytes:   newPluginConfig,
+				}))
+			})
+
+			It("adds existing key & value", func() {
+				newPluginConfig := []byte(`{"name":"some-plugin","test":"test"}`)
+
+				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				Expect(err).NotTo(HaveOccurred())
+
+				resultConfig, err = libcni.InjectConf(resultConfig, "test", "test")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin"},
+					Bytes:   newPluginConfig,
+				}))
+			})
+
+			It("adds sub-fields of NetworkConfig.Network to the config", func() {
+
+				expectedPluginConfig := []byte(`{"dns":{"domain":"local","nameservers":["server1","server2"]},"name":"some-plugin","type":"bridge"}`)
+				servers := []string{"server1", "server2"}
+				newDNS := &types.DNS{Nameservers: servers, Domain: "local"}
+
+				// inject DNS
+				resultConfig, err := libcni.InjectConf(testNetConfig, "dns", newDNS)
+				Expect(err).NotTo(HaveOccurred())
+
+				// inject type
+				resultConfig, err = libcni.InjectConf(resultConfig, "type", "bridge")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin", Type: "bridge", DNS: types.DNS{Nameservers: servers, Domain: "local"}},
+					Bytes:   expectedPluginConfig,
+				}))
 			})
 		})
 	})
