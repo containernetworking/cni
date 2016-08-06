@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/appc/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // IPAMConfig represents the IP related network configuration.
 type IPAMConfig struct {
 	Name       string
+	Version    string        `json:"version"`
 	Type       string        `json:"type"`
 	RangeStart net.IP        `json:"rangeStart"`
 	RangeEnd   net.IP        `json:"rangeEnd"`
@@ -41,8 +42,8 @@ type IPAMArgs struct {
 
 type Net struct {
 	Name  string      `json:"name"`
-	IPAM  *IPAMConfig `json:"ipam,omitempty"`
-	IPAM6 *IPAMConfig `json:"ipam6,omitempty"`
+	IPAM  *IPAMConfig `json:"ipam"`
+	IPAM6 *IPAMConfig `json:"ipam6"`
 }
 
 // LoadIPAMConfig unmarshals a given byte slice to a Net object
@@ -56,16 +57,24 @@ func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, *IPAMConfig, error)
 		if n.IPAM != nil {
 			n.IPAM.Args = &IPAMArgs{}
 			err := types.LoadArgs(args, n.IPAM.Args)
+			if n.IPAM.Version != "4" {
+				return nil, nil, fmt.Errorf("Version in the IPAM struct should be 4")
+			}
 			if err != nil {
 				return nil, nil, err
 			}
+			n.IPAM.Name = n.Name + n.IPAM.Version
 		}
 		if n.IPAM6 != nil {
 			n.IPAM6.Args = &IPAMArgs{}
 			err := types.LoadArgs(args, n.IPAM6.Args)
+			if n.IPAM6.Version != "6" {
+				return nil, nil, fmt.Errorf("Version in the IPAM6 struct should be 6")
+			}
 			if err != nil {
 				return nil, nil, err
 			}
+			n.IPAM6.Name = n.Name + n.IPAM6.Version
 		}
 	}
 
