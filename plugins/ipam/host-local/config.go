@@ -42,8 +42,8 @@ type IPAMArgs struct {
 
 type Net struct {
 	Name  string      `json:"name"`
-	IPAM  *IPAMConfig `json:"ipam"`
-	IPAM6 *IPAMConfig `json:"ipam6"`
+	IPAM  *IPAMConfig `json:"ipam,omitempty"`
+	IPAM6 *IPAMConfig `json:"ipam6,omitempty"`
 }
 
 // LoadIPAMConfig unmarshals a given byte slice to a Net object
