@@ -41,6 +41,13 @@ func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {
 	return veth, nil
 }
 
+func peerExists(name string) bool {
+	if _, err := netlink.LinkByName(name); err != nil {
+		return false
+	}
+	return true
+}
+
 func makeVeth(name string, mtu int) (peerName string, veth netlink.Link, err error) {
 	for i := 0; i < 10; i++ {
 		peerName, err = RandomVethName()
@@ -54,7 +61,11 @@ func makeVeth(name string, mtu int) (peerName string, veth netlink.Link, err err
 			return
 
 		case os.IsExist(err):
-			continue
+			if peerExists(peerName) {
+				continue
+			}
+			err = fmt.Errorf("container veth name provided (%v) already exists", name)
+			return
 
 		default:
 			err = fmt.Errorf("failed to make veth pair: %v", err)
