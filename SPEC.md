@@ -62,10 +62,14 @@ The operations that the CNI plugin needs to support are:
     - **Extra arguments**, as defined above.
     - **Name of the interface inside the container**, as defined above.
 
+- Report version
+  - Parameters: NONE.
+  - Result:
+    - The version of the CNI spec implemented by the plugin: `{ "cniVersion": "0.2.0" }`
+
 The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
 It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
-- `CNI_VERSION`:  [Semantic Version 2.0](http://semver.org) of CNI specification. This effectively versions the CNI_XXX environment variables.
-- `CNI_COMMAND`: indicates the desired operation; either `ADD` or `DEL`
+- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL` or `VERSION`.
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
 - `CNI_IFNAME`: Interface name to set up
@@ -81,7 +85,7 @@ Success is indicated by a return code of zero and the following JSON printed to 
 
 ```
 {
-  "cniVersion": "0.1.0",
+  "cniVersion": "0.2.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
@@ -110,7 +114,7 @@ Examples include generating an `/etc/resolv.conf` file to be injected into the c
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
-  "cniVersion": "0.1.0",
+  "cniVersion": "0.2.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
@@ -147,7 +151,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.1.0",
+  "cniVersion": "0.2.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -166,7 +170,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.1.0",
+  "cniVersion": "0.2.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -216,7 +220,7 @@ Success is indicated by a zero return code and the following JSON being printed 
 
 ```
 {
-  "cniVersion": "0.1.0",
+  "cniVersion": "0.2.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
