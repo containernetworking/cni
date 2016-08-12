@@ -29,6 +29,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink/nl"
 )
 
 const defaultBrName = "cni0"
@@ -170,6 +171,35 @@ func calcGatewayIP(ipn *net.IPNet) net.IP {
 	return ip.NextIP(nid)
 }
 
+func checkExisting(netns ns.NetNS, ifname string) *types.Result {
+	result := &types.Result{}
+	err := netns.Do(func(hostNS ns.NetNS) error {
+		link, err := netlink.LinkByName(ifname)
+		if err != nil {
+			return err
+		}
+		// TODO support v6
+		addrs, err := netlink.AddrList(link, nl.FAMILY_V4)
+		if err != nil {
+			return err
+		}
+		if len(addrs) == 0 {
+			return fmt.Errorf("No IPv4 address assigned to %v", ifname)
+		}
+
+		result.IP4 = &types.IPConfig{
+			IP:      *addrs[0].IPNet,
+			Gateway: calcGatewayIP(addrs[0].IPNet)}
+		_, defaultNet, err := net.ParseCIDR("0.0.0.0/0")
+		result.IP4.Routes = append(result.IP4.Routes, types.Route{Dst: *defaultNet, GW: result.IP4.Gateway})
+		return nil
+	})
+	if err != nil {
+		return nil
+	}
+	return result
+}
+
 func setupBridge(n *NetConf) (*netlink.Bridge, error) {
 	// create bridge if necessary
 	br, err := ensureBridge(n.BrName, n.MTU)
@@ -201,12 +231,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
+	result := checkExisting(netns, args.IfName)
+	if result != nil {
+		result.DNS = n.DNS
+		return result.Print()
+	}
+
 	if err = setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode); err != nil {
 		return err
 	}
 
 	// run the IPAM plugin and get back the config to apply
-	result, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
+	result, err = ipam.ExecAdd(n.IPAM.Type, args.StdinData)
 	if err != nil {
 		return err
 	}

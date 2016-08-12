@@ -251,4 +251,52 @@ var _ = Describe("bridge Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("returns response on each consecutive ADD command invokation", func() {
+		const BRNAME = "cbr0"
+		const IFNAME = "eth0"
+
+		_, subnet, err := net.ParseCIDR("10.1.2.1/24")
+		Expect(err).NotTo(HaveOccurred())
+
+		conf := fmt.Sprintf(`{
+    "name": "mynet",
+    "type": "bridge",
+    "bridge": "%s",
+    "isDefaultGateway": true,
+    "ipMasq": false,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "%s"
+    }
+}`, BRNAME, subnet.String())
+
+		targetNs, err := ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+		defer targetNs.Close()
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       targetNs.Path(),
+			IfName:      IFNAME,
+			StdinData:   []byte(conf),
+		}
+
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+			rst, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdAdd(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			secondRst, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdAdd(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rst.String()).To(Equal(secondRst.String()))
+			return err
+		})
+
+	})
+
 })
