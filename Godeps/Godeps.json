@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/containernetworking/cni",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
 	],
@@ -170,15 +171,19 @@
 		},
 		{
 			"ImportPath": "github.com/vishvananda/netlink",
-			"Rev": "ecf47fd5739b3d2c3daf7c89c4b9715a2605c21b"
+			"Rev": "9dee363ad4abbc3c9a4a24a9f1e33363e224b111"
 		},
 		{
 			"ImportPath": "github.com/vishvananda/netlink/nl",
-			"Rev": "ecf47fd5739b3d2c3daf7c89c4b9715a2605c21b"
+			"Rev": "9dee363ad4abbc3c9a4a24a9f1e33363e224b111"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "e11762ca30adc5b39fdbfd8c4250dabeb8e456d3"
+		},
+		{
+			"ImportPath": "github.com/vishvananda/netns",
+			"Rev": "8ba1072b58e0c2a240eb5f6120165c7776c3e7b8"
 		}
 	]
 }
