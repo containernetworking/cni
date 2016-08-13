@@ -2,20 +2,39 @@ language: go
 sudo: required
 dist: trusty
 
-
-matrix:
-  include:
-    - go: 1.5.4
-      env: GO15VENDOREXPERIMENT=1
-    - go: 1.6.2
-    - go: tip
-  allow_failures: 
-    - go: tip
+go:
+  - 1.5.4
+  - 1.6.2
+  - tip
 
 env:
   global:
     - TOOLS_CMD=golang.org/x/tools/cmd
     - PATH=$GOROOT/bin:$PATH
+    - GO15VENDOREXPERIMENT=1
+  matrix:
+   - TARGET=amd64
+   - TARGET=arm
+   - TARGET=arm64
+   - TARGET=ppc64le
+
+matrix:
+  fast_finish: true
+  allow_failures: 
+    - go: tip
+  exclude:
+    - go: 1.5.4
+      env: arm
+    - go: 1.5.4
+      env: arm64
+    - go: 1.5.4
+      env: ppc64le
+    - go: tip
+      env: arm
+    - go: tip
+      env: arm64
+    - go: tip
+      env: ppc64le
 
 install:
  - go get ${TOOLS_CMD}/cover
@@ -23,7 +42,12 @@ install:
  - go get github.com/mattn/goveralls
 
 script:
- - ./test
+ - >
+    if [ "${TARGET}" == "amd64" ]; then
+      GOARCH="${TARGET}" ./test;
+    else
+      GOARCH="${TARGET}" ./build;
+    fi
 
 notifications:
   email: false

@@ -26,11 +26,17 @@ sudo -E rkt run \
     ${FEDORA_IMAGE} \
     --exec /bin/bash \
     -- -xe -c "\
-    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; CGO_ENABLED=0 ./build ${BUILDFLAGS}; \
-    for format in txz tbz2 tgz; do \
-        FILENAME=cni-${TAG}.\$format; \
-        FILEPATH=${RELEASE_DIR}/\$FILENAME; \
-        tar -C ${OUTPUT_DIR} --owner=0 --group=0 -caf \$FILEPATH .; \
+    ${FEDORA_INSTALL}; cd /opt/src; umask 0022; 
+    for arch in amd64 arm arm64 ppc64le; do \
+        CGO_ENABLED=0 GOARCH=\$arch ./build ${BUILDFLAGS}; \
+        for format in txz tbz2 tgz; do \
+            FILENAME=cni-\$arch-${TAG}.\$format; \
+            FILEPATH=${RELEASE_DIR}/\$FILENAME; \
+            tar -C ${OUTPUT_DIR} --owner=0 --group=0 -caf \$FILEPATH .; \
+            if [ \"\$arch\" == \"amd64\" ]; then \
+                cp \$FILEPATH ${RELEASE_DIR}/cni-${TAG}.\$format; \
+            fi; \
+        done; \
     done; \
     wget -O - ${ACBUILD_URL} | tar -C /usr/bin -xzvf -; \
     ${ACBUILD} begin; \

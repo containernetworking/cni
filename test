@@ -35,7 +35,7 @@ TEST=${split[@]/#/${REPO_PATH}/}
 
 echo -n "Running tests "
 function testrun {
-    sudo -E bash -c "umask 0; PATH=$GOROOT/bin:$GOBIN:$PATH go test -covermode set $@"
+    sudo -E bash -c "umask 0; PATH=$GOROOT/bin:$(pwd)/bin:$PATH go test -covermode set $@"
 }
 if [ ! -z "${COVERALLS}" ]; then
     echo "with coverage profile generation..."
