@@ -10,14 +10,13 @@ if [ ! -h gopath/src/${REPO_PATH} ]; then
 fi
 
 export GO15VENDOREXPERIMENT=1
-export GOBIN=${PWD}/bin
 export GOPATH=${PWD}/gopath
 
 echo "Building API"
 go build "$@" ${REPO_PATH}/libcni
 
 echo "Building reference CLI"
-go install "$@" ${REPO_PATH}/cnitool
+go build -o ${PWD}/bin/cnitool "$@" ${REPO_PATH}/cnitool
 
 echo "Building plugins"
 PLUGINS="plugins/meta/* plugins/main/* plugins/ipam/* plugins/test/*"
@@ -25,6 +24,6 @@ for d in $PLUGINS; do
 	if [ -d $d ]; then
 		plugin=$(basename $d)
 		echo "  " $plugin
-		go install "$@" ${REPO_PATH}/$d
+		go build -o ${PWD}/bin/$plugin "$@" ${REPO_PATH}/$d
 	fi
 done
