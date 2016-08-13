@@ -35,6 +35,51 @@
 			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
 		},
 		{
+			"ImportPath": "github.com/onsi/ginkgo/extensions/table",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/convert",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/interrupthandler",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/nodot",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testrunner",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/testsuite",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/ginkgo/watch",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo/integration",
+			"Comment": "v1.2.0-29-g7f8ab55",
+			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
+		},
+		{
 			"ImportPath": "github.com/onsi/ginkgo/internal/codelocation",
 			"Comment": "v1.2.0-29-g7f8ab55",
 			"Rev": "7f8ab55aaf3b86885aa55b762e803744d1674700"
@@ -179,7 +224,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "e11762ca30adc5b39fdbfd8c4250dabeb8e456d3"
+			"Rev": "076b546753157f758b316e59bcb51e6807c04057"
 		},
 		{
 			"ImportPath": "github.com/vishvananda/netns",
