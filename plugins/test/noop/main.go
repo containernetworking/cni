@@ -28,6 +28,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
@@ -71,5 +72,6 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel)
+	skel.PluginMain(cmdAdd, cmdDel,
+		version.PluginSupports("0.-42.0", "0.1.0", "0.2.0", "0.3.0"))
 }

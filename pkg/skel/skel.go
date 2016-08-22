@@ -39,11 +39,10 @@ type CmdArgs struct {
 }
 
 type dispatcher struct {
-	Getenv    func(string) string
-	Stdin     io.Reader
-	Stdout    io.Writer
-	Stderr    io.Writer
-	Versioner version.PluginVersioner
+	Getenv func(string) string
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 type reqForCmdEntry map[string]bool
@@ -144,7 +143,7 @@ func createTypedError(f string, args ...interface{}) *types.Error {
 	}
 }
 
-func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) *types.Error {
+func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		return createTypedError(err.Error())
@@ -158,7 +157,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) *types.Er
 		err = cmdDel(cmdArgs)
 
 	case "VERSION":
-		err = t.Versioner.Encode(t.Stdout)
+		err = versionInfo.Encode(t.Stdout)
 
 	default:
 		return createTypedError("unknown CNI_COMMAND: %v", cmd)
@@ -176,16 +175,15 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) *types.Er
 
 // PluginMain is the "main" for a plugin. It accepts
 // two callback functions for add and del commands.
-func PluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error) {
+func PluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) {
 	caller := dispatcher{
-		Getenv:    os.Getenv,
-		Stdin:     os.Stdin,
-		Stdout:    os.Stdout,
-		Stderr:    os.Stderr,
-		Versioner: version.DefaultPluginVersioner,
+		Getenv: os.Getenv,
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	}
 
-	err := caller.pluginMain(cmdAdd, cmdDel)
+	err := caller.pluginMain(cmdAdd, cmdDel, versionInfo)
 	if err != nil {
 		dieErr(err)
 	}

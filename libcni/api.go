@@ -19,6 +19,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 type RuntimeConf struct {
@@ -58,6 +59,17 @@ func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 	}
 
 	return invoke.ExecPluginWithoutResult(pluginPath, net.Bytes, c.args("DEL", rt))
+}
+
+func (c *CNIConfig) GetVersionInfo(pluginType string) (version.PluginInfo, error) {
+	pluginPath, err := invoke.FindInPath(pluginType, c.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: if error is because plugin is old and VERSION command is unrecognized
+	// then do the right thing and return version.PluginSupports("0.1.0"), nil
+	return invoke.ExecPluginForVersion(pluginPath)
 }
 
 // =====

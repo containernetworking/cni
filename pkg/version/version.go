@@ -16,27 +16,67 @@ package version
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 )
 
-// A PluginVersioner can encode information about its version
-type PluginVersioner interface {
+// Current reports the version of the CNI spec implemented by this library
+func Current() string {
+	return "0.3.0"
+}
+
+// PluginInfo reports information about CNI versioning
+type PluginInfo interface {
+	// SupportedVersions returns one or more CNI spec versions that the plugin
+	// supports.  If input is provided in one of these versions, then the plugin
+	// promises to use the same CNI version in its response
+	SupportedVersions() []string
+
+	// Encode writes this CNI version information as JSON to the given Writer
 	Encode(io.Writer) error
 }
 
-// BasicVersioner is a PluginVersioner which reports a single cniVersion string
-type BasicVersioner struct {
-	CNIVersion string `json:"cniVersion"`
+type simple struct {
+	CNIVersion_        string   `json:"cniVersion"`
+	SupportedVersions_ []string `json:"supportedVersions,omitempty"`
 }
 
-func (p *BasicVersioner) Encode(w io.Writer) error {
+func (p *simple) Encode(w io.Writer) error {
 	return json.NewEncoder(w).Encode(p)
 }
 
-// Current reports the version of the CNI spec implemented by this library
-func Current() string {
-	return "0.2.0"
+func (p *simple) SupportedVersions() []string {
+	return p.SupportedVersions_
 }
 
-// DefaultPluginVersioner reports the Current library spec version as the cniVersion
-var DefaultPluginVersioner = &BasicVersioner{CNIVersion: Current()}
+// PluginSupports returns a new PluginInfo that will report the given versions
+// as supported
+func PluginSupports(supportedVersions ...string) PluginInfo {
+	if len(supportedVersions) < 1 {
+		panic("programmer error: you must support at least one version")
+	}
+	return &simple{
+		CNIVersion_:        Current(),
+		SupportedVersions_: supportedVersions,
+	}
+}
+
+func Decode(jsonBytes []byte) (PluginInfo, error) {
+	var info simple
+	err := json.Unmarshal(jsonBytes, &info)
+	if err != nil {
+		return nil, fmt.Errorf("decoding version info: %s", err)
+	}
+	if info.CNIVersion_ == "" {
+		return nil, fmt.Errorf("decoding version info: missing field cniVersion")
+	}
+	if len(info.SupportedVersions_) == 0 {
+		if info.CNIVersion_ == "0.2.0" {
+			return PluginSupports("0.1.0", "0.2.0"), nil
+		}
+		return nil, fmt.Errorf("decoding version info: missing field supportedVersions")
+	}
+	return &info, nil
+}
+
+var Legacy = PluginSupports("0.1.0", "0.2.0", "0.3.0")

@@ -11,7 +11,7 @@ set -e
 
 source ./build
 
-TESTABLE="libcni plugins/ipam/dhcp plugins/ipam/host-local plugins/main/loopback pkg/invoke pkg/ns pkg/skel pkg/types pkg/utils plugins/main/ipvlan plugins/main/macvlan plugins/main/bridge plugins/main/ptp plugins/test/noop pkg/utils/hwaddr pkg/ip"
+TESTABLE="libcni plugins/ipam/dhcp plugins/ipam/host-local plugins/main/loopback pkg/invoke pkg/ns pkg/skel pkg/types pkg/utils plugins/main/ipvlan plugins/main/macvlan plugins/main/bridge plugins/main/ptp plugins/test/noop pkg/utils/hwaddr pkg/ip pkg/version"
 FORMATTABLE="$TESTABLE pkg/testutils plugins/meta/flannel plugins/meta/tuning"
 
 # user has not provided PKG override

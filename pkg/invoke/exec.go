@@ -23,6 +23,7 @@ import (
 	"os/exec"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 func pluginErr(err error, output []byte) error {
@@ -55,6 +56,15 @@ func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*typ
 func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
 	_, err := execPlugin(pluginPath, netconf, args)
 	return err
+}
+
+func ExecPluginForVersion(pluginPath string) (version.PluginInfo, error) {
+	stdoutBytes, err := execPlugin(pluginPath, nil, &Args{Command: "VERSION"})
+	if err != nil {
+		return nil, err
+	}
+
+	return version.Decode(stdoutBytes)
 }
 
 func execPlugin(pluginPath string, netconf []byte, args CNIArgs) ([]byte, error) {
