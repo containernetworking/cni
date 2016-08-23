@@ -94,6 +94,7 @@ func (r *Result) String() string {
 type IPConfig struct {
 	IP      net.IPNet
 	Gateway net.IP
+	Iface   string
 	Routes  []Route
 }
 
@@ -132,6 +133,7 @@ type ipConfig struct {
 	IP      IPNet   `json:"ip"`
 	Gateway net.IP  `json:"gateway,omitempty"`
 	Routes  []Route `json:"routes,omitempty"`
+	Iface   string  `json:"iface,omitempty"`
 }
 
 type route struct {
@@ -144,6 +146,7 @@ func (c *IPConfig) MarshalJSON() ([]byte, error) {
 		IP:      IPNet(c.IP),
 		Gateway: c.Gateway,
 		Routes:  c.Routes,
+		Iface:   c.Iface,
 	}
 
 	return json.Marshal(ipc)
@@ -158,6 +161,7 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	c.IP = net.IPNet(ipc.IP)
 	c.Gateway = ipc.Gateway
 	c.Routes = ipc.Routes
+	c.Iface = ipc.Iface
 	return nil
 }
 

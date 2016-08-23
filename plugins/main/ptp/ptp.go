@@ -160,6 +160,54 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 	return nil
 }
 
+// setupTapDevice creates persistent tap device
+// and returns a newly created netlink.Link structure
+func setupTapDevice(podID string, mtu int, pr *types.Result) error {
+	// network device names are limited to 16 characters
+	// the suffix %d will be replaced by the kernel with a suitable number
+	ifName := fmt.Sprintf("rkt-%s-tap%d", podID[0:4], 0)
+	la := netlink.NewLinkAttrs()
+	la.Name = ifName
+	la.MTU = mtu
+	mode := netlink.TUNTAP_MODE_TAP
+	flags := netlink.TUNTAP_NO_PI | netlink.TUNTAP_VNET_HDR
+	tunDesc := &netlink.Tuntap{la, mode, flags}
+	if err := netlink.LinkAdd(tunDesc); err != nil {
+		return fmt.Errorf("%v", err)
+	}
+
+	link, err := netlink.LinkByName(tunDesc.Name)
+	if err != nil {
+		return fmt.Errorf("cannot find link %v %v", tunDesc.Name, err)
+	}
+
+	if err := netlink.LinkSetUp(link); err != nil {
+		return fmt.Errorf("cannot set link up %q", ifName)
+	}
+
+	ipn := &net.IPNet{
+		IP:   pr.IP4.Gateway,
+		Mask: net.CIDRMask(32, 32),
+	}
+	addr := &netlink.Addr{IPNet: ipn, Label: ""}
+	if err = netlink.AddrAdd(link, addr); err != nil {
+		return fmt.Errorf("failed to add IP addr (%#v) to tap: %v", ipn, err)
+	}
+
+	ipn = &net.IPNet{
+		IP:   pr.IP4.IP.IP,
+		Mask: net.CIDRMask(32, 32),
+	}
+	// dst happens to be the same as IP/net of host veth
+	if err = ip.AddHostRoute(ipn, nil, link); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("failed to add route on host: %v", err)
+	}
+
+	pr.IP4.Iface = link.Attrs().Name
+
+	return nil
+}
+
 func cmdAdd(args *skel.CmdArgs) error {
 	conf := NetConf{}
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
@@ -179,13 +227,23 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
-	if err != nil {
-		return err
-	}
+	if args.UsesTapDevice == "" {
+		// veth pair
+		// regular network configuration for containers
+		hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
+		if err != nil {
+			return err
+		}
 
-	if err = setupHostVeth(hostVethName, result.IP4); err != nil {
-		return err
+		if err = setupHostVeth(hostVethName, result.IP4); err != nil {
+			return err
+		}
+	} else {
+		// tap device
+		// for vm based containers
+		if err := setupTapDevice(args.ContainerID, conf.MTU, result); err != nil {
+			return err
+		}
 	}
 
 	if conf.IPMasq {
