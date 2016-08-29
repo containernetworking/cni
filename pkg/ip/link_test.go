@@ -46,6 +46,8 @@ var _ = Describe("Link", func() {
 		hostNetNS         ns.NetNS
 		containerNetNS    ns.NetNS
 		ifaceCounter      int = 0
+		hostVeth          netlink.Link
+		containerVeth     netlink.Link
 		hostVethName      string
 		containerVethName string
 
@@ -70,7 +72,7 @@ var _ = Describe("Link", func() {
 		_ = containerNetNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			hostVeth, containerVeth, err := ip.SetupVeth(fmt.Sprintf(ifaceFormatString, ifaceCounter), mtu, hostNetNS)
+			hostVeth, containerVeth, err = ip.SetupVeth(fmt.Sprintf(ifaceFormatString, ifaceCounter), mtu, hostNetNS)
 			if err != nil {
 				return err
 			}
@@ -94,8 +96,9 @@ var _ = Describe("Link", func() {
 		_ = containerNetNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			_, err := netlink.LinkByName(containerVethName)
+			containerVethFromName, err := netlink.LinkByName(containerVethName)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(containerVethFromName.Attrs().Index).To(Equal(containerVeth.Attrs().Index))
 
 			return nil
 		})
@@ -103,8 +106,9 @@ var _ = Describe("Link", func() {
 		_ = hostNetNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			_, err := netlink.LinkByName(hostVethName)
+			hostVethFromName, err := netlink.LinkByName(hostVethName)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(hostVethFromName.Attrs().Index).To(Equal(hostVeth.Attrs().Index))
 
 			return nil
 		})
