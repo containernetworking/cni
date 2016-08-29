@@ -72,30 +72,33 @@ var _ = Describe("host-local ip allocator", func() {
 					expectResult: "10.0.0.3",
 					lastIP:       "",
 				},
-				// next ip of last reserved ip
+				// wrap around
 				{
 					subnet:       "10.0.0.0/29",
 					ipmap:        map[string]string{},
-					expectResult: "10.0.0.7",
+					expectResult: "10.0.0.2",
 					lastIP:       "10.0.0.6",
 				},
+				// next ip of last reserved ip
+				{
+					subnet: "10.0.0.0/29",
+					ipmap: map[string]string{
+						"10.0.0.2": "id",
+						"10.0.0.3": "id",
+						"10.0.0.4": "id",
+					},
+					expectResult: "10.0.0.6",
+					lastIP:       "10.0.0.5",
+				},
+				// round robin to the beginning
 				{
 					subnet: "10.0.0.0/29",
 					ipmap: map[string]string{
 						"10.0.0.5": "id",
 						"10.0.0.6": "id",
 					},
-					expectResult: "10.0.0.7",
-					lastIP:       "10.0.0.4",
-				},
-				// round robin to the beginning
-				{
-					subnet: "10.0.0.0/29",
-					ipmap: map[string]string{
-						"10.0.0.7": "id",
-					},
 					expectResult: "10.0.0.2",
-					lastIP:       "10.0.0.6",
+					lastIP:       "10.0.0.4",
 				},
 				// lastIP is out of range
 				{
@@ -105,6 +108,15 @@ var _ = Describe("host-local ip allocator", func() {
 					},
 					expectResult: "10.0.0.3",
 					lastIP:       "10.0.0.128",
+				},
+				// lastIP is subnet broadcast address
+				{
+					subnet: "10.0.0.0/29",
+					ipmap: map[string]string{
+						"10.0.0.2": "id",
+					},
+					expectResult: "10.0.0.3",
+					lastIP:       "10.0.0.7",
 				},
 			}
 
@@ -143,7 +155,6 @@ var _ = Describe("host-local ip allocator", func() {
 					subnet: "10.0.0.0/30",
 					ipmap: map[string]string{
 						"10.0.0.2": "id",
-						"10.0.0.3": "id",
 					},
 				},
 				{
@@ -154,7 +165,6 @@ var _ = Describe("host-local ip allocator", func() {
 						"10.0.0.4": "id",
 						"10.0.0.5": "id",
 						"10.0.0.6": "id",
-						"10.0.0.7": "id",
 					},
 				},
 			}
