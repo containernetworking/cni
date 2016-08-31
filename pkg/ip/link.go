@@ -117,7 +117,7 @@ func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (hostVeth, contVet
 	}
 
 	err = hostNS.Do(func(_ ns.NetNS) error {
-		hostVeth, err := netlink.LinkByName(hostVethName)
+		hostVeth, err = netlink.LinkByName(hostVethName)
 		if err != nil {
 			return fmt.Errorf("failed to lookup %q in %q: %v", hostVethName, hostNS.Path(), err)
 		}
