@@ -51,6 +51,8 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		return err
 	}
 
+	os.Stderr.WriteString(debug.ReportStderr)
+
 	if debug.ReportError != "" {
 		return errors.New(debug.ReportError)
 	} else {
