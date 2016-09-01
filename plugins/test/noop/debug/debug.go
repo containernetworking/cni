@@ -26,6 +26,7 @@ import (
 type Debug struct {
 	ReportResult string
 	ReportError  string
+	ReportStderr string
 	Command      string
 	CmdArgs      skel.CmdArgs
 }
