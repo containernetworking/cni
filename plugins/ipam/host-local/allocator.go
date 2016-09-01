@@ -74,9 +74,6 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 	defer a.store.Unlock()
 
 	gw := a.conf.Gateway
-	if gw == nil {
-		gw = ip.NextIP(a.conf.Subnet.IP)
-	}
 
 	var requestedIP net.IP
 	if a.conf.Args != nil {
