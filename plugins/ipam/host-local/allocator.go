@@ -114,8 +114,8 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 
 	startIP, endIP := a.getSearchRange()
 	for cur := startIP; !cur.Equal(endIP); cur = a.nextIP(cur) {
-		// don't allocate gateway IP
-		if gw != nil && cur.Equal(gw) {
+		// don't allocate gateway IP or broadcast IP
+		if gw != nil && cur.Equal(gw) || cur.Equal(a.end) {
 			continue
 		}
 
