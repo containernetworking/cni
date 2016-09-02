@@ -61,7 +61,9 @@ func PluginSupports(supportedVersions ...string) PluginInfo {
 	}
 }
 
-func Decode(jsonBytes []byte) (PluginInfo, error) {
+type Decoder struct{}
+
+func (_ *Decoder) Decode(jsonBytes []byte) (PluginInfo, error) {
 	var info simple
 	err := json.Unmarshal(jsonBytes, &info)
 	if err != nil {

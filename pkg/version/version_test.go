@@ -21,8 +21,14 @@ import (
 )
 
 var _ = Describe("Decode", func() {
+	var decoder *version.Decoder
+
+	BeforeEach(func() {
+		decoder = &version.Decoder{}
+	})
+
 	It("returns a PluginInfo that represents the given json bytes", func() {
-		pluginInfo, err := version.Decode([]byte(`{
+		pluginInfo, err := decoder.Decode([]byte(`{
 			"cniVersion": "some-library-version",
 			"supportedVersions": [ "some-version", "some-other-version" ]
 		}`))
@@ -36,14 +42,14 @@ var _ = Describe("Decode", func() {
 
 	Context("when the bytes cannot be decoded as json", func() {
 		It("returns a meaningful error", func() {
-			_, err := version.Decode([]byte(`{{{`))
+			_, err := decoder.Decode([]byte(`{{{`))
 			Expect(err).To(MatchError("decoding version info: invalid character '{' looking for beginning of object key string"))
 		})
 	})
 
 	Context("when the json bytes are missing the required CNIVersion field", func() {
 		It("returns a meaningful error", func() {
-			_, err := version.Decode([]byte(`{ "supportedVersions": [ "foo" ] }`))
+			_, err := decoder.Decode([]byte(`{ "supportedVersions": [ "foo" ] }`))
 			Expect(err).To(MatchError("decoding version info: missing field cniVersion"))
 		})
 	})
@@ -51,7 +57,7 @@ var _ = Describe("Decode", func() {
 	Context("when there are no supported versions", func() {
 		Context("when the cniVersion is 0.2.0", func() {
 			It("infers the supported versions are 0.1.0 and 0.2.0", func() {
-				pluginInfo, err := version.Decode([]byte(`{ "cniVersion": "0.2.0" }`))
+				pluginInfo, err := decoder.Decode([]byte(`{ "cniVersion": "0.2.0" }`))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(pluginInfo).NotTo(BeNil())
 				Expect(pluginInfo.SupportedVersions()).To(Equal([]string{
@@ -63,7 +69,7 @@ var _ = Describe("Decode", func() {
 
 		Context("when the cniVersion is >= 0.3.0", func() {
 			It("returns a meaningful error", func() {
-				_, err := version.Decode([]byte(`{ "cniVersion": "0.3.0" }`))
+				_, err := decoder.Decode([]byte(`{ "cniVersion": "0.3.0" }`))
 				Expect(err).To(MatchError("decoding version info: missing field supportedVersions"))
 			})
 		})

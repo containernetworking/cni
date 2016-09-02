@@ -15,35 +15,41 @@
 package invoke
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
 	"os"
-	"os/exec"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
-func pluginErr(err error, output []byte) error {
-	if _, ok := err.(*exec.ExitError); ok {
-		emsg := types.Error{}
-		if perr := json.Unmarshal(output, &emsg); perr != nil {
-			return fmt.Errorf("netplugin failed but error parsing its diagnostic message %q: %v", string(output), perr)
-		}
-		details := ""
-		if emsg.Details != "" {
-			details = fmt.Sprintf("; %v", emsg.Details)
-		}
-		return fmt.Errorf("%v%v", emsg.Msg, details)
-	}
-
-	return err
+func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
+	return defaultPluginExec.WithResult(pluginPath, netconf, args)
 }
 
-func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
-	stdoutBytes, err := execPlugin(pluginPath, netconf, args)
+func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
+	return defaultPluginExec.WithoutResult(pluginPath, netconf, args)
+}
+
+func ExecPluginForVersion(pluginPath string) (version.PluginInfo, error) {
+	return defaultPluginExec.GetVersion(pluginPath)
+}
+
+var defaultPluginExec = &PluginExec{
+	RawExec:        &RawExec{Stderr: os.Stderr},
+	VersionDecoder: &version.Decoder{},
+}
+
+type PluginExec struct {
+	RawExec interface {
+		ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error)
+	}
+	VersionDecoder interface {
+		Decode(jsonBytes []byte) (version.PluginInfo, error)
+	}
+}
+
+func (e *PluginExec) WithResult(pluginPath string, netconf []byte, args CNIArgs) (*types.Result, error) {
+	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
 	if err != nil {
 		return nil, err
 	}
@@ -53,44 +59,17 @@ func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (*typ
 	return res, err
 }
 
-func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
-	_, err := execPlugin(pluginPath, netconf, args)
+func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
+	_, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
 	return err
 }
 
-func ExecPluginForVersion(pluginPath string) (version.PluginInfo, error) {
-	stdoutBytes, err := execPlugin(pluginPath, nil, &Args{Command: "VERSION"})
+func (e *PluginExec) GetVersion(pluginPath string) (version.PluginInfo, error) {
+	args := &Args{Command: "VERSION"}
+	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, nil, args.AsEnv())
 	if err != nil {
 		return nil, err
 	}
 
-	return version.Decode(stdoutBytes)
-}
-
-func execPlugin(pluginPath string, netconf []byte, args CNIArgs) ([]byte, error) {
-	return defaultRawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
-}
-
-var defaultRawExec = &RawExec{Stderr: os.Stderr}
-
-type RawExec struct {
-	Stderr io.Writer
-}
-
-func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
-	stdout := &bytes.Buffer{}
-
-	c := exec.Cmd{
-		Env:    environ,
-		Path:   pluginPath,
-		Args:   []string{pluginPath},
-		Stdin:  bytes.NewBuffer(stdinData),
-		Stdout: stdout,
-		Stderr: e.Stderr,
-	}
-	if err := c.Run(); err != nil {
-		return nil, pluginErr(err, stdout.Bytes())
-	}
-
-	return stdout.Bytes(), nil
+	return e.VersionDecoder.Decode(stdoutBytes)
 }
