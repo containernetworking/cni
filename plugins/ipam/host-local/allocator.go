@@ -25,7 +25,9 @@ import (
 )
 
 type IPAllocator struct {
+	// start is inclusive and may be allocated
 	start net.IP
+	// end is inclusive and may be allocated
 	end   net.IP
 	conf  *IPAMConfig
 	store backend.Store
@@ -56,7 +58,7 @@ func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error)
 			return nil, err
 		}
 		// RangeEnd is inclusive
-		end = ip.NextIP(conf.RangeEnd)
+		end = conf.RangeEnd
 	}
 	return &IPAllocator{start, end, conf, store}, nil
 }

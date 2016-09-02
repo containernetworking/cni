@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/containernetworking/cni/pkg/types"
 	fakestore "github.com/containernetworking/cni/plugins/ipam/host-local/backend/testing"
 	. "github.com/onsi/ginkgo"
@@ -113,6 +114,79 @@ var _ = Describe("host-local ip allocator", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(res.IP.IP.String()).To(Equal(tc.expectResult))
 			}
+		})
+
+		It("should allocate the last address if RangeEnd not given", func() {
+			subnet, err := types.ParseCIDR("192.168.1.0/24")
+			Expect(err).ToNot(HaveOccurred())
+
+			conf := IPAMConfig{
+				Name:   "test",
+				Type:   "host-local",
+				Subnet: types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+			}
+			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+			alloc, err := NewIPAllocator(&conf, store)
+			Expect(err).ToNot(HaveOccurred())
+
+			for i := 1; i < 255; i++ {
+				res, err := alloc.Get("ID")
+				Expect(err).ToNot(HaveOccurred())
+				// i+1 because the gateway address is skipped
+				s := fmt.Sprintf("192.168.1.%d/24", i+1)
+				Expect(s).To(Equal(res.IP.String()))
+			}
+
+			_, err = alloc.Get("ID")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should allocate RangeStart first", func() {
+			subnet, err := types.ParseCIDR("192.168.1.0/24")
+			Expect(err).ToNot(HaveOccurred())
+
+			conf := IPAMConfig{
+				Name:       "test",
+				Type:       "host-local",
+				Subnet:     types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+				RangeStart: net.ParseIP("192.168.1.10"),
+			}
+			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+			alloc, err := NewIPAllocator(&conf, store)
+			Expect(err).ToNot(HaveOccurred())
+
+			res, err := alloc.Get("ID")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.IP.String()).To(Equal("192.168.1.10/24"))
+
+			res, err = alloc.Get("ID")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(res.IP.String()).To(Equal("192.168.1.11/24"))
+		})
+
+		It("should allocate RangeEnd but not past RangeEnd", func() {
+			subnet, err := types.ParseCIDR("192.168.1.0/24")
+			Expect(err).ToNot(HaveOccurred())
+
+			conf := IPAMConfig{
+				Name:     "test",
+				Type:     "host-local",
+				Subnet:   types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+				RangeEnd: net.ParseIP("192.168.1.5"),
+			}
+			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+			alloc, err := NewIPAllocator(&conf, store)
+			Expect(err).ToNot(HaveOccurred())
+
+			for i := 1; i < 5; i++ {
+				res, err := alloc.Get("ID")
+				Expect(err).ToNot(HaveOccurred())
+				// i+1 because the gateway address is skipped
+				Expect(res.IP.String()).To(Equal(fmt.Sprintf("192.168.1.%d/24", i+1)))
+			}
+
+			_, err = alloc.Get("ID")
+			Expect(err).To(HaveOccurred())
 		})
 
 		Context("when requesting a specific IP", func() {
