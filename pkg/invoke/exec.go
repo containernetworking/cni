@@ -65,9 +65,19 @@ func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIAr
 }
 
 func (e *PluginExec) GetVersion(pluginPath string) (version.PluginInfo, error) {
-	args := &Args{Command: "VERSION"}
+	args := &Args{
+		Command: "VERSION",
+
+		// set fake values required by plugins built against an older version of skel
+		NetNS:  "/tmp/not/a/container",
+		IfName: "not-an-interface",
+		Path:   "/tmp/not/a/path",
+	}
 	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, nil, args.AsEnv())
 	if err != nil {
+		if err.Error() == "unknown CNI_COMMAND: VERSION" {
+			return version.PluginSupports("0.1.0"), nil
+		}
 		return nil, err
 	}
 

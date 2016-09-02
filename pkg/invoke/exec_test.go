@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Executing a plugin", func() {
+var _ = Describe("Executing a plugin, unit tests", func() {
 	var (
 		pluginExec     *invoke.PluginExec
 		rawExec        *fakes.RawExec

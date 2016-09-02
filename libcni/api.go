@@ -67,8 +67,6 @@ func (c *CNIConfig) GetVersionInfo(pluginType string) (version.PluginInfo, error
 		return nil, err
 	}
 
-	// TODO: if error is because plugin is old and VERSION command is unrecognized
-	// then do the right thing and return version.PluginSupports("0.1.0"), nil
 	return invoke.ExecPluginForVersion(pluginPath)
 }
 
