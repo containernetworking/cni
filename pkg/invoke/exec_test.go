@@ -103,14 +103,14 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 		})
 
 		It("execs the plugin with the command VERSION", func() {
-			pluginExec.GetVersion(pluginPath)
+			pluginExec.GetVersionInfo(pluginPath)
 			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
 			Expect(rawExec.ExecPluginCall.Received.StdinData).To(BeNil())
 			Expect(rawExec.ExecPluginCall.Received.Environ).To(ContainElement("CNI_COMMAND=VERSION"))
 		})
 
 		It("decodes and returns the version info", func() {
-			versionInfo, err := pluginExec.GetVersion(pluginPath)
+			versionInfo, err := pluginExec.GetVersionInfo(pluginPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(versionInfo.SupportedVersions()).To(Equal([]string{"0.42.0"}))
 			Expect(versionDecoder.DecodeCall.Received.JSONBytes).To(MatchJSON(`{ "some": "version-info" }`))
@@ -121,9 +121,31 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 				rawExec.ExecPluginCall.Returns.Error = errors.New("banana")
 			})
 			It("returns the error", func() {
-				_, err := pluginExec.GetVersion(pluginPath)
+				_, err := pluginExec.GetVersionInfo(pluginPath)
 				Expect(err).To(MatchError("banana"))
 			})
 		})
+
+		Context("when the plugin is too old to recognize the VERSION command", func() {
+			BeforeEach(func() {
+				rawExec.ExecPluginCall.Returns.Error = errors.New("unknown CNI_COMMAND: VERSION")
+			})
+
+			It("interprets the error as a 0.1.0 version", func() {
+				versionInfo, err := pluginExec.GetVersionInfo(pluginPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(versionInfo.SupportedVersions()).To(ConsistOf("0.1.0"))
+			})
+
+			It("sets dummy values for env vars required by very old plugins", func() {
+				pluginExec.GetVersionInfo(pluginPath)
+
+				env := rawExec.ExecPluginCall.Received.Environ
+				Expect(env).To(ContainElement("CNI_NETNS=dummy"))
+				Expect(env).To(ContainElement("CNI_IFNAME=dummy"))
+				Expect(env).To(ContainElement("CNI_PATH=dummy"))
+			})
+		})
+
 	})
 })

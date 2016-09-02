@@ -30,8 +30,8 @@ func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) er
 	return defaultPluginExec.WithoutResult(pluginPath, netconf, args)
 }
 
-func ExecPluginForVersion(pluginPath string) (version.PluginInfo, error) {
-	return defaultPluginExec.GetVersion(pluginPath)
+func GetVersionInfo(pluginPath string) (version.PluginInfo, error) {
+	return defaultPluginExec.GetVersionInfo(pluginPath)
 }
 
 var defaultPluginExec = &PluginExec{
@@ -64,14 +64,14 @@ func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIAr
 	return err
 }
 
-func (e *PluginExec) GetVersion(pluginPath string) (version.PluginInfo, error) {
+func (e *PluginExec) GetVersionInfo(pluginPath string) (version.PluginInfo, error) {
 	args := &Args{
 		Command: "VERSION",
 
 		// set fake values required by plugins built against an older version of skel
-		NetNS:  "/tmp/not/a/container",
-		IfName: "not-an-interface",
-		Path:   "/tmp/not/a/path",
+		NetNS:  "dummy",
+		IfName: "dummy",
+		Path:   "dummy",
 	}
 	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, nil, args.AsEnv())
 	if err != nil {

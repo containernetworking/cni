@@ -67,7 +67,7 @@ func (c *CNIConfig) GetVersionInfo(pluginType string) (version.PluginInfo, error
 		return nil, err
 	}
 
-	return invoke.ExecPluginForVersion(pluginPath)
+	return invoke.GetVersionInfo(pluginPath)
 }
 
 // =====
