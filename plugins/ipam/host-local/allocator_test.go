@@ -77,26 +77,26 @@ var _ = Describe("host-local ip allocator", func() {
 				{
 					subnet:       "10.0.0.0/29",
 					ipmap:        map[string]string{},
-					expectResult: "10.0.0.7",
-					lastIP:       "10.0.0.6",
+					expectResult: "10.0.0.6",
+					lastIP:       "10.0.0.5",
 				},
 				{
 					subnet: "10.0.0.0/29",
 					ipmap: map[string]string{
+						"10.0.0.4": "id",
 						"10.0.0.5": "id",
-						"10.0.0.6": "id",
 					},
-					expectResult: "10.0.0.7",
-					lastIP:       "10.0.0.4",
+					expectResult: "10.0.0.6",
+					lastIP:       "10.0.0.3",
 				},
 				// round robin to the beginning
 				{
 					subnet: "10.0.0.0/29",
 					ipmap: map[string]string{
-						"10.0.0.7": "id",
+						"10.0.0.6": "id",
 					},
 					expectResult: "10.0.0.2",
-					lastIP:       "10.0.0.6",
+					lastIP:       "10.0.0.5",
 				},
 				// lastIP is out of range
 				{
@@ -116,7 +116,7 @@ var _ = Describe("host-local ip allocator", func() {
 			}
 		})
 
-		It("should allocate the last address if RangeEnd not given", func() {
+		It("should not allocate the broadcast address", func() {
 			subnet, err := types.ParseCIDR("192.168.1.0/24")
 			Expect(err).ToNot(HaveOccurred())
 
@@ -129,7 +129,7 @@ var _ = Describe("host-local ip allocator", func() {
 			alloc, err := NewIPAllocator(&conf, store)
 			Expect(err).ToNot(HaveOccurred())
 
-			for i := 1; i < 255; i++ {
+			for i := 1; i < 254; i++ {
 				res, err := alloc.Get("ID")
 				Expect(err).ToNot(HaveOccurred())
 				// i+1 because the gateway address is skipped
@@ -316,6 +316,22 @@ var _ = Describe("host-local ip allocator", func() {
 				_, err := tc.run()
 				Expect(err).To(MatchError("no IP addresses available in network: test"))
 			}
+		})
+	})
+
+	Context("when given an invalid subnet", func() {
+		It("returns a meaningful error", func() {
+			subnet, err := types.ParseCIDR("192.168.1.0/31")
+			Expect(err).ToNot(HaveOccurred())
+
+			conf := IPAMConfig{
+				Name:   "test",
+				Type:   "host-local",
+				Subnet: types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+			}
+			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+			_, err = NewIPAllocator(&conf, store)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

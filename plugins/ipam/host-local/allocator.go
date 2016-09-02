@@ -34,6 +34,13 @@ type IPAllocator struct {
 }
 
 func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error) {
+	// Can't create an allocator for a network with no addresses, eg
+	// a /32 or /31
+	ones, masklen := conf.Subnet.Mask.Size()
+	if ones > masklen-2 {
+		return nil, fmt.Errorf("Network %v too small to allocate from", conf.Subnet)
+	}
+
 	var (
 		start net.IP
 		end   net.IP
@@ -195,6 +202,8 @@ func (a *IPAllocator) Release(id string) error {
 	return a.store.ReleaseByID(id)
 }
 
+// Return the start and end IP addresses of a given subnet, excluding
+// the broadcast address (eg, 192.168.1.255)
 func networkRange(ipnet *net.IPNet) (net.IP, net.IP, error) {
 	if ipnet.IP == nil {
 		return nil, nil, fmt.Errorf("missing field %q in IPAM configuration", "subnet")
@@ -212,6 +221,12 @@ func networkRange(ipnet *net.IPNet) (net.IP, net.IP, error) {
 	for i := 0; i < len(ip); i++ {
 		end = append(end, ip[i]|^ipnet.Mask[i])
 	}
+
+	// Exclude the broadcast address for IPv4
+	if ip.To4() != nil {
+		end[3]--
+	}
+
 	return ipnet.IP, end, nil
 }
 
