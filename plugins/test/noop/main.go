@@ -63,6 +63,23 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	return nil
 }
 
+func debugGetSupportedVersions() []string {
+	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0"}
+	cniArgs := os.Getenv("CNI_ARGS")
+	if cniArgs == "" {
+		return vers
+	}
+	debugFilePath := strings.TrimPrefix(cniArgs, "DEBUG=")
+	debug, err := debug.ReadDebug(debugFilePath)
+	if err != nil {
+		panic("test setup error: unable to read debug file: " + err.Error())
+	}
+	if debug.ReportVersionSupport == nil {
+		return vers
+	}
+	return debug.ReportVersionSupport
+}
+
 func cmdAdd(args *skel.CmdArgs) error {
 	return debugBehavior(args, "ADD")
 }
@@ -72,6 +89,6 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel,
-		version.PluginSupports("0.-42.0", "0.1.0", "0.2.0", "0.3.0"))
+	supportedVersions := debugGetSupportedVersions()
+	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
 }

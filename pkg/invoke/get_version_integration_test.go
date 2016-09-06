@@ -54,8 +54,25 @@ var _ = Describe("GetVersion, integration tests", func() {
 		},
 		Entry("old plugin, before VERSION was introduced", git_ref_v010, plugin_source_v010, version.PluginSupports("0.1.0")),
 		Entry("when VERSION was introduced", git_ref_v020, plugin_source_v010, version.PluginSupports("0.1.0", "0.2.0")),
+		Entry("when plugins report their own version support", git_ref_v030, plugin_source_v030, version.PluginSupports("0.3.0", "0.999.0")),
+		Entry("HEAD", "HEAD", plugin_source_v030, version.PluginSupports("0.3.0", "0.999.0")),
 	)
 })
+
+// a 0.3.0 plugin that can report its own versions
+const plugin_source_v030 = `package main
+
+import (
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/version"
+	"fmt"
+)
+
+func c(_ *skel.CmdArgs) error { fmt.Println("{}"); return nil }
+
+func main() { skel.PluginMain(c, c, version.PluginSupports("0.3.0", "0.999.0")) }
+`
+const git_ref_v030 = "bf31ed15"
 
 // a minimal 0.1.0 / 0.2.0 plugin
 const plugin_source_v010 = `package main

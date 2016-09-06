@@ -20,11 +20,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Decode", func() {
-	var decoder *version.Decoder
+var _ = Describe("Decoding versions reported by a plugin", func() {
+	var decoder *version.PluginDecoder
 
 	BeforeEach(func() {
-		decoder = &version.Decoder{}
+		decoder = &version.PluginDecoder{}
 	})
 
 	It("returns a PluginInfo that represents the given json bytes", func() {

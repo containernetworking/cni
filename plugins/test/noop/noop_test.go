@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,7 +39,10 @@ var _ = Describe("No-op plugin", func() {
 	const reportResult = `{ "ip4": { "ip": "10.1.2.3/24" }, "dns": {} }`
 
 	BeforeEach(func() {
-		debug = &noop_debug.Debug{ReportResult: reportResult}
+		debug = &noop_debug.Debug{
+			ReportResult:         reportResult,
+			ReportVersionSupport: []string{"0.1.0", "0.2.0", "0.3.0"},
+		}
 
 		debugFile, err := ioutil.TempFile("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
@@ -122,6 +126,25 @@ var _ = Describe("No-op plugin", func() {
 			Expect(debug.Command).To(Equal("DEL"))
 			Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 		})
+	})
 
+	Context("when the CNI_COMMAND is VERSION", func() {
+		BeforeEach(func() {
+			cmd.Env[0] = "CNI_COMMAND=VERSION"
+			debug.ReportVersionSupport = []string{"0.123.0", "0.3.0"}
+
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+		})
+
+		It("claims to support the specified versions", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			decoder := &version.PluginDecoder{}
+			pluginInfo, err := decoder.Decode(session.Out.Contents())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pluginInfo.SupportedVersions()).To(ConsistOf(
+				"0.123.0", "0.3.0"))
+		})
 	})
 })

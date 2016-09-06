@@ -36,7 +36,7 @@ func GetVersionInfo(pluginPath string) (version.PluginInfo, error) {
 
 var defaultPluginExec = &PluginExec{
 	RawExec:        &RawExec{Stderr: os.Stderr},
-	VersionDecoder: &version.Decoder{},
+	VersionDecoder: &version.PluginDecoder{},
 }
 
 type PluginExec struct {
@@ -64,6 +64,10 @@ func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIAr
 	return err
 }
 
+// GetVersionInfo returns the version information available about the plugin.
+// For recent-enough plugins, it uses the information returned by the VERSION
+// command.  For older plugins which do not recognize that command, it reports
+// version 0.1.0
 func (e *PluginExec) GetVersionInfo(pluginPath string) (version.PluginInfo, error) {
 	args := &Args{
 		Command: "VERSION",
