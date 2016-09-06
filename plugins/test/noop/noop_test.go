@@ -131,7 +131,7 @@ var _ = Describe("No-op plugin", func() {
 	Context("when the CNI_COMMAND is VERSION", func() {
 		BeforeEach(func() {
 			cmd.Env[0] = "CNI_COMMAND=VERSION"
-			debug.ReportVersionSupport = []string{"0.123.0", "0.3.0"}
+			debug.ReportVersionSupport = []string{"0.123.0", "0.2.0"}
 
 			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 		})
@@ -144,7 +144,7 @@ var _ = Describe("No-op plugin", func() {
 			pluginInfo, err := decoder.Decode(session.Out.Contents())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pluginInfo.SupportedVersions()).To(ConsistOf(
-				"0.123.0", "0.3.0"))
+				"0.123.0", "0.2.0"))
 		})
 	})
 })

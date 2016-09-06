@@ -52,15 +52,33 @@ var _ = Describe("GetVersion, integration tests", func() {
 
 			Expect(versionInfo.SupportedVersions()).To(ConsistOf(expectedVersions.SupportedVersions()))
 		},
-		Entry("old plugin, before VERSION was introduced", git_ref_v010, plugin_source_v010, version.PluginSupports("0.1.0")),
-		Entry("when VERSION was introduced", git_ref_v020, plugin_source_v010, version.PluginSupports("0.1.0", "0.2.0")),
-		Entry("when plugins report their own version support", git_ref_v030, plugin_source_v030, version.PluginSupports("0.3.0", "0.999.0")),
-		Entry("HEAD", "HEAD", plugin_source_v030, version.PluginSupports("0.3.0", "0.999.0")),
+
+		Entry("historical: before VERSION was introduced",
+			git_ref_v010, plugin_source_no_custom_versions,
+			version.PluginSupports("0.1.0"),
+		),
+
+		Entry("historical: when VERSION was introduced but plugins couldn't customize it",
+			git_ref_v020_no_custom_versions, plugin_source_no_custom_versions,
+			version.PluginSupports("0.1.0", "0.2.0"),
+		),
+
+		Entry("historical: when plugins started reporting their own version list",
+			git_ref_v020_custom_versions, plugin_source_v020_custom_versions,
+			version.PluginSupports("0.2.0", "0.999.0"),
+		),
+
+		// this entry tracks the current behavior.  Before you change it, ensure
+		// that its previous behavior is captured in the most recent "historical" entry
+		Entry("current",
+			"HEAD", plugin_source_v020_custom_versions,
+			version.PluginSupports("0.2.0", "0.999.0"),
+		),
 	)
 })
 
-// a 0.3.0 plugin that can report its own versions
-const plugin_source_v030 = `package main
+// a 0.2.0 plugin that can report its own versions
+const plugin_source_v020_custom_versions = `package main
 
 import (
 	"github.com/containernetworking/cni/pkg/skel"
@@ -70,12 +88,12 @@ import (
 
 func c(_ *skel.CmdArgs) error { fmt.Println("{}"); return nil }
 
-func main() { skel.PluginMain(c, c, version.PluginSupports("0.3.0", "0.999.0")) }
+func main() { skel.PluginMain(c, c, version.PluginSupports("0.2.0", "0.999.0")) }
 `
-const git_ref_v030 = "bf31ed15"
+const git_ref_v020_custom_versions = "bf31ed15"
 
-// a minimal 0.1.0 / 0.2.0 plugin
-const plugin_source_v010 = `package main
+// a minimal 0.1.0 / 0.2.0 plugin that cannot report it's own version support
+const plugin_source_no_custom_versions = `package main
 
 import "github.com/containernetworking/cni/pkg/skel"
 import "fmt"
@@ -86,4 +104,4 @@ func main() { skel.PluginMain(c, c) }
 `
 
 const git_ref_v010 = "2c482f4"
-const git_ref_v020 = "349d66d"
+const git_ref_v020_no_custom_versions = "349d66d"

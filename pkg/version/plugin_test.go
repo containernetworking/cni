@@ -21,17 +21,21 @@ import (
 )
 
 var _ = Describe("Decoding versions reported by a plugin", func() {
-	var decoder *version.PluginDecoder
+	var (
+		decoder       *version.PluginDecoder
+		versionStdout []byte
+	)
 
 	BeforeEach(func() {
 		decoder = &version.PluginDecoder{}
+		versionStdout = []byte(`{
+			"cniVersion": "some-library-version",
+			"supportedVersions": [ "some-version", "some-other-version" ]
+		}`)
 	})
 
 	It("returns a PluginInfo that represents the given json bytes", func() {
-		pluginInfo, err := decoder.Decode([]byte(`{
-			"cniVersion": "some-library-version",
-			"supportedVersions": [ "some-version", "some-other-version" ]
-		}`))
+		pluginInfo, err := decoder.Decode(versionStdout)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(pluginInfo).NotTo(BeNil())
 		Expect(pluginInfo.SupportedVersions()).To(Equal([]string{
@@ -41,37 +45,40 @@ var _ = Describe("Decoding versions reported by a plugin", func() {
 	})
 
 	Context("when the bytes cannot be decoded as json", func() {
+		BeforeEach(func() {
+			versionStdout = []byte(`{{{`)
+		})
+
 		It("returns a meaningful error", func() {
-			_, err := decoder.Decode([]byte(`{{{`))
+			_, err := decoder.Decode(versionStdout)
 			Expect(err).To(MatchError("decoding version info: invalid character '{' looking for beginning of object key string"))
 		})
 	})
 
 	Context("when the json bytes are missing the required CNIVersion field", func() {
+		BeforeEach(func() {
+			versionStdout = []byte(`{ "supportedVersions": [ "foo" ] }`)
+		})
+
 		It("returns a meaningful error", func() {
-			_, err := decoder.Decode([]byte(`{ "supportedVersions": [ "foo" ] }`))
+			_, err := decoder.Decode(versionStdout)
 			Expect(err).To(MatchError("decoding version info: missing field cniVersion"))
 		})
 	})
 
 	Context("when there are no supported versions", func() {
-		Context("when the cniVersion is 0.2.0", func() {
-			It("infers the supported versions are 0.1.0 and 0.2.0", func() {
-				pluginInfo, err := decoder.Decode([]byte(`{ "cniVersion": "0.2.0" }`))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(pluginInfo).NotTo(BeNil())
-				Expect(pluginInfo.SupportedVersions()).To(Equal([]string{
-					"0.1.0",
-					"0.2.0",
-				}))
-			})
+		BeforeEach(func() {
+			versionStdout = []byte(`{ "cniVersion": "0.2.0" }`)
 		})
 
-		Context("when the cniVersion is >= 0.3.0", func() {
-			It("returns a meaningful error", func() {
-				_, err := decoder.Decode([]byte(`{ "cniVersion": "0.3.0" }`))
-				Expect(err).To(MatchError("decoding version info: missing field supportedVersions"))
-			})
+		It("assumes that the supported versions are 0.1.0 and 0.2.0", func() {
+			pluginInfo, err := decoder.Decode(versionStdout)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pluginInfo).NotTo(BeNil())
+			Expect(pluginInfo.SupportedVersions()).To(Equal([]string{
+				"0.1.0",
+				"0.2.0",
+			}))
 		})
 	})
 

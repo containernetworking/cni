@@ -68,8 +68,8 @@ The operations that the CNI plugin needs to support are:
 
       ```
       {
-        "cniVersion": "0.3.0", // the version of the CNI spec in use for this output
-        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0" ] // the list of CNI spec versions that this plugin supports
+        "cniVersion": "0.2.0", // the version of the CNI spec in use for this output
+        "supportedVersions": [ "0.1.0", "0.2.0" ] // the list of CNI spec versions that this plugin supports
       }
       ```
 
@@ -91,7 +91,7 @@ Success is indicated by a return code of zero and the following JSON printed to 
 
 ```
 {
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.2.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
@@ -120,7 +120,7 @@ Examples include generating an `/etc/resolv.conf` file to be injected into the c
 Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.2.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
@@ -157,7 +157,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.2.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -176,7 +176,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.2.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -226,7 +226,7 @@ Success is indicated by a zero return code and the following JSON being printed 
 
 ```
 {
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.2.0",
   "ip4": {
     "ip": <ipv4-and-subnet-in-CIDR>,
     "gateway": <ipv4-of-the-gateway>,  (optional)
