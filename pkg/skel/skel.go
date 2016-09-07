@@ -17,6 +17,7 @@
 package skel
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -143,9 +144,25 @@ func createTypedError(f string, args ...interface{}) *types.Error {
 	}
 }
 
+func (t *dispatcher) validateVersion(stdinData []byte) error {
+	var netconf types.NetConf
+	if err := json.Unmarshal(stdinData, &netconf); err != nil {
+		return err
+	}
+	if netconf.CNIVersion == "" {
+		return fmt.Errorf("missing required config cniVersion")
+	}
+
+	return nil
+}
+
 func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
+		return createTypedError(err.Error())
+	}
+
+	if err = t.validateVersion(cmdArgs.StdinData); err != nil {
 		return createTypedError(err.Error())
 	}
 

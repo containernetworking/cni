@@ -17,7 +17,6 @@ package skel
 import (
 	"bytes"
 	"errors"
-	"io"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
@@ -48,7 +47,7 @@ func (c *fakeCmd) Func(args *CmdArgs) error {
 var _ = Describe("dispatching to the correct callback", func() {
 	var (
 		environment     map[string]string
-		stdin           io.Reader
+		stdinData       string
 		stdout, stderr  *bytes.Buffer
 		cmdAdd, cmdDel  *fakeCmd
 		dispatch        *dispatcher
@@ -65,13 +64,14 @@ var _ = Describe("dispatching to the correct callback", func() {
 			"CNI_ARGS":        "some;extra;args",
 			"CNI_PATH":        "/some/cni/path",
 		}
-		stdin = strings.NewReader(`{ "some": "config" }`)
+
+		stdinData = `{ "some": "config", "cniVersion": "9.8.7" }`
 		stdout = &bytes.Buffer{}
 		stderr = &bytes.Buffer{}
 		versionInfo = version.PluginSupports("9.8.7")
 		dispatch = &dispatcher{
 			Getenv: func(key string) string { return environment[key] },
-			Stdin:  stdin,
+			Stdin:  strings.NewReader(stdinData),
 			Stdout: stdout,
 			Stderr: stderr,
 		}
@@ -83,7 +83,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			IfName:      "eth0",
 			Args:        "some;extra;args",
 			Path:        "/some/cni/path",
-			StdinData:   []byte(`{ "some": "config" }`),
+			StdinData:   []byte(stdinData),
 		}
 	})
 
@@ -142,6 +142,22 @@ var _ = Describe("dispatching to the correct callback", func() {
 				Expect(log).To(ContainSubstring("CNI_IFNAME env variable missing\n"))
 				Expect(log).To(ContainSubstring("CNI_PATH env variable missing\n"))
 
+			})
+		})
+
+		Context("when the stdin data is missing the required cniVersion config", func() {
+			BeforeEach(func() {
+				dispatch.Stdin = strings.NewReader(`{ "some": "config" }`)
+			})
+
+			It("immediately returns a useful error", func() {
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+				Expect(err).To(MatchError("missing required config cniVersion"))
+			})
+
+			It("does not call either callback", func() {
+				Expect(cmdAdd.CallCount).To(Equal(0))
+				Expect(cmdDel.CallCount).To(Equal(0))
 			})
 		})
 	})

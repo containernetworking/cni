@@ -43,11 +43,13 @@ var _ = Describe("ptp Operations", func() {
 		const IFNAME = "ptp0"
 
 		conf := `{
+    "cniVersion": "0.2.0",
     "name": "mynet",
     "type": "ptp",
     "ipMasq": true,
     "mtu": 5000,
     "ipam": {
+        "cniVersion": "0.2.0",
         "type": "host-local",
         "subnet": "10.1.2.0/24"
     }

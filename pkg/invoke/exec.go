@@ -16,6 +16,7 @@ package invoke
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
@@ -77,7 +78,8 @@ func (e *PluginExec) GetVersionInfo(pluginPath string) (version.PluginInfo, erro
 		IfName: "dummy",
 		Path:   "dummy",
 	}
-	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, nil, args.AsEnv())
+	stdin := []byte(fmt.Sprintf(`{"cniVersion":%q}`, version.Current()))
+	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, stdin, args.AsEnv())
 	if err != nil {
 		if err.Error() == "unknown CNI_COMMAND: VERSION" {
 			return version.PluginSupports("0.1.0"), nil
