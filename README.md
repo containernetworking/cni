@@ -26,7 +26,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [rkt - container engine](https://coreos.com/blog/rkt-cni-networking.html)
 - [Kurma - container runtime](http://kurma.io/)
 - [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
-- [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/guardian-cni-adapter)
+- [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/netman-release)
 - [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 
 ### 3rd Party Network plugins
