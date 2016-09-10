@@ -15,10 +15,12 @@
 package main
 
 import (
-	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
+	"fmt"
+	"net"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
 )
 
 func main() {
@@ -47,8 +49,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	r := &types.Result{
-		IP4: ipConf,
+	var r *types.Result
+
+	switch len(ipConf.IP.IP) {
+	case net.IPv6len:
+		r = &types.Result{
+			IP6: ipConf,
+		}
+	case net.IPv4len:
+		r = &types.Result{
+			IP4: ipConf,
+		}
+	default:
+		return fmt.Errorf("invalid IP address length: %s", ipConf.IP.IP.String())
 	}
 	return r.Print()
 }
