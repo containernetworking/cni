@@ -64,8 +64,14 @@ The operations that the CNI plugin needs to support are:
 
 - Report version
   - Parameters: NONE.
-  - Result:
-    - The version of the CNI spec implemented by the plugin: `{ "cniVersion": "0.2.0" }`
+  - Result: information about the CNI spec versions supported by the plugin
+
+      ```
+      {
+        "cniVersion": "0.2.0", // the version of the CNI spec in use for this output
+        "supportedVersions": [ "0.1.0", "0.2.0" ] // the list of CNI spec versions that this plugin supports
+      }
+      ```
 
 The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
 It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:

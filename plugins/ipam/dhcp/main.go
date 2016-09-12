@@ -22,6 +22,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 const socketPath = "/run/cni/dhcp.sock"
@@ -30,7 +31,7 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "daemon" {
 		runDaemon()
 	} else {
-		skel.PluginMain(cmdAdd, cmdDel)
+		skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
 	}
 }
 

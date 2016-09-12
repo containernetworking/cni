@@ -155,4 +155,23 @@ var _ = Describe("Invoking the plugin", func() {
 			})
 		})
 	})
+
+	Describe("GetVersionInfo", func() {
+		It("executes the plugin with the command VERSION", func() {
+			versionInfo, err := cniConfig.GetVersionInfo("noop")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(versionInfo).NotTo(BeNil())
+			Expect(versionInfo.SupportedVersions()).To(Equal([]string{
+				"0.-42.0", "0.1.0", "0.2.0",
+			}))
+		})
+
+		Context("when finding the plugin fails", func() {
+			It("returns the error", func() {
+				_, err := cniConfig.GetVersionInfo("does-not-exist")
+				Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
+			})
+		})
+	})
 })

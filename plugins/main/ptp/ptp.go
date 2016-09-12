@@ -30,6 +30,7 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/utils"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 func init() {
@@ -236,5 +237,5 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel)
+	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
 }

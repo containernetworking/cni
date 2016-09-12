@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package version
+package fakes
 
-// Current reports the version of the CNI spec implemented by this library
-func Current() string {
-	return "0.2.0"
+type CNIArgs struct {
+	AsEnvCall struct {
+		Returns struct {
+			Env []string
+		}
+	}
 }
 
-// Legacy PluginInfo describes a plugin that is backwards compatible with the
-// CNI spec version 0.1.0.  In particular, a runtime compiled against the 0.1.0
-// library ought to work correctly with a plugin that reports support for
-// Legacy versions.
-//
-// Any future CNI spec versions which meet this definition should be added to
-// this list.
-var Legacy = PluginSupports("0.1.0", "0.2.0")
+func (a *CNIArgs) AsEnv() []string {
+	return a.AsEnvCall.Returns.Env
+}

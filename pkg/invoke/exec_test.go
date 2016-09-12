@@ -15,109 +15,137 @@
 package invoke_test
 
 import (
-	"bytes"
-	"io/ioutil"
-	"os"
+	"errors"
 
 	"github.com/containernetworking/cni/pkg/invoke"
-
-	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
+	"github.com/containernetworking/cni/pkg/invoke/fakes"
+	"github.com/containernetworking/cni/pkg/version"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("RawExec", func() {
+var _ = Describe("Executing a plugin, unit tests", func() {
 	var (
-		debugFileName string
-		debug         *noop_debug.Debug
-		environ       []string
-		stdin         []byte
-		execer        *invoke.RawExec
+		pluginExec     *invoke.PluginExec
+		rawExec        *fakes.RawExec
+		versionDecoder *fakes.VersionDecoder
+
+		pluginPath string
+		netconf    []byte
+		cniargs    *fakes.CNIArgs
 	)
 
-	const reportResult = `{ "some": "result" }`
-
 	BeforeEach(func() {
-		debugFile, err := ioutil.TempFile("", "cni_debug")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(debugFile.Close()).To(Succeed())
-		debugFileName = debugFile.Name()
+		rawExec = &fakes.RawExec{}
+		rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "ip4": { "ip": "1.2.3.4/24" } }`)
 
-		debug = &noop_debug.Debug{
-			ReportResult: reportResult,
-			ReportStderr: "some stderr message",
+		versionDecoder = &fakes.VersionDecoder{}
+		versionDecoder.DecodeCall.Returns.PluginInfo = version.PluginSupports("0.42.0")
+
+		pluginExec = &invoke.PluginExec{
+			RawExec:        rawExec,
+			VersionDecoder: versionDecoder,
 		}
-		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
-
-		environ = []string{
-			"CNI_COMMAND=ADD",
-			"CNI_CONTAINERID=some-container-id",
-			"CNI_ARGS=DEBUG=" + debugFileName,
-			"CNI_NETNS=/some/netns/path",
-			"CNI_PATH=/some/bin/path",
-			"CNI_IFNAME=some-eth0",
-		}
-		stdin = []byte(`{"some":"stdin-json"}`)
-		execer = &invoke.RawExec{}
+		pluginPath = "/some/plugin/path"
+		netconf = []byte(`{ "some": "stdin" }`)
+		cniargs = &fakes.CNIArgs{}
+		cniargs.AsEnvCall.Returns.Env = []string{"SOME=ENV"}
 	})
 
-	AfterEach(func() {
-		Expect(os.Remove(debugFileName)).To(Succeed())
-	})
-
-	It("runs the plugin with the given stdin and environment", func() {
-		_, err := execer.ExecPlugin(pathToPlugin, stdin, environ)
-		Expect(err).NotTo(HaveOccurred())
-
-		debug, err := noop_debug.ReadDebug(debugFileName)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(debug.Command).To(Equal("ADD"))
-		Expect(debug.CmdArgs.StdinData).To(Equal(stdin))
-		Expect(debug.CmdArgs.Netns).To(Equal("/some/netns/path"))
-	})
-
-	It("returns the resulting stdout as bytes", func() {
-		resultBytes, err := execer.ExecPlugin(pathToPlugin, stdin, environ)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(resultBytes).To(BeEquivalentTo(reportResult))
-	})
-
-	Context("when the Stderr writer is set", func() {
-		var stderrBuffer *bytes.Buffer
-
-		BeforeEach(func() {
-			stderrBuffer = &bytes.Buffer{}
-			execer.Stderr = stderrBuffer
-		})
-
-		It("forwards any stderr bytes to the Stderr writer", func() {
-			_, err := execer.ExecPlugin(pathToPlugin, stdin, environ)
+	Describe("returning a result", func() {
+		It("unmarshals the result bytes into the Result type", func() {
+			result, err := pluginExec.WithResult(pluginPath, netconf, cniargs)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(result.IP4.IP.IP.String()).To(Equal("1.2.3.4"))
+		})
 
-			Expect(stderrBuffer.String()).To(Equal("some stderr message"))
+		It("passes its arguments through to the rawExec", func() {
+			pluginExec.WithResult(pluginPath, netconf, cniargs)
+			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
+			Expect(rawExec.ExecPluginCall.Received.StdinData).To(Equal(netconf))
+			Expect(rawExec.ExecPluginCall.Received.Environ).To(Equal([]string{"SOME=ENV"}))
+		})
+
+		Context("when the rawExec fails", func() {
+			BeforeEach(func() {
+				rawExec.ExecPluginCall.Returns.Error = errors.New("banana")
+			})
+			It("returns the error", func() {
+				_, err := pluginExec.WithResult(pluginPath, netconf, cniargs)
+				Expect(err).To(MatchError("banana"))
+			})
 		})
 	})
 
-	Context("when the plugin errors", func() {
+	Describe("without returning a result", func() {
+		It("passes its arguments through to the rawExec", func() {
+			pluginExec.WithoutResult(pluginPath, netconf, cniargs)
+			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
+			Expect(rawExec.ExecPluginCall.Received.StdinData).To(Equal(netconf))
+			Expect(rawExec.ExecPluginCall.Received.Environ).To(Equal([]string{"SOME=ENV"}))
+		})
+
+		Context("when the rawExec fails", func() {
+			BeforeEach(func() {
+				rawExec.ExecPluginCall.Returns.Error = errors.New("banana")
+			})
+			It("returns the error", func() {
+				err := pluginExec.WithoutResult(pluginPath, netconf, cniargs)
+				Expect(err).To(MatchError("banana"))
+			})
+		})
+	})
+
+	Describe("discovering the plugin version", func() {
 		BeforeEach(func() {
-			debug.ReportError = "banana"
-			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+			rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "some": "version-info" }`)
 		})
 
-		It("wraps and returns the error", func() {
-			_, err := execer.ExecPlugin(pathToPlugin, stdin, environ)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("banana"))
+		It("execs the plugin with the command VERSION", func() {
+			pluginExec.GetVersionInfo(pluginPath)
+			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
+			Expect(rawExec.ExecPluginCall.Received.StdinData).To(BeNil())
+			Expect(rawExec.ExecPluginCall.Received.Environ).To(ContainElement("CNI_COMMAND=VERSION"))
 		})
-	})
 
-	Context("when the system is unable to execute the plugin", func() {
-		It("returns the error", func() {
-			_, err := execer.ExecPlugin("/tmp/some/invalid/plugin/path", stdin, environ)
-			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("/tmp/some/invalid/plugin/path")))
+		It("decodes and returns the version info", func() {
+			versionInfo, err := pluginExec.GetVersionInfo(pluginPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(versionInfo.SupportedVersions()).To(Equal([]string{"0.42.0"}))
+			Expect(versionDecoder.DecodeCall.Received.JSONBytes).To(MatchJSON(`{ "some": "version-info" }`))
 		})
+
+		Context("when the rawExec fails", func() {
+			BeforeEach(func() {
+				rawExec.ExecPluginCall.Returns.Error = errors.New("banana")
+			})
+			It("returns the error", func() {
+				_, err := pluginExec.GetVersionInfo(pluginPath)
+				Expect(err).To(MatchError("banana"))
+			})
+		})
+
+		Context("when the plugin is too old to recognize the VERSION command", func() {
+			BeforeEach(func() {
+				rawExec.ExecPluginCall.Returns.Error = errors.New("unknown CNI_COMMAND: VERSION")
+			})
+
+			It("interprets the error as a 0.1.0 version", func() {
+				versionInfo, err := pluginExec.GetVersionInfo(pluginPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(versionInfo.SupportedVersions()).To(ConsistOf("0.1.0"))
+			})
+
+			It("sets dummy values for env vars required by very old plugins", func() {
+				pluginExec.GetVersionInfo(pluginPath)
+
+				env := rawExec.ExecPluginCall.Received.Environ
+				Expect(env).To(ContainElement("CNI_NETNS=dummy"))
+				Expect(env).To(ContainElement("CNI_IFNAME=dummy"))
+				Expect(env).To(ContainElement("CNI_PATH=dummy"))
+			})
+		})
+
 	})
 })

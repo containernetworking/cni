@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package version
+package version_test
 
-// Current reports the version of the CNI spec implemented by this library
-func Current() string {
-	return "0.2.0"
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"testing"
+)
+
+func TestVersion(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Version Suite")
 }
-
-// Legacy PluginInfo describes a plugin that is backwards compatible with the
-// CNI spec version 0.1.0.  In particular, a runtime compiled against the 0.1.0
-// library ought to work correctly with a plugin that reports support for
-// Legacy versions.
-//
-// Any future CNI spec versions which meet this definition should be added to
-// this list.
-var Legacy = PluginSupports("0.1.0", "0.2.0")

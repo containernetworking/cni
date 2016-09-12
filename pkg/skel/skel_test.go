@@ -53,6 +53,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		cmdAdd, cmdDel  *fakeCmd
 		dispatch        *dispatcher
 		expectedCmdArgs *CmdArgs
+		versionInfo     version.PluginInfo
 	)
 
 	BeforeEach(func() {
@@ -67,13 +68,12 @@ var _ = Describe("dispatching to the correct callback", func() {
 		stdin = strings.NewReader(`{ "some": "config" }`)
 		stdout = &bytes.Buffer{}
 		stderr = &bytes.Buffer{}
-		versioner := &version.BasicVersioner{CNIVersion: "9.8.7"}
+		versionInfo = version.PluginSupports("9.8.7")
 		dispatch = &dispatcher{
-			Getenv:    func(key string) string { return environment[key] },
-			Stdin:     stdin,
-			Stdout:    stdout,
-			Stderr:    stderr,
-			Versioner: versioner,
+			Getenv: func(key string) string { return environment[key] },
+			Stdin:  stdin,
+			Stdout: stdout,
+			Stderr: stderr,
 		}
 		cmdAdd = &fakeCmd{}
 		cmdDel = &fakeCmd{}
@@ -90,7 +90,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 	var envVarChecker = func(envVar string, isRequired bool) {
 		delete(environment, envVar)
 
-		err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+		err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 		if isRequired {
 			Expect(err).To(Equal(&types.Error{
 				Code: 100,
@@ -104,7 +104,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 	Context("when the CNI_COMMAND is ADD", func() {
 		It("extracts env vars and stdin data and calls cmdAdd", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdAdd.CallCount).To(Equal(1))
@@ -113,7 +113,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call cmdDel", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdDel.CallCount).To(Equal(0))
@@ -136,7 +136,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			})
 
 			It("reports that all of them are missing, not just the first", func() {
-				Expect(dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)).NotTo(Succeed())
+				Expect(dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)).NotTo(Succeed())
 				log := stderr.String()
 				Expect(log).To(ContainSubstring("CNI_NETNS env variable missing\n"))
 				Expect(log).To(ContainSubstring("CNI_IFNAME env variable missing\n"))
@@ -152,7 +152,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("calls cmdDel with the env vars and stdin data", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdDel.CallCount).To(Equal(1))
@@ -160,7 +160,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call cmdAdd", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdAdd.CallCount).To(Equal(0))
@@ -182,14 +182,17 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("prints the version to stdout", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stdout).To(MatchJSON(`{ "cniVersion": "9.8.7" }`))
+			Expect(stdout).To(MatchJSON(`{
+				"cniVersion": "0.2.0",
+				"supportedVersions": ["9.8.7"]
+			}`))
 		})
 
 		It("does not call cmdAdd or cmdDel", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmdAdd.CallCount).To(Equal(0))
@@ -212,14 +215,14 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call any cmd callback", func() {
-			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(cmdAdd.CallCount).To(Equal(0))
 			Expect(cmdDel.CallCount).To(Equal(0))
 		})
 
 		It("returns an error", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).To(Equal(&types.Error{
 				Code: 100,
@@ -234,14 +237,14 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call any cmd callback", func() {
-			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(cmdAdd.CallCount).To(Equal(0))
 			Expect(cmdDel.CallCount).To(Equal(0))
 		})
 
 		It("wraps and returns the error", func() {
-			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).To(Equal(&types.Error{
 				Code: 100,
@@ -260,7 +263,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			})
 
 			It("returns the error as-is", func() {
-				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 				Expect(err).To(Equal(&types.Error{
 					Code: 1234,
@@ -275,7 +278,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			})
 
 			It("wraps and returns the error", func() {
-				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func)
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 				Expect(err).To(Equal(&types.Error{
 					Code: 100,
