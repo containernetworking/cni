@@ -7,6 +7,31 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/boltdb/bolt",
+			"Comment": "v1.2.1-11-gacc803f",
+			"Rev": "acc803f0ced151102ed51bf824f8709ebd6602bc"
+		},
+		{
+			"ImportPath": "github.com/boltdb/bolt/cmd/bolt",
+			"Comment": "v1.2.1-11-gacc803f",
+			"Rev": "acc803f0ced151102ed51bf824f8709ebd6602bc"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/client",
+			"Comment": "v3.0.0-beta.0-831-g7114a27",
+			"Rev": "7114a273452024f834a500aa826e61b2615aed3b"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/pathutil",
+			"Comment": "v3.0.0-beta.0-831-g7114a27",
+			"Rev": "7114a273452024f834a500aa826e61b2615aed3b"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v3.0.0-beta.0-831-g7114a27",
+			"Rev": "7114a273452024f834a500aa826e61b2615aed3b"
+		},
+		{
 			"ImportPath": "github.com/coreos/go-iptables/iptables",
 			"Comment": "v0.1.0",
 			"Rev": "fbb73372b87f6e89951c2b6b31470c2c9d5cfae3"
@@ -23,6 +48,64 @@
 		{
 			"ImportPath": "github.com/d2g/dhcp4client",
 			"Rev": "bed07e1bc5b85f69c6f0fd73393aa35ec68ed892"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/boltdb",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/consul",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/etcd",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/mock",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/store/zookeeper",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/docker/libkv/testutils",
+			"Comment": "v0.2.1",
+			"Rev": "aabc039ad04deb721e234f99cd1b4aa28ac71a40"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/api",
+			"Comment": "v0.7.0-rc2-31-g0a34741",
+			"Rev": "0a34741d7266af34eed36048d1a8e8880a7b17a1"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-cleanhttp",
+			"Rev": "ad28ea4487f05916463e2423a55166280e8254b5"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/serf/coordinate",
+			"Comment": "v0.7.0-97-g9432bc0",
+			"Rev": "9432bc08aa8d486e497e27f84878ebbe8c1eab66"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -215,6 +298,36 @@
 			"Rev": "2152b45fa28a361beba9aab0885972323a444e28"
 		},
 		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/samuel/go-zookeeper/zk",
+			"Rev": "87e1bca4477a3cc767ca71be023ced183d74e538"
+		},
+		{
+			"ImportPath": "github.com/stretchr/objx",
+			"Rev": "1a9d0bb9f541897e62256577b352fdbc1fb4fd94"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.3-19-gd77da35",
+			"Rev": "d77da356e56a7428ad25149ca77381849a6a5232"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/mock",
+			"Comment": "v1.1.3-19-gd77da35",
+			"Rev": "d77da356e56a7428ad25149ca77381849a6a5232"
+		},
+		{
+			"ImportPath": "github.com/ugorji/go/codec",
+			"Rev": "b94837a2404ab90efe9289e77a70694c355739cb"
+		},
+		{
+			"ImportPath": "github.com/ugorji/go/codec/codecgen",
+			"Rev": "b94837a2404ab90efe9289e77a70694c355739cb"
+		},
+		{
 			"ImportPath": "github.com/vishvananda/netlink",
 			"Rev": "9dee363ad4abbc3c9a4a24a9f1e33363e224b111"
 		},
@@ -223,12 +336,20 @@
 			"Rev": "9dee363ad4abbc3c9a4a24a9f1e33363e224b111"
 		},
 		{
-			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "076b546753157f758b316e59bcb51e6807c04057"
-		},
-		{
 			"ImportPath": "github.com/vishvananda/netns",
 			"Rev": "8ba1072b58e0c2a240eb5f6120165c7776c3e7b8"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "0c607074acd38c5f23d1344dfe74c977464d1257"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context/ctxhttp",
+			"Rev": "0c607074acd38c5f23d1344dfe74c977464d1257"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "076b546753157f758b316e59bcb51e6807c04057"
 		}
 	]
 }
