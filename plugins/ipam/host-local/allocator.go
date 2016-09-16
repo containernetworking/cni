@@ -173,7 +173,7 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 	}
 
 	startIP, endIP := a.getSearchRange()
-	for cur := startIP; !cur.Equal(endIP); cur = a.nextIP(cur) {
+	for cur := startIP; ; cur = a.nextIP(cur) {
 		// don't allocate gateway IP
 		if gw != nil && cur.Equal(gw) {
 			continue
@@ -189,6 +189,10 @@ func (a *IPAllocator) Get(id string) (*types.IPConfig, error) {
 				Gateway: gw,
 				Routes:  a.conf.Routes,
 			}, nil
+		}
+		// break here to complete the loop
+		if cur.Equal(endIP) {
+			break
 		}
 	}
 	return nil, fmt.Errorf("no IP addresses available in network: %s", a.conf.Name)
