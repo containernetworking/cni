@@ -135,7 +135,6 @@ var _ = Describe("bridge Operations", func() {
     "isDefaultGateway": true,
     "ipMasq": false,
     "ipam": {
-        "cniVersion": "0.2.0",
         "type": "host-local",
         "subnet": "%s"
     }

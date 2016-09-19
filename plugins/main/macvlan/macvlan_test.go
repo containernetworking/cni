@@ -107,7 +107,6 @@ var _ = Describe("macvlan Operations", func() {
     "type": "macvlan",
     "master": "%s",
     "ipam": {
-        "cniVersion": "0.2.0",
         "type": "host-local",
         "subnet": "10.1.2.0/24"
     }
