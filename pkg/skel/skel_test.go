@@ -172,7 +172,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 				It("immediately returns a useful error", func() {
 					err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
-					Expect(err.Code).To(Equal(uint(1))) // see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
+					Expect(err.Code).To(Equal(types.ErrIncompatibleCNIVersion)) // see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
 					Expect(err.Msg).To(Equal("incompatible CNI versions"))
 					Expect(err.Details).To(Equal(`config is "0.1.0", plugin supports ["4.3.2"]`))
 				})
