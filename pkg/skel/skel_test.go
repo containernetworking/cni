@@ -150,14 +150,38 @@ var _ = Describe("dispatching to the correct callback", func() {
 				dispatch.Stdin = strings.NewReader(`{ "some": "config" }`)
 			})
 
-			It("immediately returns a useful error", func() {
-				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
-				Expect(err).To(MatchError("missing required config cniVersion"))
+			Context("when the plugin supports version 0.1.0", func() {
+				BeforeEach(func() {
+					versionInfo = version.PluginSupports("0.1.0")
+					expectedCmdArgs.StdinData = []byte(`{ "some": "config" }`)
+				})
+
+				It("infers the config is 0.1.0 and calls the cmdAdd callback", func() {
+					err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(cmdAdd.CallCount).To(Equal(1))
+					Expect(cmdAdd.Received.CmdArgs).To(Equal(expectedCmdArgs))
+				})
 			})
 
-			It("does not call either callback", func() {
-				Expect(cmdAdd.CallCount).To(Equal(0))
-				Expect(cmdDel.CallCount).To(Equal(0))
+			Context("when the plugin does not support 0.1.0", func() {
+				BeforeEach(func() {
+					versionInfo = version.PluginSupports("4.3.2")
+				})
+
+				It("immediately returns a useful error", func() {
+					err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+					Expect(err.Code).To(Equal(uint(1))) // see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
+					Expect(err.Msg).To(Equal("incompatible CNI versions"))
+					Expect(err.Details).To(Equal(`config is "0.1.0", plugin supports ["4.3.2"]`))
+				})
+
+				It("does not call either callback", func() {
+					dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+					Expect(cmdAdd.CallCount).To(Equal(0))
+					Expect(cmdDel.CallCount).To(Equal(0))
+				})
 			})
 		})
 	})
@@ -223,6 +247,22 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Entry("args", "CNI_ARGS", false),
 			Entry("path", "CNI_PATH", false),
 		)
+
+		Context("when the stdin is empty", func() {
+			BeforeEach(func() {
+				dispatch.Stdin = strings.NewReader("")
+			})
+
+			It("succeeds without error", func() {
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stdout).To(MatchJSON(`{
+					"cniVersion": "0.2.0",
+					"supportedVersions": ["9.8.7"]
+			}`))
+			})
+		})
 	})
 
 	Context("when the CNI_COMMAND is unrecognized", func() {
