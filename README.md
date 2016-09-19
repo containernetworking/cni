@@ -34,6 +34,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
+- [Cilium - BPF & XDP for containers](https://github.com/cilium/cilium)
 
 The CNI team also maintains some [core plugins](plugins).
 
