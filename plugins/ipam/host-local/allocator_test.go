@@ -66,6 +66,12 @@ var _ = Describe("host-local ip allocator", func() {
 					lastIP:       "",
 				},
 				{
+					subnet:       "10.0.0.0/30",
+					ipmap:        map[string]string{},
+					expectResult: "10.0.0.2",
+					lastIP:       "",
+				},
+				{
 					subnet: "10.0.0.0/29",
 					ipmap: map[string]string{
 						"10.0.0.2": "id",
@@ -106,6 +112,18 @@ var _ = Describe("host-local ip allocator", func() {
 					},
 					expectResult: "10.0.0.3",
 					lastIP:       "10.0.0.128",
+				},
+				// wrap around and reserve lastIP
+				{
+					subnet: "10.0.0.0/29",
+					ipmap: map[string]string{
+						"10.0.0.2": "id",
+						"10.0.0.4": "id",
+						"10.0.0.5": "id",
+						"10.0.0.6": "id",
+					},
+					expectResult: "10.0.0.3",
+					lastIP:       "10.0.0.3",
 				},
 			}
 
