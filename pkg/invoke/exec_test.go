@@ -15,6 +15,7 @@
 package invoke_test
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/containernetworking/cni/pkg/invoke"
@@ -48,7 +49,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 			VersionDecoder: versionDecoder,
 		}
 		pluginPath = "/some/plugin/path"
-		netconf = []byte(`{ "some": "stdin" }`)
+		netconf = []byte(`{ "some": "stdin", "cniVersion": "0.2.0" }`)
 		cniargs = &fakes.CNIArgs{}
 		cniargs.AsEnvCall.Returns.Env = []string{"SOME=ENV"}
 	})
@@ -105,8 +106,9 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 		It("execs the plugin with the command VERSION", func() {
 			pluginExec.GetVersionInfo(pluginPath)
 			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
-			Expect(rawExec.ExecPluginCall.Received.StdinData).To(BeNil())
 			Expect(rawExec.ExecPluginCall.Received.Environ).To(ContainElement("CNI_COMMAND=VERSION"))
+			expectedStdin, _ := json.Marshal(map[string]string{"cniVersion": version.Current()})
+			Expect(rawExec.ExecPluginCall.Received.StdinData).To(MatchJSON(expectedStdin))
 		})
 
 		It("decodes and returns the version info", func() {
@@ -146,6 +148,5 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 				Expect(env).To(ContainElement("CNI_PATH=dummy"))
 			})
 		})
-
 	})
 })

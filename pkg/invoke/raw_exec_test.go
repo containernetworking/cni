@@ -58,7 +58,7 @@ var _ = Describe("RawExec", func() {
 			"CNI_PATH=/some/bin/path",
 			"CNI_IFNAME=some-eth0",
 		}
-		stdin = []byte(`{"some":"stdin-json"}`)
+		stdin = []byte(`{"some":"stdin-json", "cniVersion": "0.2.0"}`)
 		execer = &invoke.RawExec{}
 	})
 

@@ -60,14 +60,14 @@ var _ = Describe("No-op plugin", func() {
 			"CNI_IFNAME=some-eth0",
 			"CNI_PATH=/some/bin/path",
 		}
-		cmd.Stdin = strings.NewReader(`{"some":"stdin-json"}`)
+		cmd.Stdin = strings.NewReader(`{"some":"stdin-json", "cniVersion": "0.2.0"}`)
 		expectedCmdArgs = skel.CmdArgs{
 			ContainerID: "some-container-id",
 			Netns:       "/some/netns/path",
 			IfName:      "some-eth0",
 			Args:        "DEBUG=" + debugFileName,
 			Path:        "/some/bin/path",
-			StdinData:   []byte(`{"some":"stdin-json"}`),
+			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.2.0"}`),
 		}
 	})
 

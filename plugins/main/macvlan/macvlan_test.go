@@ -64,8 +64,9 @@ var _ = Describe("macvlan Operations", func() {
 	It("creates an macvlan link in a non-default namespace", func() {
 		conf := &NetConf{
 			NetConf: types.NetConf{
-				Name: "testConfig",
-				Type: "macvlan",
+				CNIVersion: "0.2.0",
+				Name:       "testConfig",
+				Type:       "macvlan",
 			},
 			Master: MASTER_NAME,
 			Mode:   "bridge",
@@ -101,6 +102,7 @@ var _ = Describe("macvlan Operations", func() {
 		const IFNAME = "macvl0"
 
 		conf := fmt.Sprintf(`{
+    "cniVersion": "0.2.0",
     "name": "mynet",
     "type": "macvlan",
     "master": "%s",

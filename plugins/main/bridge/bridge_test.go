@@ -51,8 +51,9 @@ var _ = Describe("bridge Operations", func() {
 
 		conf := &NetConf{
 			NetConf: types.NetConf{
-				Name: "testConfig",
-				Type: "bridge",
+				CNIVersion: "0.2.0",
+				Name:       "testConfig",
+				Type:       "bridge",
 			},
 			BrName: IFNAME,
 			IsGW:   false,
@@ -95,8 +96,9 @@ var _ = Describe("bridge Operations", func() {
 
 			conf := &NetConf{
 				NetConf: types.NetConf{
-					Name: "testConfig",
-					Type: "bridge",
+					CNIVersion: "0.2.0",
+					Name:       "testConfig",
+					Type:       "bridge",
 				},
 				BrName: IFNAME,
 				IsGW:   false,
@@ -126,6 +128,7 @@ var _ = Describe("bridge Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		conf := fmt.Sprintf(`{
+    "cniVersion": "0.2.0",
     "name": "mynet",
     "type": "bridge",
     "bridge": "%s",
@@ -253,15 +256,15 @@ var _ = Describe("bridge Operations", func() {
 	})
 
 	It("ensure bridge address", func() {
-
 		const IFNAME = "bridge0"
 		const EXPECTED_IP = "10.0.0.0/8"
 		const CHANGED_EXPECTED_IP = "10.1.2.3/16"
 
 		conf := &NetConf{
 			NetConf: types.NetConf{
-				Name: "testConfig",
-				Type: "bridge",
+				CNIVersion: "0.2.0",
+				Name:       "testConfig",
+				Type:       "bridge",
 			},
 			BrName: IFNAME,
 			IsGW:   true,
@@ -320,5 +323,4 @@ var _ = Describe("bridge Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	})
-
 })
