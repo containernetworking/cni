@@ -29,7 +29,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/netman-release)
 - [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 
-### 3rd Party Network plugins
+### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)

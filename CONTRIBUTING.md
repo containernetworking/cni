@@ -109,3 +109,17 @@ The first line is the subject and should be no longer than 70 characters, the
 second line is always blank, and other lines should be wrapped at 80 characters.
 This allows the message to be easier to read on GitHub as well as in various
 git tools.
+
+## 3rd party plugins
+So you've built a CNI plugin.  Where should it live?
+
+Short answer: We'd be happy to link to it from our [list of 3rd party plugins](README.md#3rd-party-plugins).
+But we'd rather you kept the code in your own repo.
+
+Long answer: An advantage of the CNI model is that independent plugins can be
+built, distributed and used without any code changes to this repository.  While
+some widely used plugins (and a few less-popular legacy ones) live in this repo,
+we're reluctant to add more.
+
+If you have a good reason why the CNI maintainers should take custody of your
+plugin, please open an issue or PR.
