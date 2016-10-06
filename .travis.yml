@@ -20,7 +20,7 @@ env:
 
 matrix:
   fast_finish: true
-  allow_failures: 
+  allow_failures:
     - go: tip
   exclude:
     - go: 1.5.4
@@ -51,3 +51,6 @@ script:
 
 notifications:
   email: false
+
+git:
+  depth: 9999999
