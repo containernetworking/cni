@@ -7,6 +7,7 @@ The host-local IPAM plugin can be used to allocate an IP address to the containe
 The traffic of the container interface will be routed through the interface of the host.
 
 ## Example network configuration
+
 ```
 {
 	"name": "mynet",
@@ -19,6 +20,7 @@ The traffic of the container interface will be routed through the interface of t
 		"nameservers": [ "10.1.1.1", "8.8.8.8" ]
 	}
 }
+```
 
 ## Network configuration reference
 
