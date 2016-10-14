@@ -17,12 +17,15 @@ package libcni_test
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Backwards compatibility", func() {
@@ -49,5 +52,32 @@ var _ = Describe("Backwards compatibility", func() {
 		Expect(result).To(Equal(legacy_examples.ExpectedResult))
 
 		Expect(os.RemoveAll(pluginPath)).To(Succeed())
+	})
+
+	It("correctly handles the request from a runtime with an older libcni", func() {
+		// We need to be root (or have CAP_SYS_ADMIN...)
+		if os.Geteuid() != 0 {
+			Fail("must be run as root")
+		}
+
+		example := legacy_examples.V010_Runtime
+
+		binPath, err := example.Build()
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, configName := range example.NetConfs {
+			configStr, ok := legacy_examples.NetConfs[configName]
+			if !ok {
+				Fail("Invalid config name " + configName)
+			}
+
+			cmd := exec.Command(binPath, pluginDirs...)
+			cmd.Stdin = strings.NewReader(configStr)
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			Eventually(session).Should(gexec.Exit(0))
+		}
 	})
 })
