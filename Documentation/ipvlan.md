@@ -18,7 +18,7 @@ Because all ipvlan interfaces share the MAC address with the host interface, DHC
 	"master": "eth0",
 	"ipam": {
 		"type": "host-local",
-		"subnet": "10.1.2.0/24",
+		"subnet": "10.1.2.0/24"
 	}
 }
 ```
