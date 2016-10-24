@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/containernetworking/cni.svg?branch=master)](https://travis-ci.org/containernetworking/cni)
 [![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
+[![Slack Status](https://cryptic-tundra-43194.herokuapp.com/badge.svg)](https://cryptic-tundra-43194.herokuapp.com/)
 
 # CNI - the Container Network Interface
 
@@ -172,3 +173,4 @@ If these topics of are interest, please contact the team via the mailing list or
 For any questions about CNI, please reach out on the mailing list:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.org:6667/#containernetworking) channel on freenode.org
+- Slack: [containernetworking.slack.com](https://cryptic-tundra-43194.herokuapp.com)
