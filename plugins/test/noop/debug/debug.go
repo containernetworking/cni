@@ -22,6 +22,8 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 )
 
+const EmptyReportResultMessage = "set debug.ReportResult and call debug.WriteDebug() before calling this plugin"
+
 // Debug is used to control and record the behavior of the noop plugin
 type Debug struct {
 	// Report* fields allow the test to control the behavior of the no-op plugin
