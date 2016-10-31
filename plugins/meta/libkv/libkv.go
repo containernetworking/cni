@@ -28,6 +28,7 @@ import (
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
@@ -48,6 +49,7 @@ type LibKvConf struct {
 	Uri          string        `json:"uri"`
 	BasePath     string        `json:"basePath,omitempty"`
 	StoreConfig  *StoreConfig  `json:"storeConfig,omitempty"`
+	Identifier   string        `json:"identifier,omitempty"`
 }
 
 type StoreConfig struct {
@@ -87,7 +89,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		log.Fatal("Cannot create %s store", config.StoreBackend)
 	}
-	key := config.BasePath + args.ContainerID
+
+	// Construct the lookup path for the container
+	key := config.BasePath
+	if config.Identifier != "" {
+		for _, kv := range strings.Split(args.Args, ";") {
+			if strings.HasPrefix(kv, config.Identifier+"=") {
+				key += strings.TrimPrefix(kv, config.Identifier+"=")
+			}
+		}
+	} else {
+		key += args.ContainerID
+	}
+
 	pair, err := kv.Get(key)
 	if err != nil {
 		return fmt.Errorf("Error trying accessing value at key: %v", key)
@@ -128,7 +142,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 func loadPluginConfig(bytes []byte) (*LibKvConf, error) {
 	config := &LibKvConf{
-		BasePath:     "/",
+		BasePath:    "/",
 		StoreConfig: &StoreConfig{},
 	}
 	if err := json.Unmarshal(bytes, config); err != nil {
@@ -191,5 +205,5 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel)
+	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
 }

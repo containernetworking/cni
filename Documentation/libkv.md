@@ -10,8 +10,11 @@ treated as the main configuration and it's configuration will be returned as
 result to the caller.
 
 The plugin searches for the configuration on the location
-<basePath>/<containerId> in the store. This allows different configurations per
-container.
+<basePath>/<key> in the store. Where the _key_ is either the `containerId`
+or extracted from the `Args` section of the runtime configuration by using
+a key specified via the `identifier` config property.
+
+This allows different configurations per container.
 
 Further the plugins allows extended per-container configuration in Kubernetes
 since Kubernetes currently only reads the first CNI configuration it finds.
@@ -126,9 +129,15 @@ ip netns delete $contid
   "basePath": "cni/",
   "storeConfig": {
     "connectionTimeout": 10
-  }
+  },
+  "identifier": "K8S_POD_NAME"
 }
 ```
+
+By adding the `identifier` _K8S_POD_NAME_, this example can be used in combination with Kubernetes.
+Kubernetes only runs one CNI config file per container start, so we would normally end up with one device per pod.
+Luckily Kubernetes adds the `K8S_POD_NAME` runtime argument to every CNI config run.
+Now, with this plugin, we can use stock Kubernetes and plain CNI to build complex multi-device network topologies per pod.
 
 ## Network configuration reference
 
@@ -138,3 +147,4 @@ ip netns delete $contid
 * `uri` (string, required): Store connection URI. 
 * `basePath` (string, optional): Base path where to search for the key.
 * `storeConfig` (dictionary, optional): Additional store connection options (credentials, tls, ...).
+* `identifier` (string, optional): Which label from the Args section to use to uniquely identify the container in the store. If absent the container ID will be used.
