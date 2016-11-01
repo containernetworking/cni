@@ -29,6 +29,7 @@ the flannel plugin will generate another network configuration file:
 	"mtu": 1472,
 	"ipMasq": false,
 	"isGateway": true,
+	"forceAddress": true,
 	"ipam": {
 		"type": "host-local",
 		"subnet": "10.1.17.0/24"
