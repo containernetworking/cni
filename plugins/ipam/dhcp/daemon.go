@@ -78,7 +78,7 @@ func (d *DHCP) Allocate(args *skel.CmdArgs, result *types.Result) error {
 
 	result.DNS = types.DNS{
 		Nameservers: l.DNSServers(),
-		Domain: l.DNSDomain(),
+		Domain:      l.DNSDomain(),
 	}
 
 	return nil

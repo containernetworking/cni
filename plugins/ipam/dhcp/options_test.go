@@ -79,21 +79,21 @@ func TestParseDNSServers(t *testing.T) {
 	opts[dhcp4.OptionDomainNameServer] = []byte{8, 8, 8, 8, 8, 8, 4, 4}
 	nameservers := parseDNSServers(opts)
 
-	expected := []string {
+	expected := []string{
 		"8.8.8.8",
 		"8.8.4.4",
 	}
 
 	if len(nameservers) != len(expected) {
 		t.Fatalf("wrong number of records; expected %v, got %v",
-							len(expected), len(nameservers))
+			len(expected), len(nameservers))
 	}
 
-	for i := 0; i < len(nameservers); i ++ {
+	for i := 0; i < len(nameservers); i++ {
 
 		if nameservers[i] != expected[i] {
 			t.Errorf("nameserver mismatch: expected %v, got %v",
-								expected[i], nameservers[i])
+				expected[i], nameservers[i])
 		}
 	}
 }
@@ -109,6 +109,6 @@ func TestParseDNSDomain(t *testing.T) {
 
 	if expected != domainname {
 		t.Errorf("domain name mismatch: expected %v, got %v",
-							expected, domainname)
+			expected, domainname)
 	}
 }

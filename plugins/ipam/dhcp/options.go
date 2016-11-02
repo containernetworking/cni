@@ -48,7 +48,7 @@ func parseDNSServers(opts dhcp4.Options) []string {
 	if opt, ok := opts[dhcp4.OptionDomainNameServer]; ok {
 		for len(opt) >= 4 {
 			ns = net.IP(opt[0:4]).String()
-			nameservers = append(nameservers,ns)
+			nameservers = append(nameservers, ns)
 			opt = opt[4:]
 		}
 
@@ -59,7 +59,7 @@ func parseDNSServers(opts dhcp4.Options) []string {
 
 func parseDNSDomain(opts dhcp4.Options) string {
 	// Parse domainname option
-  var domainname string
+	var domainname string
 	if opt, ok := opts[dhcp4.OptionDomainName]; ok {
 		domainname = string(opt[:])
 	}
