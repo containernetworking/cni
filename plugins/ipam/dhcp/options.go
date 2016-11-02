@@ -40,6 +40,33 @@ func classfulSubnet(sn net.IP) net.IPNet {
 	}
 }
 
+func parseDNSServers(opts dhcp4.Options) []string {
+	// Parse DNS from dhcp4 options packet
+	// ns = 4 bytes, net.IP
+	nameservers := []string{}
+	var ns string
+	if opt, ok := opts[dhcp4.OptionDomainNameServer]; ok {
+		for len(opt) >= 4 {
+			ns = net.IP(opt[0:4]).String()
+			nameservers = append(nameservers,ns)
+			opt = opt[4:]
+		}
+
+	}
+
+	return nameservers
+}
+
+func parseDNSDomain(opts dhcp4.Options) string {
+	// Parse domainname option
+  var domainname string
+	if opt, ok := opts[dhcp4.OptionDomainName]; ok {
+		domainname = string(opt[:])
+	}
+
+	return domainname
+}
+
 func parseRoutes(opts dhcp4.Options) []types.Route {
 	// StaticRoutes format: pairs of:
 	// Dest = 4 bytes; Classful IP subnet

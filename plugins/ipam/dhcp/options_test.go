@@ -73,3 +73,42 @@ func TestParseCIDRRoutes(t *testing.T) {
 
 	validateRoutes(t, routes)
 }
+
+func TestParseDNSServers(t *testing.T) {
+	opts := make(dhcp4.Options)
+	opts[dhcp4.OptionDomainNameServer] = []byte{8, 8, 8, 8, 8, 8, 4, 4}
+	nameservers := parseDNSServers(opts)
+
+	expected := []string {
+		"8.8.8.8",
+		"8.8.4.4",
+	}
+
+	if len(nameservers) != len(expected) {
+		t.Fatalf("wrong number of records; expected %v, got %v",
+							len(expected), len(nameservers))
+	}
+
+	for i := 0; i < len(nameservers); i ++ {
+
+		if nameservers[i] != expected[i] {
+			t.Errorf("nameserver mismatch: expected %v, got %v",
+								expected[i], nameservers[i])
+		}
+	}
+}
+
+func TestParseDNSDomain(t *testing.T) {
+	opts := make(dhcp4.Options)
+	// Let's add example.com
+	// python -c "print [ord(i) for i in 'example.com']"
+	opts[dhcp4.OptionDomainName] = []byte{101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109}
+	domainname := parseDNSDomain(opts)
+
+	expected := "example.com"
+
+	if expected != domainname {
+		t.Errorf("domain name mismatch: expected %v, got %v",
+							expected, domainname)
+	}
+}

@@ -296,6 +296,15 @@ func (l *DHCPLease) Routes() []types.Route {
 	return append(routes, parseCIDRRoutes(l.opts)...)
 }
 
+func (l *DHCPLease) DNSServers() []string {
+	// parse and return DNS Server included in the options section
+	return parseDNSServers(l.opts)
+}
+
+func (l *DHCPLease) DNSDomain() string {
+	return parseDNSDomain(l.opts)
+}
+
 // jitter returns a random value within [-span, span) range
 func jitter(span time.Duration) time.Duration {
 	return time.Duration(float64(span) * (2.0*rand.Float64() - 1.0))
