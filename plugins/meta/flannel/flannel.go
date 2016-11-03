@@ -37,12 +37,13 @@ import (
 
 const (
 	defaultSubnetFile = "/run/flannel/subnet.env"
-	stateDir          = "/var/lib/cni/flannel"
+	defaultStateDir   = "/var/lib/cni/flannel"
 )
 
 type NetConf struct {
 	types.NetConf
 	SubnetFile string                 `json:"subnetFile"`
+	StateDir   string                 `json:"stateDir"`
 	Delegate   map[string]interface{} `json:"delegate"`
 }
 
@@ -74,6 +75,7 @@ func (se *subnetEnv) missing() string {
 func loadFlannelNetConf(bytes []byte) (*NetConf, error) {
 	n := &NetConf{
 		SubnetFile: defaultSubnetFile,
+		StateDir:   defaultStateDir,
 	}
 	if err := json.Unmarshal(bytes, n); err != nil {
 		return nil, fmt.Errorf("failed to load netconf: %v", err)
@@ -130,7 +132,7 @@ func loadFlannelSubnetEnv(fn string) (*subnetEnv, error) {
 	return se, nil
 }
 
-func saveScratchNetConf(containerID string, netconf []byte) error {
+func saveScratchNetConf(containerID, stateDir string, netconf []byte) error {
 	if err := os.MkdirAll(stateDir, 0700); err != nil {
 		return err
 	}
@@ -138,21 +140,21 @@ func saveScratchNetConf(containerID string, netconf []byte) error {
 	return ioutil.WriteFile(path, netconf, 0600)
 }
 
-func consumeScratchNetConf(containerID string) ([]byte, error) {
+func consumeScratchNetConf(containerID, stateDir string) ([]byte, error) {
 	path := filepath.Join(stateDir, containerID)
 	defer os.Remove(path)
 
 	return ioutil.ReadFile(path)
 }
 
-func delegateAdd(cid string, netconf map[string]interface{}) error {
+func delegateAdd(cid, stateDir string, netconf map[string]interface{}) error {
 	netconfBytes, err := json.Marshal(netconf)
 	if err != nil {
 		return fmt.Errorf("error serializing delegate netconf: %v", err)
 	}
 
 	// save the rendered netconf for cmdDel
-	if err = saveScratchNetConf(cid, netconfBytes); err != nil {
+	if err = saveScratchNetConf(cid, stateDir, netconfBytes); err != nil {
 		return err
 	}
 
@@ -232,11 +234,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 		},
 	}
 
-	return delegateAdd(args.ContainerID, n.Delegate)
+	return delegateAdd(args.ContainerID, n.StateDir, n.Delegate)
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	netconfBytes, err := consumeScratchNetConf(args.ContainerID)
+	nc, err := loadFlannelNetConf(args.StdinData)
+	if err != nil {
+		return err
+	}
+
+	netconfBytes, err := consumeScratchNetConf(args.ContainerID, nc.StateDir)
 	if err != nil {
 		return err
 	}
