@@ -55,6 +55,44 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 	}
 }
 
+func (h *Handle) SetPromiscOn(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change = syscall.IFF_PROMISC
+	msg.Flags = syscall.IFF_UP
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func SetPromiscOn(link Link) error {
+	return pkgHandle.SetPromiscOn(link)
+}
+
+func (h *Handle) SetPromiscOff(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change = syscall.IFF_PROMISC
+	msg.Flags = 0 & ^syscall.IFF_UP
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func SetPromiscOff(link Link) error {
+	return pkgHandle.SetPromiscOff(link)
+}
+
 // LinkSetUp enables the link device.
 // Equivalent to: `ip link set $link up`
 func LinkSetUp(link Link) error {
@@ -378,6 +416,23 @@ func (h *Handle) LinkSetNsFd(link Link, fd int) error {
 	return err
 }
 
+// LinkSetXdpFd adds a bpf function to the driver. The fd must be a bpf
+// program loaded with bpf(type=BPF_PROG_TYPE_XDP)
+func LinkSetXdpFd(link Link, fd int) error {
+	base := link.Attrs()
+	ensureIndex(base)
+	req := nl.NewNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	addXdpAttrs(&LinkXdp{Fd: fd}, req)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
 func boolAttr(val bool) []byte {
 	var v uint8
 	if val {
@@ -655,6 +710,10 @@ func (h *Handle) LinkAdd(link Link) error {
 		req.AddData(attr)
 	}
 
+	if base.Xdp != nil {
+		addXdpAttrs(base.Xdp, req)
+	}
+
 	linkInfo := nl.NewRtAttr(syscall.IFLA_LINKINFO, nil)
 	nl.NewRtAttrChild(linkInfo, nl.IFLA_INFO_KIND, nl.NonZeroTerminated(link.Type()))
 
@@ -877,7 +936,10 @@ func linkDeserialize(m []byte) (Link, error) {
 		return nil, err
 	}
 
-	base := LinkAttrs{Index: int(msg.Index), Flags: linkFlags(msg.Flags)}
+	base := LinkAttrs{Index: int(msg.Index), RawFlags: msg.Flags, Flags: linkFlags(msg.Flags), EncapType: msg.EncapType()}
+	if msg.Flags&syscall.IFF_PROMISC != 0 {
+		base.Promisc = 1
+	}
 	var link Link
 	linkType := ""
 	for _, attr := range attrs {
@@ -964,6 +1026,12 @@ func linkDeserialize(m []byte) (Link, error) {
 			base.Alias = string(attr.Value[:len(attr.Value)-1])
 		case syscall.IFLA_STATS:
 			base.Statistics = parseLinkStats(attr.Value[:])
+		case nl.IFLA_XDP:
+			xdp, err := parseLinkXdp(attr.Value[:])
+			if err != nil {
+				return nil, err
+			}
+			base.Xdp = xdp
 		}
 	}
 	// Links that don't have IFLA_INFO_KIND are hardware devices
@@ -1394,4 +1462,29 @@ func parseGretapData(link Link, data []syscall.NetlinkRouteAttr) {
 
 func parseLinkStats(data []byte) *LinkStatistics {
 	return (*LinkStatistics)(unsafe.Pointer(&data[0:SizeofLinkStats][0]))
+}
+
+func addXdpAttrs(xdp *LinkXdp, req *nl.NetlinkRequest) {
+	attrs := nl.NewRtAttr(nl.IFLA_XDP|syscall.NLA_F_NESTED, nil)
+	b := make([]byte, 4)
+	native.PutUint32(b, uint32(xdp.Fd))
+	nl.NewRtAttrChild(attrs, nl.IFLA_XDP_FD, b)
+	req.AddData(attrs)
+}
+
+func parseLinkXdp(data []byte) (*LinkXdp, error) {
+	attrs, err := nl.ParseRouteAttr(data)
+	if err != nil {
+		return nil, err
+	}
+	xdp := &LinkXdp{}
+	for _, attr := range attrs {
+		switch attr.Attr.Type {
+		case nl.IFLA_XDP_FD:
+			xdp.Fd = int(native.Uint32(attr.Value[0:4]))
+		case nl.IFLA_XDP_ATTACHED:
+			xdp.Attached = attr.Value[0] != 0
+		}
+	}
+	return xdp, nil
 }
