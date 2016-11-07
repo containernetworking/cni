@@ -74,16 +74,7 @@ func TestParseCIDRRoutes(t *testing.T) {
 	validateRoutes(t, routes)
 }
 
-func TestParseDNSServers(t *testing.T) {
-	opts := make(dhcp4.Options)
-	opts[dhcp4.OptionDomainNameServer] = []byte{8, 8, 8, 8, 8, 8, 4, 4}
-	nameservers := parseDNSServers(opts)
-
-	expected := []string{
-		"8.8.8.8",
-		"8.8.4.4",
-	}
-
+func validateDNSServers(t *testing.T, nameservers []string, expected []string) {
 	if len(nameservers) != len(expected) {
 		t.Fatalf("wrong number of records; expected %v, got %v",
 			len(expected), len(nameservers))
@@ -98,17 +89,83 @@ func TestParseDNSServers(t *testing.T) {
 	}
 }
 
-func TestParseDNSDomain(t *testing.T) {
+func TestParseDNSServers(t *testing.T) {
 	opts := make(dhcp4.Options)
-	// Let's add example.com
-	// python -c "print [ord(i) for i in 'example.com']"
-	opts[dhcp4.OptionDomainName] = []byte{101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109}
-	domainname := parseDNSDomain(opts)
 
-	expected := "example.com"
+	var tests = []struct {
+		nameservers []byte
+		expected    []string
+	}{
+		{[]byte{8, 8, 8, 8, 8, 8, 4, 4, 1, 2, 3, 4}, []string{"8.8.8.8", "8.8.4.4", "1.2.3.4"}},
+		{[]byte{8, 8, 8, 8, 8, 8, 4, 4}, []string{"8.8.8.8", "8.8.4.4"}},
+		{[]byte{8, 8, 8, 8, 4, 4}, []string{"8.8.8.8"}},
+		{[]byte{8, 8, 8, 8, 4}, []string{"8.8.8.8"}},
+		{[]byte{8, 8, 8}, nil},
+	}
 
+	for _, test := range tests {
+		opts[dhcp4.OptionDomainNameServer] = test.nameservers
+		var nameservers = parseDNSServers(opts)
+		validateDNSServers(t, nameservers, test.expected)
+	}
+}
+
+func validateDNSDomain(t *testing.T, domainname string, expected string) {
 	if expected != domainname {
 		t.Errorf("domain name mismatch: expected %v, got %v",
 			expected, domainname)
 	}
+}
+
+func TestParseDNSDomain(t *testing.T) {
+	opts := make(dhcp4.Options)
+
+	var tests = []struct {
+		domainname []byte
+		expected   string
+	}{
+		// Let's add example.com
+		// python -c "print [ord(i) for i in 'example.com']"
+		{[]byte{101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109}, "example.com"},
+		// "veryveryverylonglonglonglonglonglonglonglongname.com"
+		{[]byte{118, 101, 114, 121, 118, 101, 114, 121, 118, 101, 114, 121, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 110, 97, 109, 101, 46, 99, 111, 109},
+			"veryveryverylonglonglonglonglonglonglonglongname.com"},
+		// 64 bytes label: python -c 'print [ord(i) for i in "long"*16+".new.com"]'
+		{[]byte{108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 46, 110, 101, 119, 46, 99,
+			111, 109}, ""},
+		// over 255
+		{[]byte{108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 46, 108, 111, 110, 103, 108, 111, 110, 103,
+			108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111,
+			110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103,
+			108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111,
+			110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 46, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108,
+			111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110,
+			103, 46, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103,
+			108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111,
+			110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103,
+			108, 111, 110, 103, 108, 111, 110, 103, 108, 111, 110, 103, 108, 111,
+			110, 103, 108, 111, 110, 103, 46, 109, 111, 114, 101, 116, 104, 97, 110,
+			50, 53, 53, 98, 121, 116, 101, 115, 46, 99, 111, 109}, ""},
+	}
+
+	for _, test := range tests {
+		opts[dhcp4.OptionDomainName] = test.domainname
+		domainname := parseDNSDomain(opts)
+		validateDNSDomain(t, domainname, test.expected)
+	}
+
 }

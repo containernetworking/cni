@@ -18,6 +18,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/containernetworking/cni/pkg/types"
@@ -60,8 +62,20 @@ func parseDNSServers(opts dhcp4.Options) []string {
 func parseDNSDomain(opts dhcp4.Options) string {
 	// Parse domainname option
 	var domainname string
+	// Thanks to: https://github.com/asaskevich/govalidator
+	var DNSName string = `^([a-zA-Z0-9]{1}[a-zA-Z0-9_-]{1,62}){1}(\.[a-zA-Z0-9]{1}[a-zA-Z0-9_-]{1,62})*$`
 	if opt, ok := opts[dhcp4.OptionDomainName]; ok {
 		domainname = string(opt[:])
+		// RFC 1035 section 2.3.4 and 3.1
+		if len(strings.Replace(domainname, ".", "", -1)) > 255 {
+			// length is restricted to 255 octects
+			return ""
+		}
+		// labels max 63 bytes
+		matched, _ := regexp.MatchString(DNSName, domainname)
+		if !matched {
+			return ""
+		}
 	}
 
 	return domainname
