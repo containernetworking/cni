@@ -29,6 +29,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
 )
@@ -46,7 +47,7 @@ type NetConf struct {
 	MTU    int  `json:"mtu"`
 }
 
-func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string, error) {
+func setupContainerVeth(netns, ifName string, mtu int, pr *current.Result) (string, error) {
 	// The IPAM result will be something like IP=192.168.3.5/24, GW=192.168.3.1.
 	// What we want is really a point-to-point link but veth does not support IFF_POINTOPONT.
 	// Next best thing would be to let it ARP but set interface to 192.168.3.5/32 and
@@ -102,7 +103,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 		}
 
 		for _, r := range []netlink.Route{
-			netlink.Route{
+			{
 				LinkIndex: contVeth.Attrs().Index,
 				Dst: &net.IPNet{
 					IP:   pr.IP4.Gateway,
@@ -111,7 +112,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 				Scope: netlink.SCOPE_LINK,
 				Src:   pr.IP4.IP.IP,
 			},
-			netlink.Route{
+			{
 				LinkIndex: contVeth.Attrs().Index,
 				Dst: &net.IPNet{
 					IP:   pr.IP4.IP.IP.Mask(pr.IP4.IP.Mask),
@@ -132,7 +133,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *types.Result) (string
 	return hostVethName, err
 }
 
-func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
+func setupHostVeth(vethName string, ipConf *current.IPConfig) error {
 	// hostVeth moved namespaces and may have a new ifindex
 	veth, err := netlink.LinkByName(vethName)
 	if err != nil {
@@ -172,7 +173,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// run the IPAM plugin and get back the config to apply
-	result, err := ipam.ExecAdd(conf.IPAM.Type, args.StdinData)
+	r, err := ipam.ExecAdd(conf.IPAM.Type, args.StdinData)
+	if err != nil {
+		return err
+	}
+	result, err := current.GetResult(r)
 	if err != nil {
 		return err
 	}

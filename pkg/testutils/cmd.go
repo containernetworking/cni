@@ -15,11 +15,11 @@
 package testutils
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 func envCleanup() {
@@ -29,7 +29,7 @@ func envCleanup() {
 	os.Unsetenv("CNI_IFNAME")
 }
 
-func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (*types.Result, []byte, error) {
+func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (types.Result, []byte, error) {
 	os.Setenv("CNI_COMMAND", "ADD")
 	os.Setenv("CNI_PATH", os.Getenv("PATH"))
 	os.Setenv("CNI_NETNS", cniNetns)
@@ -57,13 +57,19 @@ func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (
 		return nil, nil, err
 	}
 
-	result := types.Result{}
-	err = json.Unmarshal(out, &result)
+	// Plugin must return result in same version as specified in netconf
+	versionDecoder := &version.ConfigDecoder{}
+	confVersion, err := versionDecoder.Decode(conf)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return &result, out, nil
+	result, err := version.NewResult(confVersion, out)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return result, out, nil
 }
 
 func CmdDelWithResult(cniNetns, cniIfname string, f func() error) error {

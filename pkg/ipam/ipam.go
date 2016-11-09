@@ -21,11 +21,12 @@ import (
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 
 	"github.com/vishvananda/netlink"
 )
 
-func ExecAdd(plugin string, netconf []byte) (*types.Result, error) {
+func ExecAdd(plugin string, netconf []byte) (types.Result, error) {
 	return invoke.DelegateAdd(plugin, netconf)
 }
 
@@ -35,7 +36,7 @@ func ExecDel(plugin string, netconf []byte) error {
 
 // ConfigureIface takes the result of IPAM plugin and
 // applies to the ifName interface
-func ConfigureIface(ifName string, res *types.Result) error {
+func ConfigureIface(ifName string, res *current.Result) error {
 	link, err := netlink.LinkByName(ifName)
 	if err != nil {
 		return fmt.Errorf("failed to lookup %q: %v", ifName, err)

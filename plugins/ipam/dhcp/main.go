@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/containernetworking/cni/pkg/skel"
-	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -36,8 +36,8 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	result := types.Result{}
-	if err := rpcCall("DHCP.Allocate", args, &result); err != nil {
+	result := &current.Result{}
+	if err := rpcCall("DHCP.Allocate", args, result); err != nil {
 		return err
 	}
 	return result.Print()

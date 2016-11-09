@@ -27,6 +27,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -67,7 +68,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	result := types.Result{}
+	result := current.Result{}
 	return result.Print()
 }
 

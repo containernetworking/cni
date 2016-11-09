@@ -19,7 +19,7 @@ import (
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
 
 	"github.com/containernetworking/cni/pkg/skel"
-	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -33,7 +33,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	r := types.Result{}
+	r := &current.Result{}
 
 	if ipamConf.ResolvConf != "" {
 		dns, err := parseResolvConf(ipamConf.ResolvConf)
@@ -54,11 +54,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	ipConf, err := allocator.Get(args.ContainerID)
+	r.IP4, err = allocator.Get(args.ContainerID)
 	if err != nil {
 		return err
 	}
-	r.IP4 = ipConf
 
 	return r.Print()
 }

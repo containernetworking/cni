@@ -17,6 +17,7 @@ package allocator
 import (
 	"fmt"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	fakestore "github.com/containernetworking/cni/plugins/ipam/host-local/backend/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,7 +31,7 @@ type AllocatorTestCase struct {
 	lastIP       string
 }
 
-func (t AllocatorTestCase) run() (*types.IPConfig, error) {
+func (t AllocatorTestCase) run() (*current.IPConfig, error) {
 	subnet, err := types.ParseCIDR(t.subnet)
 	if err != nil {
 		return nil, err

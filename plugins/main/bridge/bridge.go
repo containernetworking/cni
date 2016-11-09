@@ -27,6 +27,7 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/vishvananda/netlink"
@@ -234,7 +235,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// run the IPAM plugin and get back the config to apply
-	result, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
+	r, err := ipam.ExecAdd(n.IPAM.Type, args.StdinData)
+	if err != nil {
+		return err
+	}
+
+	result, err := current.GetResult(r)
 	if err != nil {
 		return err
 	}

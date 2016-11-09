@@ -20,6 +20,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/invoke/fakes"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 
 	. "github.com/onsi/ginkgo"
@@ -56,7 +57,10 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 	Describe("returning a result", func() {
 		It("unmarshals the result bytes into the Result type", func() {
-			result, err := pluginExec.WithResult(pluginPath, netconf, cniargs)
+			r, err := pluginExec.WithResult(pluginPath, netconf, cniargs)
+			Expect(err).NotTo(HaveOccurred())
+
+			result, err := current.GetResult(r)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.IP4.IP.IP.String()).To(Equal("1.2.3.4"))
 		})
