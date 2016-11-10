@@ -31,6 +31,7 @@ type IPAMConfig struct {
 	Subnet     types.IPNet   `json:"subnet"`
 	Gateway    net.IP        `json:"gateway"`
 	Routes     []types.Route `json:"routes"`
+	DataDir    string        `json:"dataDir"`
 	Args       *IPAMArgs     `json:"-"`
 }
 
