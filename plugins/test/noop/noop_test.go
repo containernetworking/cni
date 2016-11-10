@@ -15,6 +15,7 @@
 package main_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -52,10 +53,12 @@ var _ = Describe("No-op plugin", func() {
 		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 
 		cmd = exec.Command(pathToPlugin)
+
+		args := fmt.Sprintf("DEBUG=%s;FOO=BAR", debugFileName)
 		cmd.Env = []string{
 			"CNI_COMMAND=ADD",
 			"CNI_CONTAINERID=some-container-id",
-			"CNI_ARGS=DEBUG=" + debugFileName,
+			"CNI_ARGS=" + args,
 			"CNI_NETNS=/some/netns/path",
 			"CNI_IFNAME=some-eth0",
 			"CNI_PATH=/some/bin/path",
@@ -65,7 +68,7 @@ var _ = Describe("No-op plugin", func() {
 			ContainerID: "some-container-id",
 			Netns:       "/some/netns/path",
 			IfName:      "some-eth0",
-			Args:        "DEBUG=" + debugFileName,
+			Args:        args,
 			Path:        "/some/bin/path",
 			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.2.0"}`),
 		}
