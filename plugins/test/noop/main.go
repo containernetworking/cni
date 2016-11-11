@@ -32,13 +32,34 @@ import (
 	"github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
+// parse extra args i.e. FOO=BAR;ABC=123
+func parseExtraArgs(args string) (map[string]string, error) {
+	m := make(map[string]string)
+
+	items := strings.Split(args, ";")
+	for _, item := range items {
+		kv := strings.Split(item, "=")
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("CNI_ARGS invalid key/value pair: %s\n", kv)
+		}
+		m[kv[0]] = kv[1]
+	}
+	return m, nil
+}
+
 func debugBehavior(args *skel.CmdArgs, command string) error {
-	if !strings.HasPrefix(args.Args, "DEBUG=") {
+	extraArgs, err := parseExtraArgs(args.Args)
+	if err != nil {
+		return err
+	}
+
+	debugFilePath, ok := extraArgs["DEBUG"]
+	if !ok {
 		fmt.Printf(`{}`)
 		os.Stderr.WriteString("CNI_ARGS empty, no debug behavior\n")
 		return nil
 	}
-	debugFilePath := strings.TrimPrefix(args.Args, "DEBUG=")
+
 	debug, err := debug.ReadDebug(debugFilePath)
 	if err != nil {
 		return err
@@ -69,7 +90,17 @@ func debugGetSupportedVersions() []string {
 	if cniArgs == "" {
 		return vers
 	}
-	debugFilePath := strings.TrimPrefix(cniArgs, "DEBUG=")
+
+	extraArgs, err := parseExtraArgs(cniArgs)
+	if err != nil {
+		panic("test setup error: invalid CNI_ARGS format")
+	}
+
+	debugFilePath, ok := extraArgs["DEBUG"]
+	if !ok {
+		panic("test setup error: missing DEBUG in CNI_ARGS")
+	}
+
 	debug, err := debug.ReadDebug(debugFilePath)
 	if err != nil {
 		panic("test setup error: unable to read debug file: " + err.Error())
