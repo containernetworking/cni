@@ -17,44 +17,40 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"strings"
 
+	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/testutils"
 
-	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Flannel", func() {
 	var (
-		cmd             *exec.Cmd
-		debugFileName   string
-		input           string
-		debug           *noop_debug.Debug
-		expectedCmdArgs skel.CmdArgs
-		subnetFile      string
-		stateDir        string
+		originalNS ns.NetNS
+		input      string
+		subnetFile string
+		stateDir   string
 	)
 
-	const delegateInput = `
-{
-		"type": "noop",
-		"some": "other data"
-}
-`
+	BeforeEach(func() {
+		var err error
+		originalNS, err = ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		Expect(originalNS.Close()).To(Succeed())
+	})
 
 	const inputTemplate = `
 {
   "name": "cni-flannel",
   "type": "flannel",
 	"subnetFile": "%s",
-	"stateDir": "%s",
-	"delegate": ` +
-		delegateInput +
-		`}`
+	"stateDir": "%s"
+}`
 
 	const flannelSubnetEnv = `
 FLANNEL_NETWORK=10.1.0.0/16
@@ -71,32 +67,8 @@ FLANNEL_IPMASQ=true
 		return file.Name()
 	}
 
-	var cniCommand = func(command, input string) *exec.Cmd {
-		toReturn := exec.Command(paths.PathToPlugin)
-		toReturn.Env = []string{
-			"CNI_COMMAND=" + command,
-			"CNI_CONTAINERID=some-container-id",
-			"CNI_NETNS=/some/netns/path",
-			"CNI_IFNAME=some-eth0",
-			"CNI_PATH=" + paths.CNIPath,
-			"CNI_ARGS=DEBUG=" + debugFileName,
-		}
-		toReturn.Stdin = strings.NewReader(input)
-		return toReturn
-	}
-
 	BeforeEach(func() {
-		debugFile, err := ioutil.TempFile("", "cni_debug")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(debugFile.Close()).To(Succeed())
-		debugFileName = debugFile.Name()
-
-		debug = &noop_debug.Debug{
-			ReportResult:         `{ "ip4": { "ip": "1.2.3.4/32" } }`,
-			ReportVersionSupport: []string{"0.1.0", "0.2.0", "0.3.0"},
-		}
-		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
-
+		var err error
 		// flannel subnet.env
 		subnetFile = writeSubnetEnv(flannelSubnetEnv)
 
@@ -107,41 +79,43 @@ FLANNEL_IPMASQ=true
 	})
 
 	AfterEach(func() {
-		os.Remove(debugFileName)
 		os.Remove(subnetFile)
 		os.Remove(stateDir)
 	})
 
 	Describe("CNI lifecycle", func() {
+		It("uses stateDir for storing network configuration", func() {
+			const IFNAME = "eth0"
 
-		BeforeEach(func() {
-			expectedCmdArgs = skel.CmdArgs{
+			targetNs, err := ns.NewNS()
+			Expect(err).NotTo(HaveOccurred())
+			defer targetNs.Close()
+
+			args := &skel.CmdArgs{
 				ContainerID: "some-container-id",
-				Netns:       "/some/netns/path",
-				IfName:      "some-eth0",
-				Args:        "DEBUG=" + debugFileName,
-				Path:        "/some/bin/path",
+				Netns:       targetNs.Path(),
+				IfName:      IFNAME,
 				StdinData:   []byte(input),
 			}
-			cmd = cniCommand("ADD", input)
-		})
 
-		It("uses stateDir for storing network configuration", func() {
-			By("calling ADD")
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "ip4": { "ip": "1.2.3.4/32" }, "dns":{} }`))
+			err = originalNS.Do(func(ns.NetNS) error {
+				defer GinkgoRecover()
 
-			By("check that plugin writes to net config to stateDir")
-			path := fmt.Sprintf("%s/%s", stateDir, "some-container-id")
-			Expect(path).Should(BeAnExistingFile())
+				By("calling ADD")
+				_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+					return cmdAdd(args)
+				})
+				Expect(err).NotTo(HaveOccurred())
 
-			netConfBytes, err := ioutil.ReadFile(path)
-			Expect(err).NotTo(HaveOccurred())
-			expected := `{
+				By("check that plugin writes to net config to stateDir")
+				path := fmt.Sprintf("%s/%s", stateDir, "some-container-id")
+				Expect(path).Should(BeAnExistingFile())
+
+				netConfBytes, err := ioutil.ReadFile(path)
+				Expect(err).NotTo(HaveOccurred())
+				expected := `{
    "name" : "cni-flannel",
-   "type" : "noop",
+   "type" : "bridge",
    "ipam" : {
       "type" : "host-local",
       "subnet" : "10.1.17.0/24",
@@ -153,19 +127,22 @@ FLANNEL_IPMASQ=true
    },
    "mtu" : 1472,
    "ipMasq" : false,
-   "some" : "other data"
+   "isGateway": true
 }
 `
-			Expect(netConfBytes).Should(MatchJSON(expected))
+				Expect(netConfBytes).Should(MatchJSON(expected))
 
-			By("calling DEL")
-			cmd = cniCommand("DEL", input)
-			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				By("calling DEL")
+				err = testutils.CmdDelWithResult(targetNs.Path(), IFNAME, func() error {
+					return cmdDel(args)
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("check that plugin removes net config from state dir")
+				Expect(path).ShouldNot(BeAnExistingFile())
+				return nil
+			})
 			Expect(err).NotTo(HaveOccurred())
-			Eventually(session).Should(gexec.Exit(0))
-
-			By("check that plugin removes net config from state dir")
-			Expect(path).ShouldNot(BeAnExistingFile())
 		})
 	})
 
@@ -185,10 +162,8 @@ FLANNEL_IPMASQ=true
 			BeforeEach(func() {
 				input = `{
 "name": "cni-flannel",
-"type": "flannel",
-"delegate": ` +
-					delegateInput +
-					`}`
+"type": "flannel"
+}`
 			})
 
 			It("loads flannel network config with defaults", func() {
