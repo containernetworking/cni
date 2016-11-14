@@ -32,7 +32,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store, err := disk.New(ipamConf.Name, ipamConf.DataDir)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	store, err := disk.New(ipamConf.Name)
+	store, err := disk.New(ipamConf.Name, ipamConf.DataDir)
 	if err != nil {
 		return err
 	}

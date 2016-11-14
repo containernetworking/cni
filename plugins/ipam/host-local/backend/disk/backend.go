@@ -31,8 +31,11 @@ type Store struct {
 	dataDir string
 }
 
-func New(network string) (*Store, error) {
-	dir := filepath.Join(defaultDataDir, network)
+func New(network, dataDir string) (*Store, error) {
+	if dataDir == "" {
+		dataDir = defaultDataDir
+	}
+	dir := filepath.Join(dataDir, network)
 	if err := os.MkdirAll(dir, 0644); err != nil {
 		return nil, err
 	}
