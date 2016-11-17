@@ -31,7 +31,7 @@ var _ = Describe("Flannel", func() {
 		originalNS ns.NetNS
 		input      string
 		subnetFile string
-		stateDir   string
+		dataDir    string
 	)
 
 	BeforeEach(func() {
@@ -49,7 +49,7 @@ var _ = Describe("Flannel", func() {
   "name": "cni-flannel",
   "type": "flannel",
 	"subnetFile": "%s",
-	"stateDir": "%s"
+	"dataDir": "%s"
 }`
 
 	const flannelSubnetEnv = `
@@ -73,18 +73,18 @@ FLANNEL_IPMASQ=true
 		subnetFile = writeSubnetEnv(flannelSubnetEnv)
 
 		// flannel state dir
-		stateDir, err = ioutil.TempDir("", "stateDir")
+		dataDir, err = ioutil.TempDir("", "dataDir")
 		Expect(err).NotTo(HaveOccurred())
-		input = fmt.Sprintf(inputTemplate, subnetFile, stateDir)
+		input = fmt.Sprintf(inputTemplate, subnetFile, dataDir)
 	})
 
 	AfterEach(func() {
 		os.Remove(subnetFile)
-		os.Remove(stateDir)
+		os.Remove(dataDir)
 	})
 
 	Describe("CNI lifecycle", func() {
-		It("uses stateDir for storing network configuration", func() {
+		It("uses dataDir for storing network configuration", func() {
 			const IFNAME = "eth0"
 
 			targetNs, err := ns.NewNS()
@@ -107,8 +107,8 @@ FLANNEL_IPMASQ=true
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("check that plugin writes to net config to stateDir")
-				path := fmt.Sprintf("%s/%s", stateDir, "some-container-id")
+				By("check that plugin writes to net config to dataDir")
+				path := fmt.Sprintf("%s/%s", dataDir, "some-container-id")
 				Expect(path).Should(BeAnExistingFile())
 
 				netConfBytes, err := ioutil.ReadFile(path)
@@ -147,18 +147,18 @@ FLANNEL_IPMASQ=true
 	})
 
 	Describe("loadFlannelNetConf", func() {
-		Context("when subnetFile and stateDir are specified", func() {
+		Context("when subnetFile and dataDir are specified", func() {
 			It("loads flannel network config", func() {
 				conf, err := loadFlannelNetConf([]byte(input))
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(conf.Name).To(Equal("cni-flannel"))
 				Expect(conf.Type).To(Equal("flannel"))
 				Expect(conf.SubnetFile).To(Equal(subnetFile))
-				Expect(conf.StateDir).To(Equal(stateDir))
+				Expect(conf.DataDir).To(Equal(dataDir))
 			})
 		})
 
-		Context("when defaulting subnetFile and stateDir", func() {
+		Context("when defaulting subnetFile and dataDir", func() {
 			BeforeEach(func() {
 				input = `{
 "name": "cni-flannel",
@@ -172,7 +172,7 @@ FLANNEL_IPMASQ=true
 				Expect(conf.Name).To(Equal("cni-flannel"))
 				Expect(conf.Type).To(Equal("flannel"))
 				Expect(conf.SubnetFile).To(Equal(defaultSubnetFile))
-				Expect(conf.StateDir).To(Equal(defaultStateDir))
+				Expect(conf.DataDir).To(Equal(defaultDataDir))
 			})
 		})
 

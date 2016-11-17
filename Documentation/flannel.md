@@ -73,7 +73,7 @@ To use `ipvlan` instead of `bridge`, the following configuration can be specifie
 * `name` (string, required): the name of the network
 * `type` (string, required): "flannel"
 * `subnetFile` (string, optional): full path to the subnet file written out by flanneld. Defaults to /run/flannel/subnet.env
-* `stateDir` (string, optional): path to directory where plugin will store generated network configuration files. Defaults to `/var/lib/cni/flannel`
+* `dataDir` (string, optional): path to directory where plugin will store generated network configuration files. Defaults to `/var/lib/cni/flannel`
 * `delegate` (dictionary, optional): specifies configuration options for the delegated plugin.
 
 flannel plugin will always set the following fields in the delegated plugin configuration:
