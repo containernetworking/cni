@@ -33,6 +33,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
+	r := types.Result{}
+
+	if ipamConf.ResolvConf != "" {
+		dns, err := parseResolvConf(ipamConf.ResolvConf)
+		if err != nil {
+			return err
+		}
+		r.DNS = *dns
+	}
+
 	store, err := disk.New(ipamConf.Name, ipamConf.DataDir)
 	if err != nil {
 		return err
@@ -48,10 +58,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
+	r.IP4 = ipConf
 
-	r := &types.Result{
-		IP4: ipConf,
-	}
 	return r.Print()
 }
 

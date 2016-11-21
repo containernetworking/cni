@@ -38,6 +38,9 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
+		err = ioutil.WriteFile(filepath.Join(tmpDir, "resolv.conf"), []byte("nameserver 192.0.2.3"), 0644)
+		Expect(err).NotTo(HaveOccurred())
+
 		conf := fmt.Sprintf(`{
     "cniVersion": "0.2.0",
     "name": "mynet",
@@ -46,9 +49,10 @@ var _ = Describe("host-local Operations", func() {
     "ipam": {
         "type": "host-local",
         "subnet": "10.1.2.0/24",
-        "dataDir": "%s"
+        "dataDir": "%s",
+		"resolvConf": "%s/resolv.conf"
     }
-}`, tmpDir)
+}`, tmpDir, tmpDir)
 
 		args := &skel.CmdArgs{
 			ContainerID: "dummy",
@@ -79,6 +83,8 @@ var _ = Describe("host-local Operations", func() {
 		contents, err = ioutil.ReadFile(lastFilePath)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(Equal("10.1.2.2"))
+
+		Expect(result.DNS).To(Equal(types.DNS{Nameservers: []string{"192.0.2.3"}}))
 
 		// Release the IP
 		err = testutils.CmdDelWithResult(nspath, ifname, func() error {
