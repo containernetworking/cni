@@ -29,7 +29,7 @@ func envCleanup() {
 	os.Unsetenv("CNI_IFNAME")
 }
 
-func CmdAddWithResult(cniNetns, cniIfname string, f func() error) (*types.Result, error) {
+func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (*types.Result, []byte, error) {
 	os.Setenv("CNI_COMMAND", "ADD")
 	os.Setenv("CNI_PATH", os.Getenv("PATH"))
 	os.Setenv("CNI_NETNS", cniNetns)
@@ -40,30 +40,30 @@ func CmdAddWithResult(cniNetns, cniIfname string, f func() error) (*types.Result
 	oldStdout := os.Stdout
 	r, w, err := os.Pipe()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	os.Stdout = w
 	err = f()
 	w.Close()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// parse the result
 	out, err := ioutil.ReadAll(r)
 	os.Stdout = oldStdout
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	result := types.Result{}
 	err = json.Unmarshal(out, &result)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &result, nil
+	return &result, out, nil
 }
 
 func CmdDelWithResult(cniNetns, cniIfname string, f func() error) error {

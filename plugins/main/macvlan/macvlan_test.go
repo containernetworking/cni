@@ -127,7 +127,7 @@ var _ = Describe("macvlan Operations", func() {
 		err = originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+			_, _, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, []byte(conf), func() error {
 				return cmdAdd(args)
 			})
 			Expect(err).NotTo(HaveOccurred())

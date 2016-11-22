@@ -102,7 +102,7 @@ FLANNEL_IPMASQ=true
 				defer GinkgoRecover()
 
 				By("calling ADD")
-				_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+				_, _, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, []byte(input), func() error {
 					return cmdAdd(args)
 				})
 				Expect(err).NotTo(HaveOccurred())
