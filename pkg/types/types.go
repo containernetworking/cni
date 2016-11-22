@@ -16,6 +16,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"os"
 )
@@ -112,6 +113,10 @@ type DNS struct {
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
+}
+
+func (r *Route) String() string {
+	return fmt.Sprintf("%+v", *r)
 }
 
 // Well known error codes

@@ -20,10 +20,12 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/testutils"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/020"
 	"github.com/containernetworking/cni/pkg/types/current"
 
 	. "github.com/onsi/ginkgo"
@@ -43,7 +45,7 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.3.0",
     "name": "mynet",
     "type": "ipvlan",
     "master": "foo0",
@@ -63,19 +65,83 @@ var _ = Describe("host-local Operations", func() {
 		}
 
 		// Allocate the IP
-		r, _, err := testutils.CmdAddWithResult(nspath, ifname, []byte(conf), func() error {
+		r, raw, err := testutils.CmdAddWithResult(nspath, ifname, []byte(conf), func() error {
 			return cmdAdd(args)
 		})
 		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.Index(string(raw), "\"version\":")).Should(BeNumerically(">", 0))
 
 		result, err := current.GetResult(r)
 		Expect(err).NotTo(HaveOccurred())
 
 		expectedAddress, err := types.ParseCIDR("10.1.2.2/24")
 		Expect(err).NotTo(HaveOccurred())
+		Expect(len(result.IPs)).To(Equal(1))
+		expectedAddress.IP = expectedAddress.IP.To16()
+		Expect(result.IPs[0].Address).To(Equal(*expectedAddress))
+		Expect(result.IPs[0].Gateway).To(Equal(net.ParseIP("10.1.2.1")))
+
+		ipFilePath := filepath.Join(tmpDir, "mynet", "10.1.2.2")
+		contents, err := ioutil.ReadFile(ipFilePath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(contents)).To(Equal("dummy"))
+
+		lastFilePath := filepath.Join(tmpDir, "mynet", "last_reserved_ip")
+		contents, err = ioutil.ReadFile(lastFilePath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(contents)).To(Equal("10.1.2.2"))
+
+		// Release the IP
+		err = testutils.CmdDelWithResult(nspath, ifname, func() error {
+			return cmdDel(args)
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = os.Stat(ipFilePath)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("allocates and releases an address with ADD/DEL and 0.1.0 config", func() {
+		const ifname string = "eth0"
+		const nspath string = "/some/where"
+
+		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(tmpDir)
+
+		conf := fmt.Sprintf(`{
+    "cniVersion": "0.1.0",
+    "name": "mynet",
+    "type": "ipvlan",
+    "master": "foo0",
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24",
+        "dataDir": "%s"
+    }
+}`, tmpDir)
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       nspath,
+			IfName:      ifname,
+			StdinData:   []byte(conf),
+		}
+
+		// Allocate the IP
+		r, raw, err := testutils.CmdAddWithResult(nspath, ifname, []byte(conf), func() error {
+			return cmdAdd(args)
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.Index(string(raw), "\"ip4\":")).Should(BeNumerically(">", 0))
+
+		result, err := types020.GetResult(r)
+		Expect(err).NotTo(HaveOccurred())
+
+		expectedAddress, err := types.ParseCIDR("10.1.2.2/24")
+		Expect(err).NotTo(HaveOccurred())
 		expectedAddress.IP = expectedAddress.IP.To16()
 		Expect(result.IP4.IP).To(Equal(*expectedAddress))
-
 		Expect(result.IP4.Gateway).To(Equal(net.ParseIP("10.1.2.1")))
 
 		ipFilePath := filepath.Join(tmpDir, "mynet", "10.1.2.2")
@@ -136,7 +202,7 @@ var _ = Describe("host-local Operations", func() {
 		result, err := current.GetResult(r)
 		Expect(err).NotTo(HaveOccurred())
 
-		ipFilePath := filepath.Join(tmpDir, "mynet", result.IP4.IP.IP.String())
+		ipFilePath := filepath.Join(tmpDir, "mynet", result.IPs[0].Address.IP.String())
 		contents, err := ioutil.ReadFile(ipFilePath)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(Equal("dummy"))

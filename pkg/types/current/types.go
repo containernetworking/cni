@@ -21,11 +21,12 @@ import (
 	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/020"
 )
 
-const implementedSpecVersion string = "0.2.0"
+const implementedSpecVersion string = "0.3.0"
 
-var SupportedVersions = []string{"", "0.1.0", implementedSpecVersion}
+var SupportedVersions = []string{implementedSpecVersion}
 
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}
@@ -36,11 +37,11 @@ func NewResult(data []byte) (types.Result, error) {
 }
 
 func GetResult(r types.Result) (*Result, error) {
-	newResult, err := r.GetAsVersion(implementedSpecVersion)
+	resultCurrent, err := r.GetAsVersion(implementedSpecVersion)
 	if err != nil {
 		return nil, err
 	}
-	result, ok := newResult.(*Result)
+	result, ok := resultCurrent.(*Result)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert result")
 	}
@@ -51,10 +52,67 @@ var resultConverters = []struct {
 	versions []string
 	convert  func(types.Result) (*Result, error)
 }{
-	{SupportedVersions, convertFrom020},
+	{types020.SupportedVersions, convertFrom020},
+	{SupportedVersions, convertFrom030},
 }
 
 func convertFrom020(result types.Result) (*Result, error) {
+	oldResult, err := types020.GetResult(result)
+	if err != nil {
+		return nil, err
+	}
+
+	newResult := &Result{
+		DNS:    oldResult.DNS,
+		Routes: []*types.Route{},
+	}
+
+	if oldResult.IP4 != nil {
+		newResult.IPs = append(newResult.IPs, &IPConfig{
+			Version:   "4",
+			Interface: -1,
+			Address:   oldResult.IP4.IP,
+			Gateway:   oldResult.IP4.Gateway,
+		})
+		for _, route := range oldResult.IP4.Routes {
+			gw := route.GW
+			if gw == nil {
+				gw = oldResult.IP4.Gateway
+			}
+			newResult.Routes = append(newResult.Routes, &types.Route{
+				Dst: route.Dst,
+				GW:  gw,
+			})
+		}
+	}
+
+	if oldResult.IP6 != nil {
+		newResult.IPs = append(newResult.IPs, &IPConfig{
+			Version:   "6",
+			Interface: -1,
+			Address:   oldResult.IP6.IP,
+			Gateway:   oldResult.IP6.Gateway,
+		})
+		for _, route := range oldResult.IP6.Routes {
+			gw := route.GW
+			if gw == nil {
+				gw = oldResult.IP6.Gateway
+			}
+			newResult.Routes = append(newResult.Routes, &types.Route{
+				Dst: route.Dst,
+				GW:  gw,
+			})
+		}
+	}
+
+	if len(newResult.IPs) == 0 {
+		return nil, fmt.Errorf("cannot convert: no valid IP addresses")
+	}
+
+	return newResult, nil
+}
+
+func convertFrom030(result types.Result) (*Result, error) {
 	newResult, ok := result.(*Result)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert result")
@@ -76,9 +134,58 @@ func NewResultFromResult(result types.Result) (*Result, error) {
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
-	IP4 *IPConfig `json:"ip4,omitempty"`
-	IP6 *IPConfig `json:"ip6,omitempty"`
-	DNS types.DNS `json:"dns,omitempty"`
+	Interfaces []*Interface   `json:"interfaces,omitempty"`
+	IPs        []*IPConfig    `json:"ips,omitempty"`
+	Routes     []*types.Route `json:"routes,omitempty"`
+	DNS        types.DNS      `json:"dns,omitempty"`
+}
+
+// Convert to the older 0.2.0 CNI spec Result type
+func (r *Result) convertTo020() (*types020.Result, error) {
+	oldResult := &types020.Result{
+		DNS: r.DNS,
+	}
+
+	for _, ip := range r.IPs {
+		// Only convert the first IP address of each version as 0.2.0
+		// and earlier cannot handle multiple IP addresses
+		if ip.Version == "4" && oldResult.IP4 == nil {
+			oldResult.IP4 = &types020.IPConfig{
+				IP:      ip.Address,
+				Gateway: ip.Gateway,
+			}
+		} else if ip.Version == "6" && oldResult.IP6 == nil {
+			oldResult.IP6 = &types020.IPConfig{
+				IP:      ip.Address,
+				Gateway: ip.Gateway,
+			}
+		}
+
+		if oldResult.IP4 != nil && oldResult.IP6 != nil {
+			break
+		}
+	}
+
+	for _, route := range r.Routes {
+		is4 := route.Dst.IP.To4() != nil
+		if is4 && oldResult.IP4 != nil {
+			oldResult.IP4.Routes = append(oldResult.IP4.Routes, types.Route{
+				Dst: route.Dst,
+				GW:  route.GW,
+			})
+		} else if !is4 && oldResult.IP6 != nil {
+			oldResult.IP6.Routes = append(oldResult.IP6.Routes, types.Route{
+				Dst: route.Dst,
+				GW:  route.GW,
+			})
+		}
+	}
+
+	if oldResult.IP4 == nil && oldResult.IP6 == nil {
+		return nil, fmt.Errorf("cannot convert: no valid IP addresses")
+	}
+
+	return oldResult, nil
 }
 
 func (r *Result) Version() string {
@@ -86,12 +193,13 @@ func (r *Result) Version() string {
 }
 
 func (r *Result) GetAsVersion(version string) (types.Result, error) {
-	for _, supportedVersion := range SupportedVersions {
-		if version == supportedVersion {
-			return r, nil
-		}
+	switch version {
+	case implementedSpecVersion:
+		return r, nil
+	case types020.SupportedVersions[0], types020.SupportedVersions[1], types020.SupportedVersions[2]:
+		return r.convertTo020()
 	}
-	return nil, fmt.Errorf("cannot convert version %q to %s", SupportedVersions, version)
+	return nil, fmt.Errorf("cannot convert version 0.3.0 to %q", version)
 }
 
 func (r *Result) Print() error {
@@ -103,42 +211,67 @@ func (r *Result) Print() error {
 	return err
 }
 
-// String returns a formatted string in the form of "[IP4: $1,][ IP6: $2,] DNS: $3" where
-// $1 represents the receiver's IPv4, $2 represents the receiver's IPv6 and $3 the
+// String returns a formatted string in the form of "[Interfaces: $1,][ IP: $2,] DNS: $3" where
+// $1 represents the receiver's Interfaces, $2 represents the receiver's IP addresses and $3 the
 // receiver's DNS. If $1 or $2 are nil, they won't be present in the returned string.
 func (r *Result) String() string {
 	var str string
-	if r.IP4 != nil {
-		str = fmt.Sprintf("IP4:%+v, ", *r.IP4)
+	if len(r.Interfaces) > 0 {
+		str += fmt.Sprintf("Interfaces:%+v, ", r.Interfaces)
 	}
-	if r.IP6 != nil {
-		str += fmt.Sprintf("IP6:%+v, ", *r.IP6)
+	if len(r.IPs) > 0 {
+		str += fmt.Sprintf("IP:%+v, ", r.IPs)
+	}
+	if len(r.Routes) > 0 {
+		str += fmt.Sprintf("Routes:%+v, ", r.Routes)
 	}
 	return fmt.Sprintf("%sDNS:%+v", str, r.DNS)
 }
 
-// IPConfig contains values necessary to configure an interface
-type IPConfig struct {
-	IP      net.IPNet
-	Gateway net.IP
-	Routes  []types.Route
+// Convert this old version result to the current CNI version result
+func (r *Result) Convert() (*Result, error) {
+	return r, nil
 }
 
-// net.IPNet is not JSON (un)marshallable so this duality is needed
-// for our custom IPNet type
+// Interface contains values about the created interfaces
+type Interface struct {
+	Name    string `json:"name"`
+	Mac     string `json:"mac,omitempty"`
+	Sandbox string `json:"sandbox,omitempty"`
+}
+
+func (i *Interface) String() string {
+	return fmt.Sprintf("%+v", *i)
+}
+
+// IPConfig contains values necessary to configure an IP address on an interface
+type IPConfig struct {
+	// IP version, either "4" or "6"
+	Version string
+	// Index into Result structs Interfaces list
+	Interface int
+	Address   net.IPNet
+	Gateway   net.IP
+}
+
+func (i *IPConfig) String() string {
+	return fmt.Sprintf("%+v", *i)
+}
 
 // JSON (un)marshallable types
 type ipConfig struct {
-	IP      types.IPNet   `json:"ip"`
-	Gateway net.IP        `json:"gateway,omitempty"`
-	Routes  []types.Route `json:"routes,omitempty"`
+	Version   string      `json:"version"`
+	Interface int         `json:"interface,omitempty"`
+	Address   types.IPNet `json:"address"`
+	Gateway   net.IP      `json:"gateway,omitempty"`
 }
 
 func (c *IPConfig) MarshalJSON() ([]byte, error) {
 	ipc := ipConfig{
-		IP:      types.IPNet(c.IP),
-		Gateway: c.Gateway,
-		Routes:  c.Routes,
+		Version:   c.Version,
+		Interface: c.Interface,
+		Address:   types.IPNet(c.Address),
+		Gateway:   c.Gateway,
 	}
 
 	return json.Marshal(ipc)
@@ -150,8 +283,9 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	c.IP = net.IPNet(ipc.IP)
+	c.Version = ipc.Version
+	c.Interface = ipc.Interface
+	c.Address = net.IPNet(ipc.Address)
 	c.Gateway = ipc.Gateway
-	c.Routes = ipc.Routes
 	return nil
 }

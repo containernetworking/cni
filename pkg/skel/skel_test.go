@@ -226,7 +226,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout).To(MatchJSON(`{
-				"cniVersion": "0.2.0",
+				"cniVersion": "0.3.0",
 				"supportedVersions": ["9.8.7"]
 			}`))
 		})
@@ -258,7 +258,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(MatchJSON(`{
-					"cniVersion": "0.2.0",
+					"cniVersion": "0.3.0",
 					"supportedVersions": ["9.8.7"]
 			}`))
 			})

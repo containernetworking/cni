@@ -71,11 +71,12 @@ func (d *DHCP) Allocate(args *skel.CmdArgs, result *current.Result) error {
 
 	d.setLease(args.ContainerID, conf.Name, l)
 
-	result.IP4 = &current.IPConfig{
-		IP:      *ipn,
+	result.IPs = []*current.IPConfig{{
+		Version: "4",
+		Address: *ipn,
 		Gateway: l.Gateway(),
-		Routes:  l.Routes(),
-	}
+	}}
+	result.Routes = l.Routes()
 
 	return nil
 }

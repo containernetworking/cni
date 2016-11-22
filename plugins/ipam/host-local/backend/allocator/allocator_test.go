@@ -31,10 +31,10 @@ type AllocatorTestCase struct {
 	lastIP       string
 }
 
-func (t AllocatorTestCase) run() (*current.IPConfig, error) {
+func (t AllocatorTestCase) run() (*current.IPConfig, []*types.Route, error) {
 	subnet, err := types.ParseCIDR(t.subnet)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	conf := IPAMConfig{
@@ -45,14 +45,14 @@ func (t AllocatorTestCase) run() (*current.IPConfig, error) {
 	store := fakestore.NewFakeStore(t.ipmap, net.ParseIP(t.lastIP))
 	alloc, err := NewIPAllocator(&conf, store)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	res, err := alloc.Get("ID")
+	res, routes, err := alloc.Get("ID")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return res, nil
+	return res, routes, nil
 }
 
 var _ = Describe("host-local ip allocator", func() {
@@ -129,9 +129,9 @@ var _ = Describe("host-local ip allocator", func() {
 			}
 
 			for _, tc := range testCases {
-				res, err := tc.run()
+				res, _, err := tc.run()
 				Expect(err).ToNot(HaveOccurred())
-				Expect(res.IP.IP.String()).To(Equal(tc.expectResult))
+				Expect(res.Address.IP.String()).To(Equal(tc.expectResult))
 			}
 		})
 
@@ -149,14 +149,14 @@ var _ = Describe("host-local ip allocator", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for i := 1; i < 254; i++ {
-				res, err := alloc.Get("ID")
+				res, _, err := alloc.Get("ID")
 				Expect(err).ToNot(HaveOccurred())
 				// i+1 because the gateway address is skipped
 				s := fmt.Sprintf("192.168.1.%d/24", i+1)
-				Expect(s).To(Equal(res.IP.String()))
+				Expect(s).To(Equal(res.Address.String()))
 			}
 
-			_, err = alloc.Get("ID")
+			_, _, err = alloc.Get("ID")
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -174,13 +174,13 @@ var _ = Describe("host-local ip allocator", func() {
 			alloc, err := NewIPAllocator(&conf, store)
 			Expect(err).ToNot(HaveOccurred())
 
-			res, err := alloc.Get("ID")
+			res, _, err := alloc.Get("ID")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(res.IP.String()).To(Equal("192.168.1.10/24"))
+			Expect(res.Address.String()).To(Equal("192.168.1.10/24"))
 
-			res, err = alloc.Get("ID")
+			res, _, err = alloc.Get("ID")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(res.IP.String()).To(Equal("192.168.1.11/24"))
+			Expect(res.Address.String()).To(Equal("192.168.1.11/24"))
 		})
 
 		It("should allocate RangeEnd but not past RangeEnd", func() {
@@ -198,13 +198,13 @@ var _ = Describe("host-local ip allocator", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			for i := 1; i < 5; i++ {
-				res, err := alloc.Get("ID")
+				res, _, err := alloc.Get("ID")
 				Expect(err).ToNot(HaveOccurred())
 				// i+1 because the gateway address is skipped
-				Expect(res.IP.String()).To(Equal(fmt.Sprintf("192.168.1.%d/24", i+1)))
+				Expect(res.Address.String()).To(Equal(fmt.Sprintf("192.168.1.%d/24", i+1)))
 			}
 
-			_, err = alloc.Get("ID")
+			_, _, err = alloc.Get("ID")
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -222,9 +222,9 @@ var _ = Describe("host-local ip allocator", func() {
 				}
 				store := fakestore.NewFakeStore(ipmap, nil)
 				alloc, _ := NewIPAllocator(&conf, store)
-				res, err := alloc.Get("ID")
+				res, _, err := alloc.Get("ID")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(res.IP.IP.String()).To(Equal(requestedIP.String()))
+				Expect(res.Address.IP.String()).To(Equal(requestedIP.String()))
 			})
 
 			It("must return an error when the requested IP is after RangeEnd", func() {
@@ -240,7 +240,7 @@ var _ = Describe("host-local ip allocator", func() {
 				}
 				store := fakestore.NewFakeStore(ipmap, nil)
 				alloc, _ := NewIPAllocator(&conf, store)
-				_, err = alloc.Get("ID")
+				_, _, err = alloc.Get("ID")
 				Expect(err).To(HaveOccurred())
 			})
 
@@ -257,7 +257,7 @@ var _ = Describe("host-local ip allocator", func() {
 				}
 				store := fakestore.NewFakeStore(ipmap, nil)
 				alloc, _ := NewIPAllocator(&conf, store)
-				_, err = alloc.Get("ID")
+				_, _, err = alloc.Get("ID")
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -332,7 +332,7 @@ var _ = Describe("host-local ip allocator", func() {
 				},
 			}
 			for _, tc := range testCases {
-				_, err := tc.run()
+				_, _, err := tc.run()
 				Expect(err).To(MatchError("no IP addresses available in network: test"))
 			}
 		})

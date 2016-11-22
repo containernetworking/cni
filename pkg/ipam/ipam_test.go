@@ -94,19 +94,35 @@ var _ = Describe("IPAM Operations", func() {
 		Expect(ipgw6).NotTo(BeNil())
 
 		result = &current.Result{
-			IP4: &current.IPConfig{
-				IP:      *ipv4,
-				Gateway: ipgw4,
-				Routes: []types.Route{
-					{Dst: *routev4, GW: routegwv4},
+			Interfaces: []*current.Interface{
+				{
+					Name:    "eth0",
+					Mac:     "00:11:22:33:44:55",
+					Sandbox: "/proc/3553/ns/net",
+				},
+				{
+					Name:    "fake0",
+					Mac:     "00:33:44:55:66:77",
+					Sandbox: "/proc/1234/ns/net",
 				},
 			},
-			IP6: &current.IPConfig{
-				IP:      *ipv6,
-				Gateway: ipgw6,
-				Routes: []types.Route{
-					{Dst: *routev6, GW: routegwv6},
+			IPs: []*current.IPConfig{
+				{
+					Version:   "4",
+					Interface: 0,
+					Address:   *ipv4,
+					Gateway:   ipgw4,
 				},
+				{
+					Version:   "6",
+					Interface: 0,
+					Address:   *ipv6,
+					Gateway:   ipgw6,
+				},
+			},
+			Routes: []*types.Route{
+				{Dst: *routev4, GW: routegwv4},
+				{Dst: *routev6, GW: routegwv6},
 			},
 		}
 	})
@@ -131,24 +147,39 @@ var _ = Describe("IPAM Operations", func() {
 			Expect(len(v4addrs)).To(Equal(1))
 			Expect(ipNetEqual(v4addrs[0].IPNet, ipv4)).To(Equal(true))
 
-			// Doesn't support IPv6 yet so only link-local address expected
 			v6addrs, err := netlink.AddrList(link, syscall.AF_INET6)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(v6addrs)).To(Equal(1))
+			Expect(len(v6addrs)).To(Equal(2))
 
-			// Ensure the v4 route
+			var found bool
+			for _, a := range v6addrs {
+				if ipNetEqual(a.IPNet, ipv6) {
+					found = true
+					break
+				}
+			}
+			Expect(found).To(Equal(true))
+
+			// Ensure the v4 route, v6 route, and subnet route
 			routes, err := netlink.RouteList(link, 0)
 			Expect(err).NotTo(HaveOccurred())
 
-			var v4found bool
+			var v4found, v6found bool
 			for _, route := range routes {
 				isv4 := route.Dst.IP.To4() != nil
 				if isv4 && ipNetEqual(route.Dst, routev4) && route.Gw.Equal(routegwv4) {
 					v4found = true
+				}
+				if !isv4 && ipNetEqual(route.Dst, routev6) && route.Gw.Equal(routegwv6) {
+					v6found = true
+				}
+
+				if v4found && v6found {
 					break
 				}
 			}
 			Expect(v4found).To(Equal(true))
+			Expect(v6found).To(Equal(true))
 
 			return nil
 		})
@@ -156,8 +187,8 @@ var _ = Describe("IPAM Operations", func() {
 	})
 
 	It("configures a link with routes using address gateways", func() {
-		result.IP4.Routes[0].GW = nil
-		result.IP6.Routes[0].GW = nil
+		result.Routes[0].GW = nil
+		result.Routes[1].GW = nil
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
@@ -168,23 +199,54 @@ var _ = Describe("IPAM Operations", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(LINK_NAME))
 
-			// Ensure the v4 route
+			// Ensure the v4 route, v6 route, and subnet route
 			routes, err := netlink.RouteList(link, 0)
 			Expect(err).NotTo(HaveOccurred())
 
-			var v4found bool
+			var v4found, v6found bool
 			for _, route := range routes {
 				isv4 := route.Dst.IP.To4() != nil
 				if isv4 && ipNetEqual(route.Dst, routev4) && route.Gw.Equal(ipgw4) {
 					v4found = true
+				}
+				if !isv4 && ipNetEqual(route.Dst, routev6) && route.Gw.Equal(ipgw6) {
+					v6found = true
+				}
+
+				if v4found && v6found {
 					break
 				}
 			}
 			Expect(v4found).To(Equal(true))
+			Expect(v6found).To(Equal(true))
 
 			return nil
 		})
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("returns an error when the interface index doesn't match the link name", func() {
+		result.IPs[0].Interface = 1
+		err := originalNS.Do(func(ns.NetNS) error {
+			return ConfigureIface(LINK_NAME, result)
+		})
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("returns an error when the interface index is too big", func() {
+		result.IPs[0].Interface = 2
+		err := originalNS.Do(func(ns.NetNS) error {
+			return ConfigureIface(LINK_NAME, result)
+		})
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("returns an error when there are no interfaces to configure", func() {
+		result.Interfaces = []*current.Interface{}
+		err := originalNS.Do(func(ns.NetNS) error {
+			return ConfigureIface(LINK_NAME, result)
+		})
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("returns an error when configuring the wrong interface", func() {

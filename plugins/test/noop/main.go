@@ -142,7 +142,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 }
 
 func debugGetSupportedVersions(stdinData []byte) []string {
-	vers := []string{"0.-42.0", "0.1.0", "0.2.0"}
+	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0"}
 	cniArgs := os.Getenv("CNI_ARGS")
 	if cniArgs == "" {
 		return vers

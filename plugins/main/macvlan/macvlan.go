@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"runtime"
 
 	"github.com/containernetworking/cni/pkg/ip"
@@ -49,15 +50,15 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func loadConf(bytes []byte) (*NetConf, error) {
+func loadConf(bytes []byte) (*NetConf, string, error) {
 	n := &NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		return nil, fmt.Errorf("failed to load netconf: %v", err)
+		return nil, "", fmt.Errorf("failed to load netconf: %v", err)
 	}
 	if n.Master == "" {
-		return nil, fmt.Errorf(`"master" field is required. It specifies the host interface name to virtualize`)
+		return nil, "", fmt.Errorf(`"master" field is required. It specifies the host interface name to virtualize`)
 	}
-	return n, nil
+	return n, n.CNIVersion, nil
 }
 
 func modeFromString(s string) (netlink.MacvlanMode, error) {
@@ -75,22 +76,24 @@ func modeFromString(s string) (netlink.MacvlanMode, error) {
 	}
 }
 
-func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
+func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) (*current.Interface, error) {
+	macvlan := &current.Interface{}
+
 	mode, err := modeFromString(conf.Mode)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	m, err := netlink.LinkByName(conf.Master)
 	if err != nil {
-		return fmt.Errorf("failed to lookup master %q: %v", conf.Master, err)
+		return nil, fmt.Errorf("failed to lookup master %q: %v", conf.Master, err)
 	}
 
 	// due to kernel bug we have to create with tmpName or it might
 	// collide with the name on the host and error out
 	tmpName, err := ip.RandomVethName()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	mv := &netlink.Macvlan{
@@ -104,10 +107,10 @@ func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 	}
 
 	if err := netlink.LinkAdd(mv); err != nil {
-		return fmt.Errorf("failed to create macvlan: %v", err)
+		return nil, fmt.Errorf("failed to create macvlan: %v", err)
 	}
 
-	return netns.Do(func(_ ns.NetNS) error {
+	err = netns.Do(func(_ ns.NetNS) error {
 		// TODO: duplicate following lines for ipv6 support, when it will be added in other places
 		ipv4SysctlValueName := fmt.Sprintf(IPv4InterfaceArpProxySysctlTemplate, tmpName)
 		if _, err := sysctl.Sysctl(ipv4SysctlValueName, "1"); err != nil {
@@ -121,12 +124,27 @@ func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 			_ = netlink.LinkDel(mv)
 			return fmt.Errorf("failed to rename macvlan to %q: %v", ifName, err)
 		}
+		macvlan.Name = ifName
+
+		// Re-fetch macvlan to get all properties/attributes
+		contMacvlan, err := netlink.LinkByName(ifName)
+		if err != nil {
+			return fmt.Errorf("failed to refetch macvlan %q: %v", ifName, err)
+		}
+		macvlan.Mac = contMacvlan.Attrs().HardwareAddr.String()
+		macvlan.Sandbox = netns.Path()
+
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return macvlan, nil
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	n, err := loadConf(args.StdinData)
+	n, cniVersion, err := loadConf(args.StdinData)
 	if err != nil {
 		return err
 	}
@@ -137,7 +155,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
-	if err = createMacvlan(n, args.IfName, netns); err != nil {
+	macvlanInterface, err := createMacvlan(n, args.IfName, netns)
+	if err != nil {
 		return err
 	}
 
@@ -146,32 +165,60 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
-	result, err := current.GetResult(r)
+	// Convert whatever the IPAM result was into the current Result type
+	result, err := current.NewResultFromResult(r)
 	if err != nil {
 		return err
 	}
 
-	if result.IP4 == nil {
-		return errors.New("IPAM plugin returned missing IPv4 config")
+	if len(result.IPs) == 0 {
+		return errors.New("IPAM plugin returned missing IP config")
+	}
+	result.Interfaces = []*current.Interface{macvlanInterface}
+
+	var firstV4Addr net.IP
+	for _, ipc := range result.IPs {
+		// All addresses apply to the container macvlan interface
+		ipc.Interface = 0
+
+		if ipc.Address.IP.To4() != nil && firstV4Addr == nil {
+			firstV4Addr = ipc.Address.IP
+		}
 	}
 
-	err = netns.Do(func(_ ns.NetNS) error {
-		if err := ip.SetHWAddrByIP(args.IfName, result.IP4.IP.IP, nil /* TODO IPv6 */); err != nil {
+	if firstV4Addr != nil {
+		err = netns.Do(func(_ ns.NetNS) error {
+			if err := ip.SetHWAddrByIP(args.IfName, firstV4Addr, nil /* TODO IPv6 */); err != nil {
+				return err
+			}
+
+			return ipam.ConfigureIface(args.IfName, result)
+		})
+		if err != nil {
 			return err
 		}
+	}
 
-		return ipam.ConfigureIface(args.IfName, result)
+	// Re-fetch macvlan interface as its MAC address may have changed
+	err = netns.Do(func(_ ns.NetNS) error {
+		link, err := netlink.LinkByName(args.IfName)
+		if err != nil {
+			return fmt.Errorf("failed to re-fetch macvlan interface: %v", err)
+		}
+		macvlanInterface.Mac = link.Attrs().HardwareAddr.String()
+		return nil
 	})
 	if err != nil {
 		return err
 	}
 
 	result.DNS = n.DNS
-	return result.Print()
+
+	return types.PrintResult(result, cniVersion)
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	n, err := loadConf(args.StdinData)
+	n, _, err := loadConf(args.StdinData)
 	if err != nil {
 		return err
 	}
@@ -191,5 +238,5 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
+	skel.PluginMain(cmdAdd, cmdDel, version.All)
 }

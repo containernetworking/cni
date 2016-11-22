@@ -68,5 +68,5 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.Legacy)
+	skel.PluginMain(cmdAdd, cmdDel, version.All)
 }

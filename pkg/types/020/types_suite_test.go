@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package current_test
+package types020_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -23,5 +23,5 @@ import (
 
 func TestTypes010(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "0.3.0 Types Suite")
+	RunSpecs(t, "0.1.0/0.2.0 Types Suite")
 }
