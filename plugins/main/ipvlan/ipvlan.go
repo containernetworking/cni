@@ -101,7 +101,7 @@ func createIpvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 	}
 
 	return netns.Do(func(_ ns.NetNS) error {
-		err := renameLink(tmpName, ifName)
+		err := ip.RenameLink(tmpName, ifName)
 		if err != nil {
 			return fmt.Errorf("failed to rename ipvlan to %q: %v", ifName, err)
 		}
@@ -168,15 +168,6 @@ func cmdDel(args *skel.CmdArgs) error {
 	return ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		return ip.DelLinkByName(args.IfName)
 	})
-}
-
-func renameLink(curName, newName string) error {
-	link, err := netlink.LinkByName(curName)
-	if err != nil {
-		return err
-	}
-
-	return netlink.LinkSetName(link, newName)
 }
 
 func main() {

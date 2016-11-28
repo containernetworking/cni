@@ -116,7 +116,7 @@ func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) error {
 			return fmt.Errorf("failed to set proxy_arp on newly added interface %q: %v", tmpName, err)
 		}
 
-		err := renameLink(tmpName, ifName)
+		err := ip.RenameLink(tmpName, ifName)
 		if err != nil {
 			_ = netlink.LinkDel(mv)
 			return fmt.Errorf("failed to rename macvlan to %q: %v", ifName, err)
@@ -188,15 +188,6 @@ func cmdDel(args *skel.CmdArgs) error {
 	return ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
 		return ip.DelLinkByName(args.IfName)
 	})
-}
-
-func renameLink(curName, newName string) error {
-	link, err := netlink.LinkByName(curName)
-	if err != nil {
-		return err
-	}
-
-	return netlink.LinkSetName(link, newName)
 }
 
 func main() {
