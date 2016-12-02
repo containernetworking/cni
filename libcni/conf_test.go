@@ -69,6 +69,22 @@ var _ = Describe("Loading configuration from disk", func() {
 			})
 		})
 
+		Context("when the config file is .json extension instead of .conf", func() {
+			BeforeEach(func() {
+				Expect(os.Remove(configDir + "/50-whatever.conf")).To(Succeed())
+				pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.json"), pluginConfig, 0600)).To(Succeed())
+			})
+			It("finds the network config file for the plugin of the given type", func() {
+				netConfig, err := libcni.LoadConf(configDir, "some-plugin")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(netConfig).To(Equal(&libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin"},
+					Bytes:   pluginConfig,
+				}))
+			})
+		})
+
 		Context("when there is no config for the desired plugin", func() {
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConf(configDir, "some-other-plugin")

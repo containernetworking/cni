@@ -55,7 +55,8 @@ func ConfFiles(dir string) ([]string, error) {
 		if f.IsDir() {
 			continue
 		}
-		if filepath.Ext(f.Name()) == ".conf" {
+		fileExt := filepath.Ext(f.Name())
+		if fileExt == ".conf" || fileExt == ".json" {
 			confFiles = append(confFiles, filepath.Join(dir, f.Name()))
 		}
 	}
