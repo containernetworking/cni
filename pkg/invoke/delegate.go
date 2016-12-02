@@ -15,12 +15,51 @@
 package invoke
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
+
+func GetNextPlugin(netconf []byte) (string, []byte, error) {
+	conf := struct {
+		types.NetConf
+		Inner map[string]interface{} `json:"inner,omitempty"`
+	}{}
+
+	err := json.Unmarshal(netconf, &conf)
+	if err != nil {
+		return "", nil, fmt.Errorf("error decoding net config: %v", err)
+	}
+
+	if conf.Inner != nil {
+		tmp, ok := conf.Inner["type"]
+		if !ok {
+			return "", nil, fmt.Errorf("inner plugin type not specified")
+		}
+		innerType, ok := tmp.(string)
+		if !ok {
+			return "", nil, fmt.Errorf("inner plugin type not a string")
+		}
+
+		// Copy network name and CNI version to inner plugin
+		conf.Inner["name"] = conf.Name
+		conf.Inner["cniVersion"] = conf.CNIVersion
+		innerConf, err := json.MarshalIndent(conf.Inner, "", "    ")
+		if err != nil {
+			return "", nil, fmt.Errorf("error marshalling inner plugin config: %v", err)
+		}
+		return innerType, innerConf, nil
+	} else if conf.IPAM.Type != "" {
+		// IPAM plugin gets run with normal netconf
+		return conf.IPAM.Type, netconf, nil
+	}
+
+	// No delegate to run
+	return "", nil, nil
+}
 
 func DelegateAdd(delegatePlugin string, netconf []byte) (*types.Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
