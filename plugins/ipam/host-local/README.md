@@ -61,8 +61,8 @@ f81d4fae-7dec-11d0-a765-00a0c91e6bf6
     "ipam": {
 		"type": "host-local",
 		"subnet": "3ffe:ffff:0:01ff::/64",
-		"range-start": "3ffe:ffff:0:01ff::0010",
-		"range-end": "3ffe:ffff:0:01ff::0020",
+		"rangeStart": "3ffe:ffff:0:01ff::0010",
+		"rangeEnd": "3ffe:ffff:0:01ff::0020",
 		"routes": [
 			{ "dst": "3ffe:ffff:0:01ff::1/64" }
 		]
@@ -76,8 +76,8 @@ f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 	"ipam": {
 		"type": "host-local",
 		"subnet": "203.0.113.1/24",
-		"range-start": "203.0.113.10",
-		"range-end": "203.0.113.20",
+		"rangeStart": "203.0.113.10",
+		"rangeEnd": "203.0.113.20",
 		"routes": [
 			{ "dst": "203.0.113.0/24" }
 		]
