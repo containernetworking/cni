@@ -24,8 +24,8 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/vishvananda/netlink"
 	"github.com/containernetworking/cni/pkg/version"
+	"github.com/vishvananda/netlink"
 )
 
 type NetConf struct {
