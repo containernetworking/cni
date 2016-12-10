@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const lastIPFile = "last_reserved_ip"
@@ -56,7 +57,7 @@ func (s *Store) Reserve(id string, ip net.IP) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if _, err := f.WriteString(id); err != nil {
+	if _, err := f.WriteString(strings.TrimSpace(id)); err != nil {
 		f.Close()
 		os.Remove(f.Name())
 		return false, err
@@ -99,7 +100,7 @@ func (s *Store) ReleaseByID(id string) error {
 		if err != nil {
 			return nil
 		}
-		if string(data) == id {
+		if strings.TrimSpace(string(data)) == strings.TrimSpace(id) {
 			if err := os.Remove(path); err != nil {
 				return nil
 			}
