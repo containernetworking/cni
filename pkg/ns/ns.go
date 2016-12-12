@@ -17,9 +17,12 @@ package ns
 import (
 	"crypto/rand"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -81,6 +84,8 @@ const (
 	// https://github.com/torvalds/linux/blob/master/include/uapi/linux/magic.h
 	NSFS_MAGIC   = 0x6e736673
 	PROCFS_MAGIC = 0x9fa0
+
+	NsRunDir = "/var/run/netns"
 )
 
 type NSPathNotExistErr struct{ msg string }
@@ -110,6 +115,28 @@ func IsNSorErr(nspath string) error {
 	}
 }
 
+// isMounted checks if the network namespace path provided is mounted
+func isMounted(nsPath string) (bool, error) {
+	// Handle the case where the path has been returned
+	// from getCurrentThreadNetNSPath(). In that case, it
+	// is not mounted, thus no need to check.
+	if !strings.Contains(nsPath, NsRunDir) {
+		return false, nil
+	}
+
+	mountsContent, err := ioutil.ReadFile("/proc/self/mounts")
+	if err != nil {
+		return false, err
+	}
+
+	_, nsFile := filepath.Split(nsPath)
+	if nsFile == "" {
+		return false, fmt.Errorf("failed to find netns filename\n")
+	}
+
+	return strings.Contains(string(mountsContent), nsFile), nil
+}
+
 // Returns an object representing the namespace referred to by @path
 func GetNS(nspath string) (NetNS, error) {
 	err := IsNSorErr(nspath)
@@ -122,28 +149,31 @@ func GetNS(nspath string) (NetNS, error) {
 		return nil, err
 	}
 
-	return &netNS{file: fd}, nil
+	mnt, err := isMounted(nspath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &netNS{file: fd, mounted: mnt}, nil
 }
 
 // Creates a new persistent network namespace and returns an object
 // representing that namespace, without switching to it
 func NewNS() (NetNS, error) {
-	const nsRunDir = "/var/run/netns"
-
 	b := make([]byte, 16)
 	_, err := rand.Reader.Read(b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate random netns name: %v", err)
 	}
 
-	err = os.MkdirAll(nsRunDir, 0755)
+	err = os.MkdirAll(NsRunDir, 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	// create an empty file at the mount point
 	nsName := fmt.Sprintf("cni-%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-	nsPath := path.Join(nsRunDir, nsName)
+	nsPath := path.Join(NsRunDir, nsName)
 	mountPointFd, err := os.Create(nsPath)
 	if err != nil {
 		return nil, err
