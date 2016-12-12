@@ -62,8 +62,8 @@ func parseDNSServers(opts dhcp4.Options) []string {
 func parseDNSDomain(opts dhcp4.Options) string {
 	// Parse domainname option
 	var domainname string
-	// Thanks to: https://github.com/asaskevich/govalidator
-	var DNSName string = `^([a-zA-Z0-9]{1}[a-zA-Z0-9_-]{1,62}){1}(\.[a-zA-Z0-9]{1}[a-zA-Z0-9_-]{1,62})*$`
+	// Max 63 bytes per label, must start with a letter or digit
+	var DNSName string = `^([a-zA-Z0-9_-]{1,63}){1}(\.[a-zA-Z0-9_-]{1,63})*$`
 	if opt, ok := opts[dhcp4.OptionDomainName]; ok {
 		domainname = string(opt[:])
 		// RFC 1035 section 2.3.4 and 3.1
