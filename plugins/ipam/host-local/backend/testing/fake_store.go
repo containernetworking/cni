@@ -16,12 +16,17 @@ package testing
 
 import (
 	"net"
+
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
 
 type FakeStore struct {
 	ipMap          map[string]string
 	lastReservedIP net.IP
 }
+
+// FakeStore implements the Store interface
+var _ backend.Store = &FakeStore{}
 
 func NewFakeStore(ipmap map[string]string, lastIP net.IP) *FakeStore {
 	return &FakeStore{ipmap, lastIP}
