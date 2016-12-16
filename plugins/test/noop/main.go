@@ -29,7 +29,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/version"
-	"github.com/containernetworking/cni/plugins/test/noop/debug"
+	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
 // parse extra args i.e. FOO=BAR;ABC=123
@@ -60,13 +60,17 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		return nil
 	}
 
-	debug, err := debug.ReadDebug(debugFilePath)
+	debug, err := noop_debug.ReadDebug(debugFilePath)
 	if err != nil {
 		return err
 	}
 
 	debug.CmdArgs = *args
 	debug.Command = command
+
+	if debug.ReportResult == "" {
+		debug.ReportResult = fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
+	}
 
 	err = debug.WriteDebug(debugFilePath)
 	if err != nil {
@@ -101,7 +105,7 @@ func debugGetSupportedVersions() []string {
 		panic("test setup error: missing DEBUG in CNI_ARGS")
 	}
 
-	debug, err := debug.ReadDebug(debugFilePath)
+	debug, err := noop_debug.ReadDebug(debugFilePath)
 	if err != nil {
 		panic("test setup error: unable to read debug file: " + err.Error())
 	}

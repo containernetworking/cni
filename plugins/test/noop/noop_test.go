@@ -96,6 +96,26 @@ var _ = Describe("No-op plugin", func() {
 		Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 	})
 
+	Context("when the ReportResult debug field is empty", func() {
+		BeforeEach(func() {
+			debug.ReportResult = ""
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+		})
+
+		It("substitutes a helpful message for the test author", func() {
+			expectedResultString := fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
+
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(MatchJSON(expectedResultString))
+
+			debug, err := noop_debug.ReadDebug(debugFileName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debug.ReportResult).To(MatchJSON(expectedResultString))
+		})
+	})
+
 	Context("when the ReportError debug field is set", func() {
 		BeforeEach(func() {
 			debug.ReportError = "banana"
