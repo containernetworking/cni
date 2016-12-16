@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
 
 const lastIPFile = "last_reserved_ip"
@@ -31,6 +33,9 @@ type Store struct {
 	FileLock
 	dataDir string
 }
+
+// Store implements the Store interface
+var _ backend.Store = &Store{}
 
 func New(network, dataDir string) (*Store, error) {
 	if dataDir == "" {

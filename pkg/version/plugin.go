@@ -36,6 +36,9 @@ type pluginInfo struct {
 	SupportedVersions_ []string `json:"supportedVersions,omitempty"`
 }
 
+// pluginInfo implements the PluginInfo interface
+var _ PluginInfo = &pluginInfo{}
+
 func (p *pluginInfo) Encode(w io.Writer) error {
 	return json.NewEncoder(w).Encode(p)
 }
