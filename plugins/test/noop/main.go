@@ -22,19 +22,38 @@ the JSON encoding of a Debug.
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
+type NetConf struct {
+	types.NetConf
+	DebugFile string `json:"debugFile"`
+}
+
+func loadConf(bytes []byte) (*NetConf, error) {
+	n := &NetConf{}
+	if err := json.Unmarshal(bytes, n); err != nil {
+		return nil, fmt.Errorf("failed to load netconf: %v", err)
+	}
+	return n, nil
+}
+
 // parse extra args i.e. FOO=BAR;ABC=123
 func parseExtraArgs(args string) (map[string]string, error) {
 	m := make(map[string]string)
+	if len(args) == 0 {
+		return m, nil
+	}
 
 	items := strings.Split(args, ";")
 	for _, item := range items {
@@ -47,16 +66,34 @@ func parseExtraArgs(args string) (map[string]string, error) {
 	return m, nil
 }
 
-func debugBehavior(args *skel.CmdArgs, command string) error {
-	extraArgs, err := parseExtraArgs(args.Args)
+func getDebugFilePath(stdinData []byte, args string) (string, error) {
+	netConf, err := loadConf(stdinData)
 	if err != nil {
-		return err
+		return "", err
+	}
+
+	extraArgs, err := parseExtraArgs(args)
+	if err != nil {
+		return "", err
 	}
 
 	debugFilePath, ok := extraArgs["DEBUG"]
 	if !ok {
+		debugFilePath = netConf.DebugFile
+	}
+
+	return debugFilePath, nil
+}
+
+func debugBehavior(args *skel.CmdArgs, command string) error {
+	debugFilePath, err := getDebugFilePath(args.StdinData, args.Args)
+	if err != nil {
+		return err
+	}
+
+	if debugFilePath == "" {
 		fmt.Printf(`{}`)
-		os.Stderr.WriteString("CNI_ARGS empty, no debug behavior\n")
+		os.Stderr.WriteString("CNI_ARGS or config empty, no debug behavior\n")
 		return nil
 	}
 
@@ -88,21 +125,16 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	return nil
 }
 
-func debugGetSupportedVersions() []string {
+func debugGetSupportedVersions(stdinData []byte) []string {
 	vers := []string{"0.-42.0", "0.1.0", "0.2.0"}
 	cniArgs := os.Getenv("CNI_ARGS")
 	if cniArgs == "" {
 		return vers
 	}
 
-	extraArgs, err := parseExtraArgs(cniArgs)
+	debugFilePath, err := getDebugFilePath(stdinData, cniArgs)
 	if err != nil {
-		panic("test setup error: invalid CNI_ARGS format")
-	}
-
-	debugFilePath, ok := extraArgs["DEBUG"]
-	if !ok {
-		panic("test setup error: missing DEBUG in CNI_ARGS")
+		panic("test setup error: unable to get debug file path: " + err.Error())
 	}
 
 	debug, err := noop_debug.ReadDebug(debugFilePath)
@@ -123,7 +155,36 @@ func cmdDel(args *skel.CmdArgs) error {
 	return debugBehavior(args, "DEL")
 }
 
+func saveStdin() ([]byte, error) {
+	// Read original stdin
+	stdinData, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make a new pipe for stdin, and write original stdin data to it
+	r, w, err := os.Pipe()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := w.Write(stdinData); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	os.Stdin = r
+	return stdinData, nil
+}
+
 func main() {
-	supportedVersions := debugGetSupportedVersions()
+	// Grab and read stdin before pkg/skel gets it
+	stdinData, err := saveStdin()
+	if err != nil {
+		panic("test setup error: unable to read stdin: " + err.Error())
+	}
+
+	supportedVersions := debugGetSupportedVersions(stdinData)
 	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
 }
