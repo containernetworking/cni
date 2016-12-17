@@ -59,12 +59,21 @@ func (n *IPNet) UnmarshalJSON(data []byte) error {
 type NetConf struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
 
-	Name string `json:"name,omitempty"`
-	Type string `json:"type,omitempty"`
-	IPAM struct {
+	Name       string  `json:"name,omitempty"`
+	Type       string  `json:"type,omitempty"`
+	PrevResult *Result `json:"prevResult,omitempty"`
+	IPAM       struct {
 		Type string `json:"type,omitempty"`
 	} `json:"ipam,omitempty"`
 	DNS DNS `json:"dns"`
+}
+
+// NetConfList describes an ordered list of networks.
+type NetConfList struct {
+	CNIVersion string `json:"cniVersion,omitempty"`
+
+	Name    string     `json:"name,omitempty"`
+	Plugins []*NetConf `json:"plugins,omitempty"`
 }
 
 // Result is what gets returned from the plugin (via stdout) to the caller

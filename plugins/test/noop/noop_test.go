@@ -96,6 +96,45 @@ var _ = Describe("No-op plugin", func() {
 		Eventually(session).Should(gexec.Exit(2))
 	})
 
+	It("pass previous result through when ReportResult is PASSTHROUGH", func() {
+		debug = &noop_debug.Debug{ReportResult: "PASSTHROUGH"}
+		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+
+		cmd.Stdin = strings.NewReader(`{
+	"some":"stdin-json",
+	"cniVersion": "0.2.0",
+	"prevResult": {
+		"ip4": {"ip": "10.1.2.15/24"}
+	}
+}`)
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Out.Contents()).To(MatchJSON(`{"ip4": {"ip": "10.1.2.15/24"}, "dns": {}}`))
+	})
+
+	It("injects DNS into previous result when ReportResult is INJECT-DNS", func() {
+		debug = &noop_debug.Debug{ReportResult: "INJECT-DNS"}
+		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+
+		cmd.Stdin = strings.NewReader(`{
+	"some":"stdin-json",
+	"cniVersion": "0.2.0",
+	"prevResult": {
+		"ip4": {"ip": "10.1.2.3/24"},
+		"dns": {}
+	}
+}`)
+
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Out.Contents()).To(MatchJSON(`{
+	"ip4": {"ip": "10.1.2.3/24"},
+	"dns": {"nameservers": ["1.2.3.4"]}
+}`))
+	})
+
 	It("allows passing debug file in config JSON", func() {
 		// Remove the DEBUG option from CNI_ARGS and regular args
 		newArgs := "FOO=BAR"

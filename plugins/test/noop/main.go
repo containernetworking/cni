@@ -37,13 +37,14 @@ import (
 
 type NetConf struct {
 	types.NetConf
-	DebugFile string `json:"debugFile"`
+	DebugFile  string        `json:"debugFile"`
+	PrevResult *types.Result `json:"prevResult,omitempty"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
 	n := &NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		return nil, fmt.Errorf("failed to load netconf: %v", err)
+		return nil, fmt.Errorf("failed to load netconf: %v %q", err, string(bytes))
 	}
 	return n, nil
 }
@@ -66,15 +67,15 @@ func parseExtraArgs(args string) (map[string]string, error) {
 	return m, nil
 }
 
-func getDebugFilePath(stdinData []byte, args string) (string, error) {
+func getConfig(stdinData []byte, args string) (string, *NetConf, error) {
 	netConf, err := loadConf(stdinData)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	extraArgs, err := parseExtraArgs(args)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	debugFilePath, ok := extraArgs["DEBUG"]
@@ -82,11 +83,11 @@ func getDebugFilePath(stdinData []byte, args string) (string, error) {
 		debugFilePath = netConf.DebugFile
 	}
 
-	return debugFilePath, nil
+	return debugFilePath, netConf, nil
 }
 
 func debugBehavior(args *skel.CmdArgs, command string) error {
-	debugFilePath, err := getDebugFilePath(args.StdinData, args.Args)
+	debugFilePath, netConf, err := getConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
@@ -118,6 +119,15 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 
 	if debug.ReportError != "" {
 		return errors.New(debug.ReportError)
+	} else if debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS" {
+		if debug.ReportResult == "INJECT-DNS" {
+			netConf.PrevResult.DNS.Nameservers = []string{"1.2.3.4"}
+		}
+		newResult, err := json.Marshal(netConf.PrevResult)
+		if err != nil {
+			return fmt.Errorf("failed to marshal new result: %v", err)
+		}
+		os.Stdout.WriteString(string(newResult))
 	} else {
 		os.Stdout.WriteString(debug.ReportResult)
 	}
@@ -132,7 +142,7 @@ func debugGetSupportedVersions(stdinData []byte) []string {
 		return vers
 	}
 
-	debugFilePath, err := getDebugFilePath(stdinData, cniArgs)
+	debugFilePath, _, err := getConfig(stdinData, cniArgs)
 	if err != nil {
 		panic("test setup error: unable to get debug file path: " + err.Error())
 	}
