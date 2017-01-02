@@ -20,11 +20,16 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// AddRoute adds a universally-scoped route to a device.
+// AddRoute adds a route to a device. If the gw is nil, the route will be
+// link-scoped. Otherwise, it will be universally scoped.
 func AddRoute(ipn *net.IPNet, gw net.IP, dev netlink.Link) error {
+	scope := netlink.SCOPE_UNIVERSE
+	if gw == nil {
+		scope = netlink.SCOPE_LINK
+	}
 	return netlink.RouteAdd(&netlink.Route{
 		LinkIndex: dev.Attrs().Index,
-		Scope:     netlink.SCOPE_UNIVERSE,
+		Scope:     scope,
 		Dst:       ipn,
 		Gw:        gw,
 	})
