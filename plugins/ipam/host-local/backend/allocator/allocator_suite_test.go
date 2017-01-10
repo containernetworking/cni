@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main_test
+package allocator_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestHostLocal(t *testing.T) {
+func TestAllocator(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "HostLocal Suite")
+	RunSpecs(t, "Allocator Suite")
 }

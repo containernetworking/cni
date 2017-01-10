@@ -15,6 +15,7 @@
 package main
 
 import (
+	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/allocator"
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend/disk"
 
 	"github.com/containernetworking/cni/pkg/skel"
@@ -27,7 +28,7 @@ func main() {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := allocator.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
@@ -38,7 +39,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer store.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	allocator, err := allocator.NewIPAllocator(ipamConf, store)
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	ipamConf, err := LoadIPAMConfig(args.StdinData, args.Args)
+	ipamConf, err := allocator.LoadIPAMConfig(args.StdinData, args.Args)
 	if err != nil {
 		return err
 	}
@@ -66,10 +67,10 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 	defer store.Close()
 
-	allocator, err := NewIPAllocator(ipamConf, store)
+	ipAllocator, err := allocator.NewIPAllocator(ipamConf, store)
 	if err != nil {
 		return err
 	}
 
-	return allocator.Release(args.ContainerID)
+	return ipAllocator.Release(args.ContainerID)
 }
