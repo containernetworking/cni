@@ -1,5 +1,10 @@
 # Container Networking Interface Proposal
 
+## Version
+This is CNI **spec** version **0.2.0**.
+
+Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
+
 ## Overview
 
 This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_.
