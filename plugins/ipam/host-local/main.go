@@ -49,8 +49,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	r := &types.Result{
-		IP4: ipConf,
+	var r types.Result
+	if ipConf.IP.IP.To4() == nil {
+		r.IP6 = ipConf
+	} else {
+		r.IP4 = ipConf
 	}
 	return r.Print()
 }
