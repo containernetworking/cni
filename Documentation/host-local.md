@@ -30,6 +30,7 @@ It stores the state locally on the host filesystem, therefore ensuring uniquenes
 * `rangeEnd` (string, optional): IP inside of "subnet" with which to end allocating addresses. Defaults to ".254" IP inside of the "subnet" block.
 * `gateway` (string, optional): IP inside of "subnet" to designate as the gateway. Defaults to ".1" IP inside of the "subnet" block.
 * `routes` (string, optional): list of routes to add to the container namespace. Each route is a dictionary with "dst" and optional "gw" fields. If "gw" is omitted, value of "gateway" will be used.
+* `resolvConf` (string, optional): Path to a `resolv.conf` on the host to parse and return as the DNS configuration
 
 ## Supported arguments
 The following [CNI_ARGS](https://github.com/containernetworking/cni/blob/master/SPEC.md#parameters) are supported:

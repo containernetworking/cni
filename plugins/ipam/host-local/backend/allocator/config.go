@@ -32,6 +32,7 @@ type IPAMConfig struct {
 	Gateway    net.IP        `json:"gateway"`
 	Routes     []types.Route `json:"routes"`
 	DataDir    string        `json:"dataDir"`
+	ResolvConf string        `json:"resolvConf"`
 	Args       *IPAMArgs     `json:"-"`
 }
 

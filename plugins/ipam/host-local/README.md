@@ -1,6 +1,7 @@
 # host-local IP address manager
 
-host-local IPAM allocates IPv4 and IPv6 addresses out of a specified address range.
+host-local IPAM allocates IPv4 and IPv6 addresses out of a specified address range. Optionally,
+it can include a DNS configuration from a `resolv.conf` file on the host.
 
 ## Usage
 
@@ -65,7 +66,8 @@ f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 		"rangeEnd": "3ffe:ffff:0:01ff::0020",
 		"routes": [
 			{ "dst": "3ffe:ffff:0:01ff::1/64" }
-		]
+		],
+		"resolvConf": "/etc/resolv.conf"
 	}
 }
 ```
