@@ -114,20 +114,20 @@ FLANNEL_IPMASQ=true
 				netConfBytes, err := ioutil.ReadFile(path)
 				Expect(err).NotTo(HaveOccurred())
 				expected := `{
-   "name" : "cni-flannel",
-   "type" : "bridge",
+   "ipMasq" : false,
    "ipam" : {
-      "type" : "host-local",
-      "subnet" : "10.1.17.0/24",
       "routes" : [
          {
             "dst" : "10.1.0.0/16"
          }
-      ]
+      ],
+      "subnet" : "10.1.17.0/24",
+      "type" : "host-local"
    },
+   "isGateway": true,
    "mtu" : 1472,
-   "ipMasq" : false,
-   "isGateway": true
+   "name" : "cni-flannel",
+   "type" : "bridge"
 }
 `
 				Expect(netConfBytes).Should(MatchJSON(expected))
