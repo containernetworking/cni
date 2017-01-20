@@ -216,6 +216,167 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
+### Network Configuration Lists
+
+Network configuration lists provide a mechanism to run multiple CNI plugins for a single container in a defined order, passing the result of each plugin to the next plugin.
+The list is composed of well-known fields and list of one or more standard CNI network configurations (see above).
+
+The list is described in JSON form, and can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
+- `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration list and all the individual configurations conform.
+- `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
+- `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
+
+When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself.
+This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
+
+For the ADD action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the Result of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
+For the ADD action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
+Plugins are allowed to modify or suppress all or part of a `prevResult`.
+However, plugins that support a version of the CNI specification that includes the `prevResult` field MUST handle `prevResult` by either passing it through, modifying it, or suppressing it explicitly.
+It is a violation of this specification to be unaware of the `prevResult` field.
+
+The runtime MUST also execute each plugin in the list with the same environment.
+
+For the DEL action, the runtime MUST execute the plugins in reverse-order.
+
+#### Network Configuration List Error Handling
+
+When an error occurs while executing an action on a plugin list (eg, either ADD or DEL) the runtime MUST stop execution of the list.
+
+If an ADD action fails, when the runtime decides to handle the failure it should execute the DEL action (in reverse order from the ADD as specified above) for all plugins in the list, even if some were not called during the ADD action.
+
+Plugins should generally complete a DEL action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources (if present) even if the container network namespace and/or container network interface no longer exist.
+
+#### Example network configuration lists
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "dbnet",
+  "plugins": [
+    {
+      "type": "bridge",
+      // type (plugin) specific
+      "bridge": "cni0",
+      // args may be ignored by plugins
+      "args": {
+        "labels" : {
+            "appVersion" : "1.0"
+        }
+      },
+      "ipam": {
+        "type": "host-local",
+        // ipam specific
+        "subnet": "10.1.0.0/16",
+        "gateway": "10.1.0.1"
+      },
+      "dns": {
+        "nameservers": [ "10.1.0.1" ]
+      }
+    },
+    {
+      "type": "tuning",
+      "sysctl": {
+        "net.core.somaxconn": "500"
+      }
+    }
+  ]
+}
+```
+
+#### Network configuration list runtime examples
+
+Given the network configuration list JSON [shown above](#example-network-configuration-lists) the container runtime would perform the following steps for the ADD action.
+Note that the runtime adds the `cniVersion` and `name` fields from configuration list to the configuration JSON passed to each plugin, to ensure consistent versioning and names for all plugins in the list.
+
+1) first call the `bridge` plugin with the following JSON:
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "dbnet",
+  "type": "bridge",
+  "bridge": "cni0",
+  "args": {
+    "labels" : {
+        "appVersion" : "1.0"
+    }
+  },
+  "ipam": {
+    "type": "host-local",
+    // ipam specific
+    "subnet": "10.1.0.0/16",
+    "gateway": "10.1.0.1"
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
+  }
+}
+```
+
+2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "dbnet",
+  "type": "tuning",
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  },
+  "prevResult": {
+    "ip4": {
+      "ip": "10.1.0.3/16",
+      "gateway": "10.1.0.1",
+    },
+    "dns": {
+      "nameservers": [ "10.1.0.1" ]
+    }
+  }
+}
+```
+
+Given the same network configuration JSON list, the container runtime would perform the following steps for the DEL action.
+Note that no `prevResult` field is required as the DEL action does not return any result.
+Also note that plugins are executed in reverse order from the ADD action.
+
+1) first call the `tuning` plugin with the following JSON:
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "dbnet",
+  "type": "tuning",
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  }
+}
+```
+
+2) next call the `bridge` plugin with the following JSON:
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "dbnet",
+  "type": "bridge",
+  "bridge": "cni0",
+  "args": {
+    "labels" : {
+        "appVersion" : "1.0"
+    }
+  },
+  "ipam": {
+    "type": "host-local",
+    // ipam specific
+    "subnet": "10.1.0.0/16",
+    "gateway": "10.1.0.1"
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
+  }
+}
+```
 
 ### IP Allocation
 

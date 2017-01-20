@@ -26,29 +26,25 @@ import (
 )
 
 var _ = Describe("Loading configuration from disk", func() {
-	var (
-		configDir     string
-		pluginConfig  []byte
-		testNetConfig *libcni.NetworkConfig
-	)
-
-	BeforeEach(func() {
-		var err error
-		configDir, err = ioutil.TempDir("", "plugin-conf")
-		Expect(err).NotTo(HaveOccurred())
-
-		pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
-		Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
-
-		testNetConfig = &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
-			Bytes: []byte(`{ "name": "some-plugin" }`)}
-	})
-
-	AfterEach(func() {
-		Expect(os.RemoveAll(configDir)).To(Succeed())
-	})
-
 	Describe("LoadConf", func() {
+		var (
+			configDir    string
+			pluginConfig []byte
+		)
+
+		BeforeEach(func() {
+			var err error
+			configDir, err = ioutil.TempDir("", "plugin-conf")
+			Expect(err).NotTo(HaveOccurred())
+
+			pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
+			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(configDir)).To(Succeed())
+		})
+
 		It("finds the network config file for the plugin of the given type", func() {
 			netConfig, err := libcni.LoadConf(configDir, "some-plugin")
 			Expect(err).NotTo(HaveOccurred())
@@ -128,7 +124,137 @@ var _ = Describe("Loading configuration from disk", func() {
 		})
 	})
 
+	Describe("LoadConfList", func() {
+		var (
+			configDir  string
+			configList []byte
+		)
+
+		BeforeEach(func() {
+			var err error
+			configDir, err = ioutil.TempDir("", "plugin-conf")
+			Expect(err).NotTo(HaveOccurred())
+
+			configList = []byte(`{
+  "name": "some-list",
+  "cniVersion": "0.2.0",
+  "plugins": [
+    {
+      "type": "host-local",
+      "subnet": "10.0.0.1/24"
+    },
+    {
+      "type": "bridge",
+      "mtu": 1400
+    },
+    {
+      "type": "port-forwarding",
+      "ports": {"20.0.0.1:8080": "80"}
+    }
+  ]
+}`)
+			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(configDir)).To(Succeed())
+		})
+
+		It("finds the network config file for the plugin of the given type", func() {
+			netConfigList, err := libcni.LoadConfList(configDir, "some-list")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(netConfigList).To(Equal(&libcni.NetworkConfigList{
+				Name:       "some-list",
+				CNIVersion: "0.2.0",
+				Plugins: []*libcni.NetworkConfig{
+					{
+						Network: &types.NetConf{Type: "host-local"},
+						Bytes:   []byte(`{"subnet":"10.0.0.1/24","type":"host-local"}`),
+					},
+					{
+						Network: &types.NetConf{Type: "bridge"},
+						Bytes:   []byte(`{"mtu":1400,"type":"bridge"}`),
+					},
+					{
+						Network: &types.NetConf{Type: "port-forwarding"},
+						Bytes:   []byte(`{"ports":{"20.0.0.1:8080":"80"},"type":"port-forwarding"}`),
+					},
+				},
+				Bytes: configList,
+			}))
+		})
+
+		Context("when the config directory does not exist", func() {
+			BeforeEach(func() {
+				Expect(os.RemoveAll(configDir)).To(Succeed())
+			})
+
+			It("returns a useful error", func() {
+				_, err := libcni.LoadConfList(configDir, "some-plugin")
+				Expect(err).To(MatchError("no net configuration lists found"))
+			})
+		})
+
+		Context("when there is no config for the desired plugin list", func() {
+			It("returns a useful error", func() {
+				_, err := libcni.LoadConfList(configDir, "some-other-plugin")
+				Expect(err).To(MatchError(ContainSubstring(`no net configuration list with name "some-other-plugin" in`)))
+			})
+		})
+
+		Context("when a config file is malformed", func() {
+			BeforeEach(func() {
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "00-bad.conflist"), []byte(`{`), 0600)).To(Succeed())
+			})
+
+			It("returns a useful error", func() {
+				_, err := libcni.LoadConfList(configDir, "some-plugin")
+				Expect(err).To(MatchError(`error parsing configuration list: unexpected end of JSON input`))
+			})
+		})
+
+		Context("when the config is in a nested subdir", func() {
+			BeforeEach(func() {
+				subdir := filepath.Join(configDir, "subdir1", "subdir2")
+				Expect(os.MkdirAll(subdir, 0700)).To(Succeed())
+
+				configList = []byte(`{
+  "name": "deep",
+  "cniVersion": "0.2.0",
+  "plugins": [
+    {
+      "type": "host-local",
+      "subnet": "10.0.0.1/24"
+    },
+  ]
+}`)
+				Expect(ioutil.WriteFile(filepath.Join(subdir, "90-deep.conflist"), configList, 0600)).To(Succeed())
+			})
+
+			It("will not find the config", func() {
+				_, err := libcni.LoadConfList(configDir, "deep")
+				Expect(err).To(MatchError(HavePrefix("no net configuration list with name")))
+			})
+		})
+	})
+
+	Describe("ConfListFromFile", func() {
+		Context("when the file cannot be opened", func() {
+			It("returns a useful error", func() {
+				_, err := libcni.ConfListFromFile("/tmp/nope/not-here")
+				Expect(err).To(MatchError(HavePrefix(`error reading /tmp/nope/not-here: open /tmp/nope/not-here`)))
+			})
+		})
+	})
+
 	Describe("InjectConf", func() {
+		var testNetConfig *libcni.NetworkConfig
+
+		BeforeEach(func() {
+			testNetConfig = &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
+				Bytes: []byte(`{ "name": "some-plugin" }`)}
+		})
+
 		Context("when function parameters are incorrect", func() {
 			It("returns unmarshal error", func() {
 				conf := &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
