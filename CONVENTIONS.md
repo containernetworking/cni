@@ -61,7 +61,6 @@ For example:
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
 | labels | Pass`key=value` labels to plugins | <pre>"labels" : [<br />  { "key" : "app", "value" : "myapp" },<br />  { "key" : "env", "value" : "prod" }<br />] </pre> | none | none |
-| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | <pre>"port_mappings" : [<br />  { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />  { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />] </pre> | none | none |
 
 ## CNI_ARGS
 CNI_ARGS formed part of the original CNI spec and have been present since the initial release.
