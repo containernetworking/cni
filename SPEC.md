@@ -22,6 +22,8 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 [appc-github]: https://github.com/appc/spec
 [docker]: https://docker.com 
 
+This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins to. These extentions are not part of this specification but are documented as [conventions](CONVENTIONS.md).
+
 ## General considerations
 
 The intention is for the container runtime to first create a new network namespace for the container.
