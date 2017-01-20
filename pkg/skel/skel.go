@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
@@ -30,12 +31,13 @@ import (
 // CmdArgs captures all the arguments passed in to the plugin
 // via both env vars and stdin
 type CmdArgs struct {
-	ContainerID string
-	Netns       string
-	IfName      string
-	Args        string
-	Path        string
-	StdinData   []byte
+	ContainerID   string
+	Netns         string
+	IfName        string
+	Args          string
+	Path          string
+	UsesTapDevice bool
+	StdinData     []byte
 }
 
 type dispatcher struct {
@@ -51,7 +53,7 @@ type dispatcher struct {
 type reqForCmdEntry map[string]bool
 
 func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
-	var cmd, contID, netns, ifName, args, path string
+	var cmd, contID, netns, ifName, args, path, usesTapDevice string
 
 	vars := []struct {
 		name      string
@@ -106,6 +108,14 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 				"DEL": true,
 			},
 		},
+		{
+			"CNI_USE_TAP",
+			&usesTapDevice,
+			reqForCmdEntry{
+				"ADD": false,
+				"DEL": false,
+			},
+		},
 	}
 
 	argsMissing := false
@@ -128,13 +138,24 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 		return "", nil, fmt.Errorf("error reading from stdin: %v", err)
 	}
 
+	var useTap bool
+	if usesTapDevice == "" {
+		useTap = false
+	} else {
+		useTap, err = strconv.ParseBool(usesTapDevice)
+		if err != nil {
+			return "", nil, fmt.Errorf("CNI_USE_TAP should only contain 'true' or 'false'")
+		}
+	}
+
 	cmdArgs := &CmdArgs{
-		ContainerID: contID,
-		Netns:       netns,
-		IfName:      ifName,
-		Args:        args,
-		Path:        path,
-		StdinData:   stdinData,
+		ContainerID:   contID,
+		Netns:         netns,
+		IfName:        ifName,
+		Args:          args,
+		Path:          path,
+		UsesTapDevice: useTap,
+		StdinData:     stdinData,
 	}
 	return cmd, cmdArgs, nil
 }

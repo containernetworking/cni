@@ -161,6 +161,39 @@ func setupHostVeth(vethName string, ipConf *types.IPConfig) error {
 	return nil
 }
 
+// setupTapDevice creates persistent tap device
+// and returns a newly created netlink.Link structure
+func setupTapDevice(mtu int, pr *types.Result) error {
+	// network device names are limited to 16 characters
+	// the suffix %d will be replaced by the kernel with a suitable number
+	link, err := ip.SetupTap(mtu)
+	if err != nil {
+		return err
+	}
+
+	ipn := &net.IPNet{
+		IP:   pr.IP4.Gateway,
+		Mask: net.CIDRMask(32, 32),
+	}
+	addr := &netlink.Addr{IPNet: ipn, Label: ""}
+	if err = netlink.AddrAdd(link, addr); err != nil {
+		return fmt.Errorf("failed to add IP addr (%#v) to tap: %v", ipn, err)
+	}
+
+	ipn = &net.IPNet{
+		IP:   pr.IP4.IP.IP,
+		Mask: net.CIDRMask(32, 32),
+	}
+
+	if err = ip.AddHostRoute(ipn, nil, link); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("failed to add route on host: %v", err)
+	}
+
+	pr.IP4.Iface = link.Attrs().Name
+
+	return nil
+}
+
 func cmdAdd(args *skel.CmdArgs) error {
 	conf := NetConf{}
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
@@ -180,13 +213,23 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IPv4 config")
 	}
 
-	hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
-	if err != nil {
-		return err
-	}
+	if !args.UsesTapDevice {
+		// veth pair
+		// regular network configuration for containers
+		hostVethName, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
+		if err != nil {
+			return err
+		}
 
-	if err = setupHostVeth(hostVethName, result.IP4); err != nil {
-		return err
+		if err = setupHostVeth(hostVethName, result.IP4); err != nil {
+			return err
+		}
+	} else {
+		// tap device
+		// for vm based containers
+		if err := setupTapDevice(conf.MTU, result); err != nil {
+			return err
+		}
 	}
 
 	if conf.IPMasq {
@@ -211,24 +254,32 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
-	if args.Netns == "" {
-		return nil
-	}
-
 	var ipn *net.IPNet
-	err := ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+	if !args.UsesTapDevice {
+		if args.Netns == "" {
+			return nil
+		}
+
+		err := ns.WithNetNSPath(args.Netns, func(_ ns.NetNS) error {
+			var err error
+			ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	} else {
 		var err error
 		ipn, err = ip.DelLinkByNameAddr(args.IfName, netlink.FAMILY_V4)
-		return err
-	})
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	if conf.IPMasq {
 		chain := utils.FormatChainName(conf.Name, args.ContainerID)
 		comment := utils.FormatComment(conf.Name, args.ContainerID)
-		if err = ip.TeardownIPMasq(ipn, chain, comment); err != nil {
+		if err := ip.TeardownIPMasq(ipn, chain, comment); err != nil {
 			return err
 		}
 	}

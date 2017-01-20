@@ -111,4 +111,81 @@ var _ = Describe("ptp Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("configures and deconfigures a ptp link with ADD/DEL using TAP device", func() {
+		// Used only to fill CNI_IFNAME, not actually used in this test
+		const IFNAME = "tap"
+
+		const TAP_PREFIX = "tap"
+
+		conf := `{
+    "name": "mynet",
+    "type": "ptp",
+    "ipMasq": false,
+    "mtu": 5000,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24"
+    }
+}`
+
+		targetNs, err := ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+		defer targetNs.Close()
+
+		args := &skel.CmdArgs{
+			ContainerID:   "dummy",
+			Netns:         targetNs.Path(),
+			IfName:        IFNAME,
+			StdinData:     []byte(conf),
+			UsesTapDevice: true,
+		}
+
+		// Execute the plugin with the ADD command, creating the TAP device in the original namespace
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdAdd(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Get the second link (lo being first one)
+			link, err := netlink.LinkByIndex(2)
+			// Tap devices are created with a tap prefix and a random id
+			Expect(link.Attrs().Name[:3]).To(Equal(TAP_PREFIX))
+			Expect(err).NotTo(HaveOccurred())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		// Call the plugins with the DEL command, deleting the TAP device
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			link, err := netlink.LinkByIndex(2)
+			Expect(err).NotTo(HaveOccurred())
+			args.IfName = link.Attrs().Name
+			Expect(args.IfName[:3]).To(Equal(TAP_PREFIX))
+
+			err = testutils.CmdDelWithResult(targetNs.Path(), args.IfName, func() error {
+				return cmdDel(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		// Make sure TAP ptp link has been deleted
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			// There should be no more interfaces/devices other than lo
+			link, err := netlink.LinkByIndex(2)
+			Expect(err).To(HaveOccurred())
+			Expect(link).To(BeNil())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
 })
