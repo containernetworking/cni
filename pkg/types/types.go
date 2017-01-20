@@ -78,6 +78,7 @@ type NetConfList struct {
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
+	MAC string    `json:"mac,omitempty"`
 	IP4 *IPConfig `json:"ip4,omitempty"`
 	IP6 *IPConfig `json:"ip6,omitempty"`
 	DNS DNS       `json:"dns,omitempty"`
