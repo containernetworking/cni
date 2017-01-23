@@ -45,16 +45,19 @@ func ConfigureIface(ifName string, res *types.Result) error {
 		return fmt.Errorf("failed to set %q UP: %v", ifName, err)
 	}
 
-	// TODO(eyakubovich): IPv6
-	addr := &netlink.Addr{IPNet: &res.IP4.IP, Label: ""}
+	ipConfig := res.IP6
+	if ipConfig == nil {
+		ipConfig = res.IP4
+	}
+	addr := &netlink.Addr{IPNet: &ipConfig.IP, Label: ""}
 	if err = netlink.AddrAdd(link, addr); err != nil {
 		return fmt.Errorf("failed to add IP addr to %q: %v", ifName, err)
 	}
 
-	for _, r := range res.IP4.Routes {
+	for _, r := range ipConfig.Routes {
 		gw := r.GW
 		if gw == nil {
-			gw = res.IP4.Gateway
+			gw = ipConfig.Gateway
 		}
 		if err = ip.AddRoute(&r.Dst, gw, link); err != nil {
 			// we skip over duplicate routes as we assume the first one wins
