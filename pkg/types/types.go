@@ -78,9 +78,10 @@ type NetConfList struct {
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
-	IP4 *IPConfig `json:"ip4,omitempty"`
-	IP6 *IPConfig `json:"ip6,omitempty"`
-	DNS DNS       `json:"dns,omitempty"`
+	IP4 		*IPConfig `json:"ip4,omitempty"`
+	IP6 		*IPConfig `json:"ip6,omitempty"`
+	DNS 		DNS       `json:"dns,omitempty"`
+	CUSTOMATTR  	*CUSTOM    `json:"custom,omitempty"`
 }
 
 func (r *Result) Print() error {
@@ -98,6 +99,9 @@ func (r *Result) String() string {
 	if r.IP6 != nil {
 		str += fmt.Sprintf("IP6:%+v, ", *r.IP6)
 	}
+        if r.CUSTOMATTR != nil {
+		str += fmt.Sprintf("CUSTOMATTR:%+v, ", *r.CUSTOMATTR)
+        }
 	return fmt.Sprintf("%sDNS:%+v", str, r.DNS)
 }
 
@@ -114,6 +118,15 @@ type DNS struct {
 	Domain      string   `json:"domain,omitempty"`
 	Search      []string `json:"search,omitempty"`
 	Options     []string `json:"options,omitempty"`
+}
+
+type Attribute struct {
+	Name 	string
+	Value 	string
+}
+
+type CUSTOM struct {
+        CustomAttributes []Attribute
 }
 
 type Route struct {
