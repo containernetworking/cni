@@ -60,6 +60,18 @@ The operations that the CNI plugin needs to support are:
     - **IPs assigned to the interface**. This is either an IPv4 address, an IPv6 address, or both.
     - **DNS information**. Dictionary that includes DNS information for nameservers, domain, search domains and options.
 
+- Get container network information
+  - Parameters:
+    - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
+    - **Container ID**, as defined above.
+    - **Network namespace path**, as defined above.
+    - **Network configuration**, as defined above.
+    - **Extra arguments**, as defined above.
+    - **Name of the interface inside the container**, as defined above.
+  - Result:
+    - **IPv4 and/or IPv6**. All available ip information on specified interface inside the container.
+    - **DNS**. Dictionary that includes DNS information for nameservers, domain, search domains and options.
+
 - Delete container from network
   - Parameters:
     - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
@@ -94,7 +106,8 @@ Network configuration in JSON format is streamed to the plugin through stdin. Th
 
 ### Result
 
-Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details).
+Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. This should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details). GET command should return same output as ADD, without doing any additional configuration (in bridge plugin - GET command should enter network namespace and collect 
+information about address/routes).
 
 ```
 {
