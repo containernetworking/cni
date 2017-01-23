@@ -34,6 +34,16 @@ install:
  - go get ${TOOLS_CMD}/cover
  - go get github.com/modocache/gover
  - go get github.com/mattn/goveralls
+# Travis-Ci is running a vintage kernel image.
+# We need to patch ipvlan driver for functional tests to work.
+ - sudo apt-get -y install linux-headers-`uname -r`
+ - apt-get source linux-lts-vivid
+ - cd linux-lts-vivid-3.19.0; make oldconfig;make prepare;make scripts
+ - cd drivers/net/ipvlan; wget -O - https://github.com/torvalds/linux/commit/f631c44bbe1581d18d0aba628b3802d0eacb6373.patch|patch -p4
+ - make -C /usr/src/linux-headers-`uname -r` M=$(pwd) modules
+ - sudo insmod ipvlan.ko
+ - cd ../../../../
+ - sudo apt-get -y install isc-dhcp-server radvd
 
 script:
  - >

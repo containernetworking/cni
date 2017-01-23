@@ -76,5 +76,14 @@ if [ -n "${licRes}" ]; then
        exit 255
 fi
 
+echo "Running functional tests..."
+cd functional
+./init.sh
+funcRes=$?
+if [ "${funcRes}" -gt 0 ]; then
+	echo -e "functional tests failed:\n${funcRes}"
+	exit 255
+fi
+
 
 echo "Success"

@@ -38,3 +38,31 @@ Because all ipvlan interfaces share the MAC address with the host interface, DHC
 Therefore the container will not be able to reach the host via `ipvlan` interface.
 Be sure to also have container join a network that provides connectivity to the host (e.g. `ptp`).
 * A single master interface can not be enslaved by both `macvlan` and `ipvlan`.
+
+### Using ipvlan and dhcp
+There are two important considerations when using the "ipvlan" plugin together with the "dhcp" IPAM plugin.
+
+First, the kernel ipvlan driver uses the IP packet's destination address when choosing the slave interface to which it should be forwarded.
+The driver cannot perform this forwarding if the container interface has not yet been assigned an IP address.
+Since the DHCP packets are exchanged to determine which IP should be used, the interface will not yet have an IP address.
+DHCP servers typically unicast replies back to the client.
+The ipvlan driver will drop these replies.
+To work around this, the DHCP client must instruct the DHCP server to use broadcast replies instead.
+This can be accomplished by setting the "broadcast" flag in the "ipam" section of the network configuration:
+
+```
+{
+	"name": "mynet",
+	"type": "ipvlan",
+	"master": "eth0",
+	"ipam": {
+		"type": "dhcp",
+		"broadcast": true
+	}
+}
+```
+
+Second, because all ipvlan interfaces share the MAC address of the master interface, DHCP servers will have trouble identifying and tracking individual container interfaces.
+To mitigate this, it is necessary to include DHCP [option 61](http://tools.ietf.org/html/rfc2132#section-9.14) (Client Identifier) in DHCP messages.
+The DHCP plugin will emit such client identifiers if the sendClientID flag is set, as it is by default.
+The value of this Client Identifier option will be ContainerID catenated with the network name.

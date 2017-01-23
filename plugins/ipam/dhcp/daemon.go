@@ -37,6 +37,14 @@ const resendCount = 3
 
 var errNoMoreTries = errors.New("no more tries")
 
+type NetConf struct {
+	Name string `json:"name"`
+	IPAM struct {
+		SendClientID bool `json:"sendClientID"`
+		Broadcast    bool `json:"broadcast"`
+	} `json:"ipam"`
+}
+
 type DHCP struct {
 	mux    sync.Mutex
 	leases map[string]*DHCPLease
@@ -51,13 +59,15 @@ func newDHCP() *DHCP {
 // Allocate acquires an IP from a DHCP server for a specified container.
 // The acquired lease will be maintained until Release() is called.
 func (d *DHCP) Allocate(args *skel.CmdArgs, result *types.Result) error {
-	conf := types.NetConf{}
+	conf := NetConf{}
+	conf.IPAM.SendClientID = true
+
 	if err := json.Unmarshal(args.StdinData, &conf); err != nil {
 		return fmt.Errorf("error parsing netconf: %v", err)
 	}
 
 	clientID := args.ContainerID + "/" + conf.Name
-	l, err := AcquireLease(clientID, args.Netns, args.IfName)
+	l, err := AcquireLease(clientID, conf.IPAM.SendClientID, conf.IPAM.Broadcast, args.Netns, args.IfName)
 	if err != nil {
 		return err
 	}
