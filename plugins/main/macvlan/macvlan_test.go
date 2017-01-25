@@ -16,11 +16,14 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"syscall"
 
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/testutils"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/utils/hwaddr"
 
 	"github.com/vishvananda/netlink"
@@ -64,7 +67,7 @@ var _ = Describe("macvlan Operations", func() {
 	It("creates an macvlan link in a non-default namespace", func() {
 		conf := &NetConf{
 			NetConf: types.NetConf{
-				CNIVersion: "0.2.0",
+				CNIVersion: "0.3.0",
 				Name:       "testConfig",
 				Type:       "macvlan",
 			},
@@ -80,7 +83,7 @@ var _ = Describe("macvlan Operations", func() {
 		err = originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			err = createMacvlan(conf, "foobar0", targetNs)
+			_, err = createMacvlan(conf, "foobar0", targetNs)
 			Expect(err).NotTo(HaveOccurred())
 			return nil
 		})
@@ -102,7 +105,7 @@ var _ = Describe("macvlan Operations", func() {
 		const IFNAME = "macvl0"
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.3.0",
     "name": "mynet",
     "type": "macvlan",
     "master": "%s",
@@ -123,14 +126,21 @@ var _ = Describe("macvlan Operations", func() {
 			StdinData:   []byte(conf),
 		}
 
-		// Make sure macvlan link exists in the target namespace
+		var result *current.Result
 		err = originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+			r, _, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, []byte(conf), func() error {
 				return cmdAdd(args)
 			})
 			Expect(err).NotTo(HaveOccurred())
+
+			result, err = current.GetResult(r)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(len(result.Interfaces)).To(Equal(1))
+			Expect(result.Interfaces[0].Name).To(Equal(IFNAME))
+			Expect(len(result.IPs)).To(Equal(1))
 			return nil
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -143,9 +153,16 @@ var _ = Describe("macvlan Operations", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(IFNAME))
 
-			hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-			Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
+			hwaddrString := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
+			Expect(hwaddrString).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
+			hwaddr, err := net.ParseMAC(result.Interfaces[0].Mac)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(link.Attrs().HardwareAddr).To(Equal(hwaddr))
+
+			addrs, err := netlink.AddrList(link, syscall.AF_INET)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(addrs)).To(Equal(1))
 			return nil
 		})
 		Expect(err).NotTo(HaveOccurred())

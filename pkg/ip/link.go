@@ -90,6 +90,14 @@ func RandomVethName() (string, error) {
 	return fmt.Sprintf("veth%x", entropy), nil
 }
 
+func RenameLink(curName, newName string) error {
+	link, err := netlink.LinkByName(curName)
+	if err == nil {
+		err = netlink.LinkSetName(link, newName)
+	}
+	return err
+}
+
 // SetupVeth sets up a virtual ethernet link.
 // Should be in container netns, and will switch back to hostNS to set the host
 // veth end up.

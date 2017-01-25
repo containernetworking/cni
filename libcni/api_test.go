@@ -24,6 +24,7 @@ import (
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 
 	. "github.com/onsi/ginkgo"
@@ -57,7 +58,7 @@ func newPluginInfo(configKey, configValue, prevResult string, injectDebugFilePat
 	}
 	Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
-	config := fmt.Sprintf(`{"type": "noop", "%s": "%s", "cniVersion": "0.2.0"`, configKey, configValue)
+	config := fmt.Sprintf(`{"type": "noop", "%s": "%s", "cniVersion": "0.3.0"`, configKey, configValue)
 	if prevResult != "" {
 		config += fmt.Sprintf(`, "prevResult": %s`, prevResult)
 	}
@@ -76,8 +77,10 @@ func newPluginInfo(configKey, configValue, prevResult string, injectDebugFilePat
 var _ = Describe("Invoking plugins", func() {
 	Describe("Invoking a single plugin", func() {
 		var (
-			plugin        pluginInfo
+			debugFilePath string
+			debug         *noop_debug.Debug
 			cniBinPath    string
+			pluginConfig  string
 			cniConfig     libcni.CNIConfig
 			netConfig     *libcni.NetworkConfig
 			runtimeConfig *libcni.RuntimeConf
@@ -86,49 +89,63 @@ var _ = Describe("Invoking plugins", func() {
 		)
 
 		BeforeEach(func() {
-			pluginResult := `{ "ip4": { "ip": "10.1.2.3/24" }, "dns": {} }`
-			plugin = newPluginInfo("some-key", "some-value", "", false, pluginResult)
+			debugFile, err := ioutil.TempFile("", "cni_debug")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debugFile.Close()).To(Succeed())
+			debugFilePath = debugFile.Name()
+
+			debug = &noop_debug.Debug{
+				ReportResult: `{ "ips": [{ "version": "4", "address": "10.1.2.3/24" }], "dns": {} }`,
+			}
+			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
+			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.0" }`
 			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
 			netConfig = &libcni.NetworkConfig{
 				Network: &types.NetConf{
 					Type: "noop",
 				},
-				Bytes: []byte(plugin.config),
+				Bytes: []byte(pluginConfig),
 			}
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
 				IfName:      "some-eth0",
-				Args:        [][2]string{{"DEBUG", plugin.debugFilePath}},
+				Args:        [][2]string{[2]string{"DEBUG", debugFilePath}},
 			}
 
 			expectedCmdArgs = skel.CmdArgs{
 				ContainerID: "some-container-id",
 				Netns:       "/some/netns/path",
 				IfName:      "some-eth0",
-				Args:        "DEBUG=" + plugin.debugFilePath,
+				Args:        "DEBUG=" + debugFilePath,
 				Path:        cniBinPath,
-				StdinData:   []byte(plugin.config),
+				StdinData:   []byte(pluginConfig),
 			}
 		})
 
 		Describe("AddNetwork", func() {
 			It("executes the plugin with command ADD", func() {
-				result, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+				r, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(result).To(Equal(&types.Result{
-					IP4: &types.IPConfig{
-						IP: net.IPNet{
-							IP:   net.ParseIP("10.1.2.3"),
-							Mask: net.IPv4Mask(255, 255, 255, 0),
+				result, err := current.GetResult(r)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(result).To(Equal(&current.Result{
+					IPs: []*current.IPConfig{
+						{
+							Version: "4",
+							Address: net.IPNet{
+								IP:   net.ParseIP("10.1.2.3"),
+								Mask: net.IPv4Mask(255, 255, 255, 0),
+							},
 						},
 					},
 				}))
 
-				debug, err := noop_debug.ReadDebug(plugin.debugFilePath)
+				debug, err := noop_debug.ReadDebug(debugFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(debug.Command).To(Equal("ADD"))
 				Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
@@ -147,8 +164,8 @@ var _ = Describe("Invoking plugins", func() {
 
 			Context("when the plugin errors", func() {
 				BeforeEach(func() {
-					plugin.debug.ReportError = "plugin error: banana"
-					Expect(plugin.debug.WriteDebug(plugin.debugFilePath)).To(Succeed())
+					debug.ReportError = "plugin error: banana"
+					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
 					result, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
@@ -163,7 +180,7 @@ var _ = Describe("Invoking plugins", func() {
 				err := cniConfig.DelNetwork(netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
-				debug, err := noop_debug.ReadDebug(plugin.debugFilePath)
+				debug, err := noop_debug.ReadDebug(debugFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(debug.Command).To(Equal("DEL"))
 				Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
@@ -182,8 +199,8 @@ var _ = Describe("Invoking plugins", func() {
 
 			Context("when the plugin errors", func() {
 				BeforeEach(func() {
-					plugin.debug.ReportError = "plugin error: banana"
-					Expect(plugin.debug.WriteDebug(plugin.debugFilePath)).To(Succeed())
+					debug.ReportError = "plugin error: banana"
+					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
 					err := cniConfig.DelNetwork(netConfig, runtimeConfig)
@@ -199,7 +216,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				Expect(versionInfo).NotTo(BeNil())
 				Expect(versionInfo.SupportedVersions()).To(Equal([]string{
-					"0.-42.0", "0.1.0", "0.2.0",
+					"0.-42.0", "0.1.0", "0.2.0", "0.3.0",
 				}))
 			})
 
@@ -225,13 +242,13 @@ var _ = Describe("Invoking plugins", func() {
 
 		BeforeEach(func() {
 			plugins = make([]pluginInfo, 3, 3)
-			plugins[0] = newPluginInfo("some-key", "some-value", "", true, `{"dns":{},"ip4":{"ip": "10.1.2.3/24"}}`)
-			plugins[1] = newPluginInfo("some-key", "some-other-value", `{"dns":{},"ip4":{"ip": "10.1.2.3/24"}}`, true, "PASSTHROUGH")
-			plugins[2] = newPluginInfo("some-key", "yet-another-value", `{"dns":{},"ip4":{"ip": "10.1.2.3/24"}}`, true, "INJECT-DNS")
+			plugins[0] = newPluginInfo("some-key", "some-value", "", true, `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`)
+			plugins[1] = newPluginInfo("some-key", "some-other-value", `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, true, "PASSTHROUGH")
+			plugins[2] = newPluginInfo("some-key", "yet-another-value", `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, true, "INJECT-DNS")
 
 			configList := []byte(fmt.Sprintf(`{
   "name": "some-list",
-  "cniVersion": "0.2.0",
+  "cniVersion": "0.3.0",
   "plugins": [
     %s,
     %s,
@@ -263,15 +280,21 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("AddNetworkList", func() {
 			It("executes all plugins with command ADD and returns an intermediate result", func() {
-				result, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+				r, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(result).To(Equal(&types.Result{
+				result, err := current.GetResult(r)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(result).To(Equal(&current.Result{
 					// IP4 added by first plugin
-					IP4: &types.IPConfig{
-						IP: net.IPNet{
-							IP:   net.ParseIP("10.1.2.3"),
-							Mask: net.IPv4Mask(255, 255, 255, 0),
+					IPs: []*current.IPConfig{
+						{
+							Version: "4",
+							Address: net.IPNet{
+								IP:   net.ParseIP("10.1.2.3"),
+								Mask: net.IPv4Mask(255, 255, 255, 0),
+							},
 						},
 					},
 					// DNS injected by last plugin

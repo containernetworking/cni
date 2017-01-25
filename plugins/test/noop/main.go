@@ -31,14 +31,15 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
 type NetConf struct {
 	types.NetConf
-	DebugFile  string        `json:"debugFile"`
-	PrevResult *types.Result `json:"prevResult,omitempty"`
+	DebugFile  string          `json:"debugFile"`
+	PrevResult *current.Result `json:"prevResult,omitempty"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
@@ -121,7 +122,12 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		return errors.New(debug.ReportError)
 	} else if debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS" {
 		if debug.ReportResult == "INJECT-DNS" {
-			netConf.PrevResult.DNS.Nameservers = []string{"1.2.3.4"}
+			newResult, err := current.NewResultFromResult(netConf.PrevResult)
+			if err != nil {
+				return err
+			}
+			newResult.DNS.Nameservers = []string{"1.2.3.4"}
+			netConf.PrevResult = newResult
 		}
 		newResult, err := json.Marshal(netConf.PrevResult)
 		if err != nil {
@@ -136,7 +142,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 }
 
 func debugGetSupportedVersions(stdinData []byte) []string {
-	vers := []string{"0.-42.0", "0.1.0", "0.2.0"}
+	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0"}
 	cniArgs := os.Getenv("CNI_ARGS")
 	if cniArgs == "" {
 		return vers

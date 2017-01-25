@@ -22,7 +22,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 )
 
-func DelegateAdd(delegatePlugin string, netconf []byte) (*types.Result, error) {
+func DelegateAdd(delegatePlugin string, netconf []byte) (types.Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
 	}

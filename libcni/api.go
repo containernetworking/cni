@@ -42,10 +42,10 @@ type NetworkConfigList struct {
 }
 
 type CNI interface {
-	AddNetworkList(net *NetworkConfigList, rt *RuntimeConf) (*types.Result, error)
+	AddNetworkList(net *NetworkConfigList, rt *RuntimeConf) (types.Result, error)
 	DelNetworkList(net *NetworkConfigList, rt *RuntimeConf) error
 
-	AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error)
+	AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
 	DelNetwork(net *NetworkConfig, rt *RuntimeConf) error
 }
 
@@ -56,7 +56,7 @@ type CNIConfig struct {
 // CNIConfig implements the CNI interface
 var _ CNI = &CNIConfig{}
 
-func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult *types.Result) (*NetworkConfig, error) {
+func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult types.Result) (*NetworkConfig, error) {
 	var err error
 
 	// Ensure every config uses the same name and version
@@ -81,8 +81,8 @@ func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult *ty
 }
 
 // AddNetworkList executes a sequence of plugins with the ADD command
-func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (*types.Result, error) {
-	var prevResult *types.Result
+func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (types.Result, error) {
+	var prevResult types.Result
 	for _, net := range list.Plugins {
 		pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
 		if err != nil {
@@ -127,7 +127,7 @@ func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) err
 }
 
 // AddNetwork executes the plugin with the ADD command
-func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (*types.Result, error) {
+func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
 	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
 		return nil, err

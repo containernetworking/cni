@@ -37,7 +37,7 @@ var _ = Describe("No-op plugin", func() {
 		expectedCmdArgs skel.CmdArgs
 	)
 
-	const reportResult = `{ "ip4": { "ip": "10.1.2.3/24" }, "dns": {} }`
+	const reportResult = `{ "ips": [{ "version": "4", "address": "10.1.2.3/24" }], "dns": {} }`
 
 	BeforeEach(func() {
 		debug = &noop_debug.Debug{
@@ -64,14 +64,14 @@ var _ = Describe("No-op plugin", func() {
 			// Keep this last
 			"CNI_ARGS=" + args,
 		}
-		cmd.Stdin = strings.NewReader(`{"some":"stdin-json", "cniVersion": "0.2.0"}`)
+		cmd.Stdin = strings.NewReader(`{"some":"stdin-json", "cniVersion": "0.3.0"}`)
 		expectedCmdArgs = skel.CmdArgs{
 			ContainerID: "some-container-id",
 			Netns:       "/some/netns/path",
 			IfName:      "some-eth0",
 			Args:        args,
 			Path:        "/some/bin/path",
-			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.2.0"}`),
+			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.3.0"}`),
 		}
 	})
 
@@ -102,15 +102,15 @@ var _ = Describe("No-op plugin", func() {
 
 		cmd.Stdin = strings.NewReader(`{
 	"some":"stdin-json",
-	"cniVersion": "0.2.0",
+	"cniVersion": "0.3.0",
 	"prevResult": {
-		"ip4": {"ip": "10.1.2.15/24"}
+		"ips": [{"version": "4", "address": "10.1.2.15/24"}]
 	}
 }`)
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
-		Expect(session.Out.Contents()).To(MatchJSON(`{"ip4": {"ip": "10.1.2.15/24"}, "dns": {}}`))
+		Expect(session.Out.Contents()).To(MatchJSON(`{"ips": [{"version": "4", "address": "10.1.2.15/24"}], "dns": {}}`))
 	})
 
 	It("injects DNS into previous result when ReportResult is INJECT-DNS", func() {
@@ -119,9 +119,9 @@ var _ = Describe("No-op plugin", func() {
 
 		cmd.Stdin = strings.NewReader(`{
 	"some":"stdin-json",
-	"cniVersion": "0.2.0",
+	"cniVersion": "0.3.0",
 	"prevResult": {
-		"ip4": {"ip": "10.1.2.3/24"},
+		"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 		"dns": {}
 	}
 }`)
@@ -130,7 +130,7 @@ var _ = Describe("No-op plugin", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
 		Expect(session.Out.Contents()).To(MatchJSON(`{
-	"ip4": {"ip": "10.1.2.3/24"},
+	"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 	"dns": {"nameservers": ["1.2.3.4"]}
 }`))
 	})
@@ -139,7 +139,7 @@ var _ = Describe("No-op plugin", func() {
 		// Remove the DEBUG option from CNI_ARGS and regular args
 		newArgs := "FOO=BAR"
 		cmd.Env[len(cmd.Env)-1] = "CNI_ARGS=" + newArgs
-		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.2.0", "debugFile": "%s"}`, debugFileName)
+		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.3.0", "debugFile": "%s"}`, debugFileName)
 		cmd.Stdin = strings.NewReader(newStdin)
 		expectedCmdArgs.Args = newArgs
 		expectedCmdArgs.StdinData = []byte(newStdin)

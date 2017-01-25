@@ -43,7 +43,7 @@ var _ = Describe("ptp Operations", func() {
 		const IFNAME = "ptp0"
 
 		conf := `{
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.3.0",
     "name": "mynet",
     "type": "ptp",
     "ipMasq": true,
@@ -69,7 +69,7 @@ var _ = Describe("ptp Operations", func() {
 		err = originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			_, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, func() error {
+			_, _, err := testutils.CmdAddWithResult(targetNs.Path(), IFNAME, []byte(conf), func() error {
 				return cmdAdd(args)
 			})
 			Expect(err).NotTo(HaveOccurred())

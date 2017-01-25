@@ -41,8 +41,8 @@ var _ = Describe("Reconcile versions of net config with versions supported by pl
 			err := reconciler.Check("0.1.0", pluginInfo)
 
 			Expect(err).To(Equal(&version.ErrorIncompatible{
-				Config: "0.1.0",
-				Plugin: []string{"1.2.3", "4.3.2"},
+				Config:    "0.1.0",
+				Supported: []string{"1.2.3", "4.3.2"},
 			}))
 
 			Expect(err.Error()).To(Equal(`incompatible CNI versions: config is "0.1.0", plugin supports ["1.2.3" "4.3.2"]`))
