@@ -145,6 +145,7 @@ In addition, stderr can be used for unstructured output such as logs.
 The network configuration is described in JSON form. The configuration can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration conforms.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
+- `inner` (dictionary): defines a configuration sub-block (see the [Plugin Chaining and Delegation](#plugin-chaining-and-delegation) section).
 - `type` (string): Refers to the filename of the CNI plugin executable.
 - `args` (dictionary): Optional additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
 - `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
@@ -160,6 +161,47 @@ The network configuration is described in JSON form. The configuration can be st
   - `options` (list of strings): list of options that can be passed to the resolver
 
 Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the `args` field may be used to pass arbitrary data which may be ignored by plugins.
+
+### Plugin Chaining and Delegation
+
+Multiple plugins may be chained together to perform more complex network configuration. IPAM plugins already operate this way, with the outer plugin delegating to the IPAM plugin and receiving its IPAM result.
+The network configuration may contain an `inner` field, which itself is a complete CNI network configuration block (except for the `cniVersion` and `name` fields, which cannot be specified in the `inner` dictionary).
+When the outer plugin finds the `inner` field, it proceeds to execute the inner plugin, passing the entire `inner` configuration via stdin, merging the top-level `cniVersion` and `name` fields.
+The inner plugin then executes, including possibly running yet another inner plugin if the top-level `inner` dictionary contains a second `inner` dictionary, specifying a third plugin.
+Each plugin then receives the IPAM result of the called plugin, and can use that result and optionally manipulate it before returning the result to its caller.
+
+For example, suppose traffic shaping should be enabled for a container whose network is configured with the standard `bridge` plugin and `host-local` IPAM plugins.
+
+```json
+{
+  "cniVersion": "0.2.0",
+  "name": "chaining-example",
+  "type": "traffic-shaping",
+  "ingressbw": "20M",
+  "egressbw": "10M",
+  "inner": {
+    "type": "bridge",
+    "bridge": "cni0",
+    "ipam": {
+      "type": "host-local",
+      "subnet": "10.1.0.0/16",
+      "gateway": "10.1.0.1"
+    }
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
+  }
+}
+```
+
+The top-level configuration would specify the traffic shaping plugin as the `type` along with plugin-specific fields for shaping parameters.
+The top-level configuration would also have an `inner` dictionary which would contain the normal `bridge` plugin configuration.
+The top-level `inner` dictonary's `bridge` configuration would also have an `ipam` section specifying the `host-local` plugin and normal `host-local` IPAM options.
+The traffic shaping plugin would first delegate to the `bridge` plugin (specified by the `inner` dictionary's `type` field), and the `bridge` plugin would delegate to the `host-local` IPAM plugin.
+The IPAM plugin would return the IPAM result to the bridge plugin which configures the container's networking.
+The bridge plugin then returns the IPAM result to the traffic shaping plugin, which can now use the container's IP address and interface name to set traffic shaping parameters.
+The traffic shaping plugin then returns the IPAM result itself to the runtime.
+
 ### Example configurations
 
 ```json
