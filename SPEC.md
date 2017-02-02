@@ -88,7 +88,7 @@ It will then look for this executable in a list of predefined directories. Once 
 - `CNI_NETNS`: Path to network namespace file
 - `CNI_IFNAME`: Interface name to set up; plugin must honor this interface name or return an error
 - `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
-- `CNI_PATH`: Colon-separated list of paths to search for CNI plugin executables
+- `CNI_PATH`: List of paths to search for CNI plugin executables. Paths are separated by an OS-specific list separator; for example ':' on Linux and ';' on Windows
 
 Network configuration in JSON format is streamed to the plugin through stdin. This means it is not tied to a particular file on disk and can contain information which changes between invocations.
 

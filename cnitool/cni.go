@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/containernetworking/cni/libcni"
 )
@@ -51,7 +50,7 @@ func main() {
 	netns := os.Args[3]
 
 	cninet := &libcni.CNIConfig{
-		Path: strings.Split(os.Getenv(EnvCNIPath), ":"),
+		Path: filepath.SplitList(os.Getenv(EnvCNIPath)),
 	}
 
 	rt := &libcni.RuntimeConf{

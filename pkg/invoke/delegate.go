@@ -17,7 +17,7 @@ package invoke
 import (
 	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
@@ -27,7 +27,7 @@ func DelegateAdd(delegatePlugin string, netconf []byte) (types.Result, error) {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
 	}
 
-	paths := strings.Split(os.Getenv("CNI_PATH"), ":")
+	paths := filepath.SplitList(os.Getenv("CNI_PATH"))
 
 	pluginPath, err := FindInPath(delegatePlugin, paths)
 	if err != nil {
@@ -42,7 +42,7 @@ func DelegateDel(delegatePlugin string, netconf []byte) error {
 		return fmt.Errorf("CNI_COMMAND is not DEL")
 	}
 
-	paths := strings.Split(os.Getenv("CNI_PATH"), ":")
+	paths := filepath.SplitList(os.Getenv("CNI_PATH"))
 
 	pluginPath, err := FindInPath(delegatePlugin, paths)
 	if err != nil {
