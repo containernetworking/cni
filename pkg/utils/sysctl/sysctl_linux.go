@@ -24,7 +24,7 @@ import (
 // Sysctl provides a method to set/get values from /proc/sys - in linux systems
 // new interface to set/get values of variables formerly handled by sysctl syscall
 // If optional `params` have only one string value - this function will
-// set this value into coresponding sysctl variable
+// set this value into corresponding sysctl variable
 func Sysctl(name string, params ...string) (string, error) {
 	if len(params) > 1 {
 		return "", fmt.Errorf("unexcepted additional parameters")
