@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/types"
@@ -253,7 +254,7 @@ func (a *IPAllocator) getSearchRange() (net.IP, net.IP) {
 	var endIP net.IP
 	startFromLastReservedIP := false
 	lastReservedIP, err := a.store.LastReservedIP()
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		log.Printf("Error retriving last reserved ip: %v", err)
 	} else if lastReservedIP != nil {
 		subnet := net.IPNet{

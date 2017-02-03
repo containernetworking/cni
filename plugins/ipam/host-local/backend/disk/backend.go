@@ -15,7 +15,6 @@
 package disk
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -85,7 +84,7 @@ func (s *Store) LastReservedIP() (net.IP, error) {
 	ipfile := filepath.Join(s.dataDir, lastIPFile)
 	data, err := ioutil.ReadFile(ipfile)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to retrieve last reserved ip: %v", err)
+		return nil, err
 	}
 	return net.ParseIP(string(data)), nil
 }
