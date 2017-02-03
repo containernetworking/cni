@@ -26,6 +26,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// NetNS describes network namespace behavior.
 type NetNS interface {
 	// Executes the passed closure in this object's network namespace,
 	// attempting to restore the original namespace before returning.
@@ -72,30 +73,35 @@ func getCurrentThreadNetNSPath() string {
 	return fmt.Sprintf("/proc/%d/task/%d/ns/net", os.Getpid(), unix.Gettid())
 }
 
-// Returns an object representing the current OS thread's network namespace
+// GetCurrentNS returns an object representing the current OS thread's network namespace
 func GetCurrentNS() (NetNS, error) {
 	return GetNS(getCurrentThreadNetNSPath())
 }
 
 const (
+	// The following are inherited by
 	// https://github.com/torvalds/linux/blob/master/include/uapi/linux/magic.h
+	// hence won't follow golint rules for constants.
 	NSFS_MAGIC   = 0x6e736673
 	PROCFS_MAGIC = 0x9fa0
 )
 
-type NSPathNotExistErr struct{ msg string }
+// PathNotExistErr represents a namespace path doesn't exist error.
+type PathNotExistErr struct{ msg string }
 
-func (e NSPathNotExistErr) Error() string { return e.msg }
+func (e PathNotExistErr) Error() string { return e.msg }
 
-type NSPathNotNSErr struct{ msg string }
+// PathNotNSErr represents a namespace path isn't a namespace error.
+type PathNotNSErr struct{ msg string }
 
-func (e NSPathNotNSErr) Error() string { return e.msg }
+func (e PathNotNSErr) Error() string { return e.msg }
 
+// IsNSorErr validates namespace path and return an error if it's invalid.
 func IsNSorErr(nspath string) error {
 	stat := syscall.Statfs_t{}
 	if err := syscall.Statfs(nspath, &stat); err != nil {
 		if os.IsNotExist(err) {
-			err = NSPathNotExistErr{msg: fmt.Sprintf("failed to Statfs %q: %v", nspath, err)}
+			err = PathNotExistErr{msg: fmt.Sprintf("failed to Statfs %q: %v", nspath, err)}
 		} else {
 			err = fmt.Errorf("failed to Statfs %q: %v", nspath, err)
 		}
@@ -106,11 +112,11 @@ func IsNSorErr(nspath string) error {
 	case PROCFS_MAGIC, NSFS_MAGIC:
 		return nil
 	default:
-		return NSPathNotNSErr{msg: fmt.Sprintf("unknown FS magic on %q: %x", nspath, stat.Type)}
+		return PathNotNSErr{msg: fmt.Sprintf("unknown FS magic on %q: %x", nspath, stat.Type)}
 	}
 }
 
-// Returns an object representing the namespace referred to by @path
+// GetNS returns an object representing the namespace referred to by nspath.
 func GetNS(nspath string) (NetNS, error) {
 	err := IsNSorErr(nspath)
 	if err != nil {
@@ -125,8 +131,8 @@ func GetNS(nspath string) (NetNS, error) {
 	return &netNS{file: fd}, nil
 }
 
-// Creates a new persistent network namespace and returns an object
-// representing that namespace, without switching to it
+// NewNS creates a new persistent network namespace and returns an object
+// representing that namespace, without switching to it.
 func NewNS() (NetNS, error) {
 	const nsRunDir = "/var/run/netns"
 

@@ -33,13 +33,11 @@ type inherited struct{}
 var inheritArgsFromEnv inherited
 
 func (i *inherited) AsEnv() []string {
-	// It stands in for "just use the calling process's environment"
 	return nil
 }
 
 // ArgsFromEnv returns CNIArgs by inheriting environment variables.
 func ArgsFromEnv() CNIArgs {
-	// So far no environment variables inherited
 	return &inheritArgsFromEnv
 }
 

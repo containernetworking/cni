@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package legacy_examples contains sample code from prior versions of
+// Package legacyexamples contains sample code from prior versions of
 // the CNI library, for use in verifying backwards compatibility.
-package legacy_examples
+package legacyexamples
 
 import (
 	"io/ioutil"

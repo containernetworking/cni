@@ -29,6 +29,7 @@ func envCleanup() {
 	os.Unsetenv("CNI_IFNAME")
 }
 
+// CmdAddWithResult runs ADD and returns the result.
 func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (types.Result, []byte, error) {
 	os.Setenv("CNI_COMMAND", "ADD")
 	os.Setenv("CNI_PATH", os.Getenv("PATH"))
@@ -72,6 +73,7 @@ func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (
 	return result, out, nil
 }
 
+// CmdDelWithResult runs DEL and returns the result.
 func CmdDelWithResult(cniNetns, cniIfname string, f func() error) error {
 	os.Setenv("CNI_COMMAND", "DEL")
 	os.Setenv("CNI_PATH", os.Getenv("PATH"))

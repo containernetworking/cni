@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package legacy_examples
+package legacyexamples
 
-// An ExampleRuntime is a small program that uses libcni to invoke a network plugin.
+// ExampleRuntime is a small program that uses libcni to invoke a network plugin.
 // It should call ADD and DELETE, verifying all intermediate steps
 // and data structures.
 type ExampleRuntime struct {
@@ -23,7 +23,7 @@ type ExampleRuntime struct {
 }
 
 // NetConfs are various versioned network configuration files. Examples should
-// specify which version they expect
+// specify which version they expect.
 var NetConfs = map[string]string{
 	"unversioned": `{
 	"name": "default",
@@ -44,9 +44,9 @@ var NetConfs = map[string]string{
 }`,
 }
 
-// V010_Runtime creates a simple ptp network configuration, then
+// V010Runtime creates a simple ptp network configuration, then
 // executes libcni against the currently-built plugins.
-var V010_Runtime = ExampleRuntime{
+var V010Runtime = ExampleRuntime{
 	NetConfs: []string{"unversioned", "0.1.0"},
 	Example: Example{
 		Name:          "example_invoker_v010",

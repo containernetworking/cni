@@ -16,6 +16,7 @@ package fakes
 
 import "github.com/containernetworking/cni/pkg/version"
 
+// VersionDecoder represents a fake VersionDecoder.
 type VersionDecoder struct {
 	DecodeCall struct {
 		Received struct {
@@ -28,6 +29,7 @@ type VersionDecoder struct {
 	}
 }
 
+// Decode returns the fake result of the fake VersionDecoder decode execution.
 func (e *VersionDecoder) Decode(jsonData []byte) (version.PluginInfo, error) {
 	e.DecodeCall.Received.JSONBytes = jsonData
 	return e.DecodeCall.Returns.PluginInfo, e.DecodeCall.Returns.Error

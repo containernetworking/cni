@@ -181,8 +181,8 @@ var _ = Describe("Linux namespace operations", func() {
 
 				_, err = ns.GetNS(nspath)
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
-				Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
+				Expect(err).To(BeAssignableToTypeOf(ns.PathNotNSErr{}))
+				Expect(err).NotTo(BeAssignableToTypeOf(ns.PathNotExistErr{}))
 			})
 		})
 
@@ -231,15 +231,15 @@ var _ = Describe("Linux namespace operations", func() {
 
 			err = ns.IsNSorErr(nspath)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
-			Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
+			Expect(err).To(BeAssignableToTypeOf(ns.PathNotNSErr{}))
+			Expect(err).NotTo(BeAssignableToTypeOf(ns.PathNotExistErr{}))
 		})
 
 		It("should error on non-existing paths", func() {
 			err := ns.IsNSorErr("/tmp/IDoNotExist")
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(BeAssignableToTypeOf(ns.NSPathNotExistErr{}))
-			Expect(err).NotTo(BeAssignableToTypeOf(ns.NSPathNotNSErr{}))
+			Expect(err).To(BeAssignableToTypeOf(ns.PathNotExistErr{}))
+			Expect(err).NotTo(BeAssignableToTypeOf(ns.PathNotNSErr{}))
 		})
 	})
 })

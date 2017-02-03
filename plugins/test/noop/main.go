@@ -36,14 +36,14 @@ import (
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
-type NetConf struct {
+type netConf struct {
 	types.NetConf
 	DebugFile  string          `json:"debugFile"`
 	PrevResult *current.Result `json:"prevResult,omitempty"`
 }
 
-func loadConf(bytes []byte) (*NetConf, error) {
-	n := &NetConf{}
+func loadConf(bytes []byte) (*netConf, error) {
+	n := &netConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
 		return nil, fmt.Errorf("failed to load netconf: %v %q", err, string(bytes))
 	}
@@ -68,7 +68,7 @@ func parseExtraArgs(args string) (map[string]string, error) {
 	return m, nil
 }
 
-func getConfig(stdinData []byte, args string) (string, *NetConf, error) {
+func getConfig(stdinData []byte, args string) (string, *netConf, error) {
 	netConf, err := loadConf(stdinData)
 	if err != nil {
 		return "", nil, err

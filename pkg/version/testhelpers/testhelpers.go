@@ -80,6 +80,7 @@ func isRepoRoot(path string) bool {
 	return (err == nil) && (filepath.Base(path) == "cni")
 }
 
+// LocateCurrentGitRepo locates the current repository working directory.
 func LocateCurrentGitRepo() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {

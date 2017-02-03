@@ -14,6 +14,7 @@
 
 package fakes
 
+// CNIArgs represents fake CNIArgs.
 type CNIArgs struct {
 	AsEnvCall struct {
 		Returns struct {
@@ -22,6 +23,7 @@ type CNIArgs struct {
 	}
 }
 
+// AsEnv returns the fake CNIArgs as an array of stringified environment variables.
 func (a *CNIArgs) AsEnv() []string {
 	return a.AsEnvCall.Returns.Env
 }

@@ -35,6 +35,8 @@ func Current() string {
 // Any future CNI spec versions which meet this definition should be added to
 // this list.
 var Legacy = PluginSupports("0.1.0", "0.2.0")
+
+// All PluginInfo describes a plugin that is compatible all CNI spec versios.
 var All = PluginSupports("0.1.0", "0.2.0", "0.3.0")
 
 var resultFactories = []struct {
@@ -45,7 +47,7 @@ var resultFactories = []struct {
 	{types020.SupportedVersions, types020.NewResult},
 }
 
-// Finds a Result object matching the requested version (if any) and asks
+// NewResult finds a Result object matching the requested version (if any) and asks
 // that object to parse the plugin result, returning an error if parsing failed.
 func NewResult(version string, resultBytes []byte) (types.Result, error) {
 	reconciler := &Reconciler{}

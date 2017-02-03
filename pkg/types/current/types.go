@@ -26,8 +26,10 @@ import (
 
 const implementedSpecVersion string = "0.3.0"
 
+// SupportedVersions contains all the supported versions.
 var SupportedVersions = []string{implementedSpecVersion}
 
+// NewResult loads a new result from a JSON byte array.
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}
 	if err := json.Unmarshal(data, result); err != nil {
@@ -36,6 +38,7 @@ func NewResult(data []byte) (types.Result, error) {
 	return result, nil
 }
 
+// GetResult converts and returns the result.
 func GetResult(r types.Result) (*Result, error) {
 	resultCurrent, err := r.GetAsVersion(implementedSpecVersion)
 	if err != nil {
@@ -120,6 +123,7 @@ func convertFrom030(result types.Result) (*Result, error) {
 	return newResult, nil
 }
 
+// NewResultFromResult returns a copy of an existing result after making sure it has a supported version.
 func NewResultFromResult(result types.Result) (*Result, error) {
 	version := result.Version()
 	for _, converter := range resultConverters {
@@ -132,7 +136,7 @@ func NewResultFromResult(result types.Result) (*Result, error) {
 	return nil, fmt.Errorf("unsupported CNI result version %q", version)
 }
 
-// Result is what gets returned from the plugin (via stdout) to the caller
+// Result is what gets returned from the plugin (via stdout) to the caller.
 type Result struct {
 	Interfaces []*Interface   `json:"interfaces,omitempty"`
 	IPs        []*IPConfig    `json:"ips,omitempty"`
@@ -140,7 +144,7 @@ type Result struct {
 	DNS        types.DNS      `json:"dns,omitempty"`
 }
 
-// Convert to the older 0.2.0 CNI spec Result type
+// Convert to the older 0.2.0 CNI spec Result type.
 func (r *Result) convertTo020() (*types020.Result, error) {
 	oldResult := &types020.Result{
 		DNS: r.DNS,
@@ -188,10 +192,12 @@ func (r *Result) convertTo020() (*types020.Result, error) {
 	return oldResult, nil
 }
 
+// Version returns the currently implemented version.
 func (r *Result) Version() string {
 	return implementedSpecVersion
 }
 
+// GetAsVersion makes sure the result has a supported version.
 func (r *Result) GetAsVersion(version string) (types.Result, error) {
 	switch version {
 	case implementedSpecVersion:
@@ -202,6 +208,7 @@ func (r *Result) GetAsVersion(version string) (types.Result, error) {
 	return nil, fmt.Errorf("cannot convert version 0.3.0 to %q", version)
 }
 
+// Print prints the result to stdout.
 func (r *Result) Print() error {
 	data, err := json.MarshalIndent(r, "", "    ")
 	if err != nil {
@@ -240,6 +247,7 @@ type Interface struct {
 	Sandbox string `json:"sandbox,omitempty"`
 }
 
+// String prints the Interface.
 func (i *Interface) String() string {
 	return fmt.Sprintf("%+v", *i)
 }
@@ -254,6 +262,7 @@ type IPConfig struct {
 	Gateway   net.IP
 }
 
+// String prints the IPConfig.
 func (i *IPConfig) String() string {
 	return fmt.Sprintf("%+v", *i)
 }
@@ -266,26 +275,28 @@ type ipConfig struct {
 	Gateway   net.IP      `json:"gateway,omitempty"`
 }
 
-func (c *IPConfig) MarshalJSON() ([]byte, error) {
+// MarshalJSON marshals an IPConfig to a JSON byte array.
+func (i *IPConfig) MarshalJSON() ([]byte, error) {
 	ipc := ipConfig{
-		Version:   c.Version,
-		Interface: c.Interface,
-		Address:   types.IPNet(c.Address),
-		Gateway:   c.Gateway,
+		Version:   i.Version,
+		Interface: i.Interface,
+		Address:   types.IPNet(i.Address),
+		Gateway:   i.Gateway,
 	}
 
 	return json.Marshal(ipc)
 }
 
-func (c *IPConfig) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON unmarshals an IPConfig from a JSON byte array.
+func (i *IPConfig) UnmarshalJSON(data []byte) error {
 	ipc := ipConfig{}
 	if err := json.Unmarshal(data, &ipc); err != nil {
 		return err
 	}
 
-	c.Version = ipc.Version
-	c.Interface = ipc.Interface
-	c.Address = net.IPNet(ipc.Address)
-	c.Gateway = ipc.Gateway
+	i.Version = ipc.Version
+	i.Interface = ipc.Interface
+	i.Address = net.IPNet(ipc.Address)
+	i.Gateway = ipc.Gateway
 	return nil
 }

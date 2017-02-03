@@ -12,25 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package legacy_examples_test
+package legacyexamples_test
 
 import (
-	"os"
-	"path/filepath"
-
-	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"testing"
 )
 
-var _ = Describe("The v0.1.0 Example", func() {
-	It("builds ok", func() {
-		example := legacy_examples.V010
-		pluginPath, err := example.Build()
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(filepath.Base(pluginPath)).To(Equal(example.Name))
-
-		Expect(os.RemoveAll(pluginPath)).To(Succeed())
-	})
-})
+func TestLegacyExamples(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "LegacyExamples Suite")
+}

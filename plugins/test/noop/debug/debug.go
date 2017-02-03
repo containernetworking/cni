@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// debug supports tests that use the noop plugin
+// Package debug supports tests that use the noop plugin
 package debug
 
 import (
@@ -22,6 +22,7 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 )
 
+// EmptyReportResultMessage represents a usage message.
 const EmptyReportResultMessage = "set debug.ReportResult and call debug.WriteDebug() before calling this plugin"
 
 // Debug is used to control and record the behavior of the noop plugin
