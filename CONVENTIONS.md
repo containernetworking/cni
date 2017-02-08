@@ -21,13 +21,37 @@ Additional conventions can be created by creating PRs which modify this document
 [Plugin specific fields](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) formed part of the original CNI spec and have been present since the initial release.
 > Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the args field may be used to pass arbitrary data which may be ignored by plugins.
 
-A plugin can define any additional fields it needs to work properly. It is expected that it will return an error if if can't act on fields that were expected or where the field values were malformed.
+A plugin can define any additional fields it needs to work properly. It is expected that it will return an error if it can't act on fields that were expected or where the field values were malformed.
 
-This method of passing information to a plugin is recommended when the information should be acted on and has specific meaning to that plugin.
+This method of passing information to a plugin is recommended when the information has specific meaning to the plugin that it's passed to and when the plugin should act on it or return an error if it can't.
+
+Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtime_config` section.
 
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
-| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | <pre>"port_mappings" : [<br />  { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />  { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />] </pre> | none | none |
+| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Runtimes should receive the follow plugin config <pre>"runtime_config": {port_mappings": []} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins e.g. <pre>"runtime_config": {<br />  "port_mappings" : [<br />    { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />    { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
+
+For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration-lists).
+```json
+{
+  "name" : "ExamplePlugin",
+  "type" : "port-mapper",
+  "runtime_config": {"port_mappings": []}  
+}
+```
+
+But the runtime would fill in the mappings so the plugin itself would receive something like this.
+```json
+{
+  "name" : "ExamplePlugin",
+  "type" : "port-mapper",
+  "runtime_config": {
+    "port_mappings": [
+      {"host_port": 8080, "container_port": 80, "protocol": "tcp"}
+    ]
+  }
+}
+```
 
 ## "args" in network config
 `args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.1.0` CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
