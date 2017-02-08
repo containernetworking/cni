@@ -25,9 +25,11 @@ A plugin can define any additional fields it needs to work properly. It is expec
 
 This method of passing information to a plugin is recommended when the information should be acted on and has specific meaning to that plugin.
 
+Some information that is passed to plugins is dynamic and expected to be different for each invocation. In this case, it's recommended that runtimes support a templating mechanism so they can know to provide the dynamic fields. Recommended values are shown in the table below.
+
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
-| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | <pre>"port_mappings" : [<br />  { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />  { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />] </pre> | none | none |
+| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | It's recommended that templating is supported by runtimes to let them fill in the host port mappings. e.g. the user configures their pluging like this <pre>"port_mappings": [ {{.PortMappings}} ] </pre>. The actual config that runtimes should pass to plugins should look like this <pre>"port_mappings" : [<br />  { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />  { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />] </pre> | none | none |
 
 ## "args" in network config
 `args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.1.0` CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
