@@ -29,14 +29,14 @@ Dynamic information (i.e. data that a runtime fills out) should be placed in a `
 
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
-| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Runtimes should receive the follow plugin config <pre>"runtime_config": {port_mappings": []} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins e.g. <pre>"runtime_config": {<br />  "port_mappings" : [<br />    { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />    { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
+| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Operators can ask runtimes to pass port mapping information to plugins, by setting the following in the CNI config <pre>"capabilities": {port_mappings": true} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins. It should be placed in a new section of the config "runtime_config" e.g. <pre>"runtime_config": {<br />  "port_mappings" : [<br />    { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />    { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
 
 For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration-lists).
 ```json
 {
   "name" : "ExamplePlugin",
   "type" : "port-mapper",
-  "runtime_config": {"port_mappings": []}  
+  "capabilities": {"port_mappings": true}  
 }
 ```
 
