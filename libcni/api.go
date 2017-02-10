@@ -54,7 +54,7 @@ type CNI interface {
 	DelNetwork(net *NetworkConfig, rt *RuntimeConf) error
 }
 
-// CNIConfig contains a list of pathes where to look for plug-in network configurations.
+// CNIConfig contains a list of paths where to look for plug-in network configurations.
 type CNIConfig struct {
 	Path []string
 }

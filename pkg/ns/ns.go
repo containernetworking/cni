@@ -79,7 +79,7 @@ func GetCurrentNS() (NetNS, error) {
 }
 
 const (
-	// The following are inherited by
+	// The following are inherited from
 	// https://github.com/torvalds/linux/blob/master/include/uapi/linux/magic.h
 	// hence won't follow golint rules for constants.
 	NSFS_MAGIC   = 0x6e736673
