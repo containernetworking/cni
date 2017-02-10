@@ -31,10 +31,10 @@ var (
 	PrivateMACPrefix = []byte{0x0a, 0x58}
 )
 
-// SupportIP4OnlyErr represents an only IPv4 is supported error.
-type SupportIP4OnlyErr struct{ msg string }
+// SupportIp4OnlyErr represents an only IPv4 is supported error.
+type SupportIp4OnlyErr struct{ msg string }
 
-func (e SupportIP4OnlyErr) Error() string { return e.msg }
+func (e SupportIp4OnlyErr) Error() string { return e.msg }
 
 // MacParseErr represents a parse MAC address error.
 type MacParseErr struct{ msg string }
@@ -51,7 +51,7 @@ func GenerateHardwareAddr4(ip net.IP, prefix []byte) (net.HardwareAddr, error) {
 	switch {
 
 	case ip.To4() == nil:
-		return nil, SupportIP4OnlyErr{msg: "GenerateHardwareAddr4 only supports valid IPv4 address as input"}
+		return nil, SupportIp4OnlyErr{msg: "GenerateHardwareAddr4 only supports valid IPv4 address as input"}
 
 	case len(prefix) != len(PrivateMACPrefix):
 		return nil, InvalidPrefixLengthErr{msg: fmt.Sprintf(

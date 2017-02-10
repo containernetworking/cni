@@ -62,7 +62,7 @@ var _ = Describe("Hwaddr", func() {
 			}
 			for _, tc := range testCases {
 				_, err := hwaddr.GenerateHardwareAddr4(tc, hwaddr.PrivateMACPrefix)
-				Expect(err).To(BeAssignableToTypeOf(hwaddr.SupportIP4OnlyErr{}))
+				Expect(err).To(BeAssignableToTypeOf(hwaddr.SupportIp4OnlyErr{}))
 			}
 		})
 

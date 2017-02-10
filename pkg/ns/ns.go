@@ -86,22 +86,22 @@ const (
 	PROCFS_MAGIC = 0x9fa0
 )
 
-// PathNotExistErr represents a namespace path doesn't exist error.
-type PathNotExistErr struct{ msg string }
+// NSPathNotExistErr represents a namespace path doesn't exist error.
+type NSPathNotExistErr struct{ msg string }
 
-func (e PathNotExistErr) Error() string { return e.msg }
+func (e NSPathNotExistErr) Error() string { return e.msg }
 
-// PathNotNSErr represents a namespace path isn't a namespace error.
-type PathNotNSErr struct{ msg string }
+// NSPathNotNSErr represents a namespace path isn't a namespace error.
+type NSPathNotNSErr struct{ msg string }
 
-func (e PathNotNSErr) Error() string { return e.msg }
+func (e NSPathNotNSErr) Error() string { return e.msg }
 
 // IsNSorErr validates namespace path and return an error if it's invalid.
 func IsNSorErr(nspath string) error {
 	stat := syscall.Statfs_t{}
 	if err := syscall.Statfs(nspath, &stat); err != nil {
 		if os.IsNotExist(err) {
-			err = PathNotExistErr{msg: fmt.Sprintf("failed to Statfs %q: %v", nspath, err)}
+			err = NSPathNotExistErr{msg: fmt.Sprintf("failed to Statfs %q: %v", nspath, err)}
 		} else {
 			err = fmt.Errorf("failed to Statfs %q: %v", nspath, err)
 		}
@@ -112,7 +112,7 @@ func IsNSorErr(nspath string) error {
 	case PROCFS_MAGIC, NSFS_MAGIC:
 		return nil
 	default:
-		return PathNotNSErr{msg: fmt.Sprintf("unknown FS magic on %q: %x", nspath, stat.Type)}
+		return NSPathNotNSErr{msg: fmt.Sprintf("unknown FS magic on %q: %x", nspath, stat.Type)}
 	}
 }
 
