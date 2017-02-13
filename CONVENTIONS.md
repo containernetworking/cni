@@ -10,9 +10,11 @@ Establishing these conventions allows plugins to work across multiple runtimes. 
 
 ## Plugins
 * Plugin authors should aim to support these conventions where it makes sense for their plugin. This means they are more likely to "just work" with a wider range of runtimes.
+* Plugins should accept arguments according to these conventions if they implement the same basic functionality as other plugins. If plugins have shared functionality that isn't coverered by these conventions then a PR should be opened against this document.
 
 ## Runtimes
 * Runtime authors should follow these conventions if they want to pass additional information to plugins. This will allow the extra information to be consumed by the widest range of plugins.
+* These conventions serve as an abstraction for the runtime. For example, port forwarding is highly implementation specific, but users should be able to select the plugin of their choice without changing the runtime.
 
 # Current conventions
 Additional conventions can be created by creating PRs which modify this document.
@@ -23,7 +25,9 @@ Additional conventions can be created by creating PRs which modify this document
 
 A plugin can define any additional fields it needs to work properly. It is expected that it will return an error if it can't act on fields that were expected or where the field values were malformed.
 
-This method of passing information to a plugin is recommended when the information has specific meaning to the plugin that it's passed to and when the plugin should act on it or return an error if it can't.
+This method of passing information to a plugin is recommended when the following conditions hold
+* The configuration has specific meaning to the plugin (i.e. it's not just general meta data)
+* the plugin is expected to act on the configuration or return an error if it can't
 
 Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtime_config` section.
 
