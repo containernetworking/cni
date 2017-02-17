@@ -184,6 +184,32 @@ var _ = Describe("Loading configuration from disk", func() {
 			}))
 		})
 
+		Context("when there is a config file with the same name as the list", func() {
+			BeforeEach(func() {
+				configFile := []byte(`{
+					"name": "some-list",
+					"cniVersion": "0.2.0",
+					"type": "bridge"
+				}`)
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "49-whatever.conf"), configFile, 0600)).To(Succeed())
+			})
+
+			It("Loads the config list first", func() {
+				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(netConfigList.Plugins)).To(Equal(3))
+			})
+
+			It("falls back to the config file", func() {
+				Expect(os.Remove(filepath.Join(configDir, "50-whatever.conflist"))).To(Succeed())
+
+				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(netConfigList.Plugins)).To(Equal(1))
+				Expect(netConfigList.Plugins[0].Network.Type).To(Equal("bridge"))
+			})
+		})
+
 		Context("when the config directory does not exist", func() {
 			BeforeEach(func() {
 				Expect(os.RemoveAll(configDir)).To(Succeed())
@@ -191,14 +217,14 @@ var _ = Describe("Loading configuration from disk", func() {
 
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConfList(configDir, "some-plugin")
-				Expect(err).To(MatchError("no net configuration lists found"))
+				Expect(err).To(MatchError("no net configurations found"))
 			})
 		})
 
 		Context("when there is no config for the desired plugin list", func() {
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConfList(configDir, "some-other-plugin")
-				Expect(err).To(MatchError(ContainSubstring(`no net configuration list with name "some-other-plugin" in`)))
+				Expect(err).To(MatchError(libcni.NotFoundError{configDir, "some-other-plugin"}))
 			})
 		})
 
@@ -233,7 +259,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 			It("will not find the config", func() {
 				_, err := libcni.LoadConfList(configDir, "deep")
-				Expect(err).To(MatchError(HavePrefix("no net configuration list with name")))
+				Expect(err).To(MatchError(HavePrefix("no net configuration with name")))
 			})
 		})
 	})
@@ -338,4 +364,41 @@ var _ = Describe("Loading configuration from disk", func() {
 			})
 		})
 	})
+})
+
+var _ = Describe("ConfListFromConf", func() {
+	var testNetConfig *libcni.NetworkConfig
+
+	BeforeEach(func() {
+		pb := []byte(`{"name":"some-plugin","cniVersion":"0.3.0" }`)
+		tc, err := libcni.ConfFromBytes(pb)
+		Expect(err).NotTo(HaveOccurred())
+		testNetConfig = tc
+	})
+
+	It("correctly upconverts a NetworkConfig to a NetworkConfigList", func() {
+		ncl, err := libcni.ConfListFromConf(testNetConfig)
+		Expect(err).NotTo(HaveOccurred())
+		bytes := ncl.Bytes
+
+		// null out the json - we don't care about the exact marshalling
+		ncl.Bytes = nil
+		ncl.Plugins[0].Bytes = nil
+		testNetConfig.Bytes = nil
+
+		Expect(ncl).To(Equal(&libcni.NetworkConfigList{
+			Name:       "some-plugin",
+			CNIVersion: "0.3.0",
+			Plugins:    []*libcni.NetworkConfig{testNetConfig},
+		}))
+
+		//Test that the json unmarshals to the same data
+		ncl2, err := libcni.ConfListFromBytes(bytes)
+		Expect(err).NotTo(HaveOccurred())
+		ncl2.Bytes = nil
+		ncl2.Plugins[0].Bytes = nil
+
+		Expect(ncl2).To(Equal(ncl))
+	})
+
 })

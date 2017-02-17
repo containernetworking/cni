@@ -16,12 +16,24 @@ package libcni
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 )
+
+type NotFoundError struct {
+	Dir  string
+	Name string
+}
+
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf(`no net configuration with name "%s" in %s`, e.Name, e.Dir)
+}
+
+var NoConfigsFoundError = errors.New("no net configurations found")
 
 func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	conf := &NetworkConfig{Bytes: bytes}
@@ -137,7 +149,7 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 	case err != nil:
 		return nil, err
 	case len(files) == 0:
-		return nil, fmt.Errorf("no net configurations found")
+		return nil, NoConfigsFoundError
 	}
 	sort.Strings(files)
 
@@ -150,16 +162,13 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 			return conf, nil
 		}
 	}
-	return nil, fmt.Errorf(`no net configuration with name "%s" in %s`, name, dir)
+	return nil, NotFoundError{dir, name}
 }
 
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	files, err := ConfFiles(dir, []string{".conflist"})
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, err
-	case len(files) == 0:
-		return nil, fmt.Errorf("no net configuration lists found")
 	}
 	sort.Strings(files)
 
@@ -172,7 +181,24 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 			return conf, nil
 		}
 	}
-	return nil, fmt.Errorf(`no net configuration list with name "%s" in %s`, name, dir)
+
+	// Try and load a network configuration file (instead of list)
+	// from the same name, then upconvert.
+	singleConf, err := LoadConf(dir, name)
+	if err != nil {
+		// A little extra logic so the error makes sense
+		switch {
+		// neither configlists nor config files found
+		case len(files) == 0 && err == NoConfigsFoundError:
+			return nil, err
+		// config lists found but no config files found
+		case len(files) != 0 && err == NoConfigsFoundError:
+			return nil, NotFoundError{dir, name}
+		default: // either not found or parse error
+			return nil, err
+		}
+	}
+	return ConfListFromConf(singleConf)
 }
 
 func InjectConf(original *NetworkConfig, key string, newValue interface{}) (*NetworkConfig, error) {
@@ -198,4 +224,30 @@ func InjectConf(original *NetworkConfig, key string, newValue interface{}) (*Net
 	}
 
 	return ConfFromBytes(newBytes)
+}
+
+// ConfListFromConf "upconverts" a network config in to a NetworkConfigList,
+// with the single network as the only entry in the list.
+func ConfListFromConf(original *NetworkConfig) (*NetworkConfigList, error) {
+	// Re-deserialize the config's json, then make a raw map configlist.
+	// This may seem a bit strange, but it's to make the Bytes fields
+	// actually make sense. Otherwise, the generated json is littered with
+	// golang default values.
+
+	rawConfig := make(map[string]interface{})
+	if err := json.Unmarshal(original.Bytes, &rawConfig); err != nil {
+		return nil, err
+	}
+
+	rawConfigList := map[string]interface{}{
+		"name":       original.Network.Name,
+		"cniVersion": original.Network.CNIVersion,
+		"plugins":    []interface{}{rawConfig},
+	}
+
+	b, err := json.Marshal(rawConfigList)
+	if err != nil {
+		return nil, err
+	}
+	return ConfListFromBytes(b)
 }
