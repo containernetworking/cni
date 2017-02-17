@@ -115,6 +115,33 @@ var _ = Describe("Loading configuration from disk", func() {
 		})
 	})
 
+	Describe("Capabilities", func() {
+		var configDir string
+
+		BeforeEach(func() {
+			var err error
+			configDir, err = ioutil.TempDir("", "plugin-conf")
+			Expect(err).NotTo(HaveOccurred())
+
+			pluginConfig := []byte(`{ "name": "some-plugin", "type": "noop", "cniVersion": "0.3.0", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
+			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(configDir)).To(Succeed())
+		})
+
+		It("reads plugin capabilities from network config", func() {
+			netConfig, err := libcni.LoadConf(configDir, "some-plugin")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(netConfig.Network.Capabilities).To(Equal(map[string]bool{
+				"portMappings":  true,
+				"somethingElse": true,
+				"noCapability":  false,
+			}))
+		})
+	})
+
 	Describe("ConfFromFile", func() {
 		Context("when the file cannot be opened", func() {
 			It("returns a useful error", func() {
@@ -286,18 +313,18 @@ var _ = Describe("Loading configuration from disk", func() {
 				conf := &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
 					Bytes: []byte(`{ cc cc cc}`)}
 
-				_, err := libcni.InjectConf(conf, "", nil)
+				_, err := libcni.InjectConf(conf, map[string]interface{}{"": nil})
 				Expect(err).To(MatchError(HavePrefix(`unmarshal existing network bytes`)))
 			})
 
 			It("returns key  error", func() {
-				_, err := libcni.InjectConf(testNetConfig, "", nil)
-				Expect(err).To(MatchError(HavePrefix(`key value can not be empty`)))
+				_, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"": nil})
+				Expect(err).To(MatchError(HavePrefix(`keys cannot be empty`)))
 			})
 
 			It("returns newValue  error", func() {
-				_, err := libcni.InjectConf(testNetConfig, "test", nil)
-				Expect(err).To(MatchError(HavePrefix(`newValue must be specified`)))
+				_, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"test": nil})
+				Expect(err).To(MatchError(HavePrefix(`key 'test' value must not be nil`)))
 			})
 		})
 
@@ -305,7 +332,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("adds the new key & value to the config", func() {
 				newPluginConfig := []byte(`{"name":"some-plugin","test":"test"}`)
 
-				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				resultConfig, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
 					Network: &types.NetConf{Name: "some-plugin"},
@@ -316,10 +343,10 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("adds the new value for exiting key", func() {
 				newPluginConfig := []byte(`{"name":"some-plugin","test":"changedValue"}`)
 
-				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				resultConfig, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
 
-				resultConfig, err = libcni.InjectConf(resultConfig, "test", "changedValue")
+				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"test": "changedValue"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
@@ -331,10 +358,10 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("adds existing key & value", func() {
 				newPluginConfig := []byte(`{"name":"some-plugin","test":"test"}`)
 
-				resultConfig, err := libcni.InjectConf(testNetConfig, "test", "test")
+				resultConfig, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
 
-				resultConfig, err = libcni.InjectConf(resultConfig, "test", "test")
+				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
@@ -350,11 +377,11 @@ var _ = Describe("Loading configuration from disk", func() {
 				newDNS := &types.DNS{Nameservers: servers, Domain: "local"}
 
 				// inject DNS
-				resultConfig, err := libcni.InjectConf(testNetConfig, "dns", newDNS)
+				resultConfig, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"dns": newDNS})
 				Expect(err).NotTo(HaveOccurred())
 
 				// inject type
-				resultConfig, err = libcni.InjectConf(resultConfig, "type", "bridge")
+				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"type": "bridge"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{

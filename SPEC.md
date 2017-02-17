@@ -253,8 +253,8 @@ The list is described in JSON form, and can be stored on disk or generated from 
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
 
-When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself.
-This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
+When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself. This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
+The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
 
 For the ADD action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the Result of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
 For the ADD action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.

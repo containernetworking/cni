@@ -28,6 +28,12 @@ type RuntimeConf struct {
 	NetNS       string
 	IfName      string
 	Args        [][2]string
+	// A dictionary of capability-specific data passed by the runtime
+	// to plugins as top-level keys in the 'runtimeConfig' dictionary
+	// of the plugin's stdin data.  libcni will ensure that only keys
+	// in this map which match the capabilities of the plugin are passed
+	// to the plugin
+	CapabilityArgs map[string]interface{}
 }
 
 type NetworkConfig struct {
@@ -57,22 +63,54 @@ type CNIConfig struct {
 // CNIConfig implements the CNI interface
 var _ CNI = &CNIConfig{}
 
-func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult types.Result) (*NetworkConfig, error) {
+func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (*NetworkConfig, error) {
 	var err error
 
-	// Ensure every config uses the same name and version
-	orig, err = InjectConf(orig, "name", list.Name)
-	if err != nil {
-		return nil, err
+	inject := map[string]interface{}{
+		"name":       list.Name,
+		"cniVersion": list.CNIVersion,
 	}
-	orig, err = InjectConf(orig, "cniVersion", list.CNIVersion)
+	// Add previous plugin result
+	if prevResult != nil {
+		inject["prevResult"] = prevResult
+	}
+
+	// Ensure every config uses the same name and version
+	orig, err = InjectConf(orig, inject)
 	if err != nil {
 		return nil, err
 	}
 
-	// Add previous plugin result
-	if prevResult != nil {
-		orig, err = InjectConf(orig, "prevResult", prevResult)
+	return injectRuntimeConfig(orig, rt)
+}
+
+// This function takes a libcni RuntimeConf structure and injects values into
+// a "runtimeConfig" dictionary in the CNI network configuration JSON that
+// will be passed to the plugin on stdin.
+//
+// Only "capabilities arguments" passed by the runtime are currently injected.
+// These capabilities arguments are filtered through the plugin's advertised
+// capabilities from its config JSON, and any keys in the CapabilityArgs
+// matching plugin capabilities are added to the "runtimeConfig" dictionary
+// sent to the plugin via JSON on stdin.  For exmaple, if the plugin's
+// capabilities include "portMappings", and the CapabilityArgs map includes a
+// "portMappings" key, that key and its value are added to the "runtimeConfig"
+// dictionary to be passed to the plugin's stdin.
+func injectRuntimeConfig(orig *NetworkConfig, rt *RuntimeConf) (*NetworkConfig, error) {
+	var err error
+
+	rc := make(map[string]interface{})
+	for capability, supported := range orig.Network.Capabilities {
+		if !supported {
+			continue
+		}
+		if data, ok := rt.CapabilityArgs[capability]; ok {
+			rc[capability] = data
+		}
+	}
+
+	if len(rc) > 0 {
+		orig, err = InjectConf(orig, map[string]interface{}{"runtimeConfig": rc})
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +128,7 @@ func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (ty
 			return nil, err
 		}
 
-		newConf, err := buildOneConfig(list, net, prevResult)
+		newConf, err := buildOneConfig(list, net, prevResult, rt)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +152,7 @@ func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) err
 			return err
 		}
 
-		newConf, err := buildOneConfig(list, net, nil)
+		newConf, err := buildOneConfig(list, net, nil, rt)
 		if err != nil {
 			return err
 		}
@@ -134,12 +172,22 @@ func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Resul
 		return nil, err
 	}
 
+	net, err = injectRuntimeConfig(net, rt)
+	if err != nil {
+		return nil, err
+	}
+
 	return invoke.ExecPluginWithResult(pluginPath, net.Bytes, c.args("ADD", rt))
 }
 
 // DelNetwork executes the plugin with the DEL command
 func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return err
+	}
+
+	net, err = injectRuntimeConfig(net, rt)
 	if err != nil {
 		return err
 	}

@@ -29,18 +29,18 @@ This method of passing information to a plugin is recommended when the following
 * The configuration has specific meaning to the plugin (i.e. it's not just general meta data)
 * the plugin is expected to act on the configuration or return an error if it can't
 
-Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtime_config` section.
+Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtimeConfig` section.
 
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
-| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Operators can ask runtimes to pass port mapping information to plugins, by setting the following in the CNI config <pre>"capabilities": {port_mappings": true} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins. It should be placed in a new section of the config "runtime_config" e.g. <pre>"runtime_config": {<br />  "port_mappings" : [<br />    { "host_port": 8080, "container_port": 80, "protocol": "tcp" },<br />    { "host_port": 8000, "container_port": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
+| port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Operators can ask runtimes to pass port mapping information to plugins, by setting the following in the CNI config <pre>"capabilities": {"portMappings": true} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins. It should be placed in a new section of the config "runtimeConfig" e.g. <pre>"runtimeConfig": {<br />  "portMappings" : [<br />    { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" },<br />    { "hostPort": 8000, "containerPort": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
 
 For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration-lists).
 ```json
 {
   "name" : "ExamplePlugin",
   "type" : "port-mapper",
-  "capabilities": {"port_mappings": true}  
+  "capabilities": {"portMappings": true}
 }
 ```
 
@@ -49,9 +49,9 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 {
   "name" : "ExamplePlugin",
   "type" : "port-mapper",
-  "runtime_config": {
-    "port_mappings": [
-      {"host_port": 8080, "container_port": 80, "protocol": "tcp"}
+  "runtimeConfig": {
+    "portMappings": [
+      {"hostPort": 8080, "containerPort": 80, "protocol": "tcp"}
     ]
   }
 }
