@@ -28,9 +28,9 @@ const (
 // Generates a chain name to be used with iptables.
 // Ensures that the generated chain name is exactly
 // maxChainLength chars in length
-func FormatChainName(name string, id string) string {
+func FormatChainName(prefix, name, id string) string {
 	chainBytes := sha512.Sum512([]byte(name + id))
-	chain := fmt.Sprintf("%s%x", chainPrefix, chainBytes)
+	chain := fmt.Sprintf("%s%s%x", chainPrefix, prefix, chainBytes)
 	return chain[:maxChainLength]
 }
 
