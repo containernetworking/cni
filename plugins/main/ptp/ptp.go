@@ -47,7 +47,7 @@ type NetConf struct {
 	MTU    int  `json:"mtu"`
 }
 
-func setupContainerVeth(netns, ifName string, mtu int, pr *current.Result) (*current.Interface, *current.Interface, error) {
+func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Result) (*current.Interface, *current.Interface, error) {
 	// The IPAM result will be something like IP=192.168.3.5/24, GW=192.168.3.1.
 	// What we want is really a point-to-point link but veth does not support IFF_POINTOPONT.
 	// Next best thing would be to let it ARP but set interface to 192.168.3.5/32 and
@@ -62,7 +62,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *current.Result) (*cur
 	hostInterface := &current.Interface{}
 	containerInterface := &current.Interface{}
 
-	err := ns.WithNetNSPath(netns, func(hostNS ns.NetNS) error {
+	err := netns.Do(func(hostNS ns.NetNS) error {
 		hostVeth, contVeth, err := ip.SetupVeth(ifName, mtu, hostNS)
 		if err != nil {
 			return err
@@ -71,6 +71,7 @@ func setupContainerVeth(netns, ifName string, mtu int, pr *current.Result) (*cur
 		hostInterface.Mac = hostVeth.Attrs().HardwareAddr.String()
 		containerInterface.Name = contVeth.Attrs().Name
 		containerInterface.Mac = contVeth.Attrs().HardwareAddr.String()
+		containerInterface.Sandbox = netns.Path()
 
 		var firstV4Addr net.IP
 		for _, ipc := range pr.IPs {
@@ -222,7 +223,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return errors.New("IPAM plugin returned missing IP config")
 	}
 
-	hostInterface, containerInterface, err := setupContainerVeth(args.Netns, args.IfName, conf.MTU, result)
+	netns, err := ns.GetNS(args.Netns)
+	if err != nil {
+		return fmt.Errorf("failed to open netns %q: %v", args.Netns, err)
+	}
+	defer netns.Close()
+
+	hostInterface, containerInterface, err := setupContainerVeth(netns, args.IfName, conf.MTU, result)
 	if err != nil {
 		return err
 	}
