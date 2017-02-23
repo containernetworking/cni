@@ -17,9 +17,10 @@ import (
 
 const (
 	// Family type definitions
-	FAMILY_ALL = syscall.AF_UNSPEC
-	FAMILY_V4  = syscall.AF_INET
-	FAMILY_V6  = syscall.AF_INET6
+	FAMILY_ALL  = syscall.AF_UNSPEC
+	FAMILY_V4   = syscall.AF_INET
+	FAMILY_V6   = syscall.AF_INET6
+	FAMILY_MPLS = AF_MPLS
 )
 
 // SupportedNlFamilies contains the list of netlink families this netlink package supports
@@ -653,6 +654,13 @@ func Uint32Attr(v uint32) []byte {
 	native := NativeEndian()
 	bytes := make([]byte, 4)
 	native.PutUint32(bytes, v)
+	return bytes
+}
+
+func Uint64Attr(v uint64) []byte {
+	native := NativeEndian()
+	bytes := make([]byte, 8)
+	native.PutUint64(bytes, v)
 	return bytes
 }
 
