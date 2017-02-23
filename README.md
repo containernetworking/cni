@@ -37,6 +37,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
 - [Cilium - BPF & XDP for containers](https://github.com/cilium/cilium)
 - [Infoblox - enterprise IP address management for containers](https://github.com/infobloxopen/cni-infoblox)
+- [Multus - a Multi plugin](https://github.com/Intel-Corp/multus-cni)
 
 The CNI team also maintains some [core plugins](plugins).
 
