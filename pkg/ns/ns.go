@@ -15,7 +15,6 @@
 package ns
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -61,14 +60,6 @@ type netNS struct {
 
 // netNS implements the NetNS interface
 var _ NetNS = &netNS{}
-
-// NotImplementedError is used to indicate that a method is not implemented for the given platform
-var NotImplementedError = errors.New("Not Implemented")
-
-// Returns an object representing the current OS thread's network namespace
-func GetCurrentNS() (NetNS, error) {
-	return GetNS(getCurrentThreadNetNSPath())
-}
 
 const (
 	// https://github.com/torvalds/linux/blob/master/include/uapi/linux/magic.h
@@ -139,7 +130,7 @@ func (ns *netNS) Do(toRun func(NetNS) error) error {
 	}
 
 	containedCall := func(hostNS NetNS) error {
-		threadNS, err := GetNS(getCurrentThreadNetNSPath())
+		threadNS, err := GetCurrentNS()
 		if err != nil {
 			return fmt.Errorf("failed to open current netns: %v", err)
 		}
@@ -155,7 +146,7 @@ func (ns *netNS) Do(toRun func(NetNS) error) error {
 	}
 
 	// save a handle to current network namespace
-	hostNS, err := GetNS(getCurrentThreadNetNSPath())
+	hostNS, err := GetCurrentNS()
 	if err != nil {
 		return fmt.Errorf("Failed to open current namespace: %v", err)
 	}

@@ -16,18 +16,21 @@
 
 package ns
 
-func getCurrentThreadNetNSPath() string {
-	return ""
+import "github.com/containernetworking/cni/pkg/types"
+
+// Returns an object representing the current OS thread's network namespace
+func GetCurrentNS() (NetNS, error) {
+	return nil, types.NotImplementedError
 }
 
 func NewNS() (NetNS, error) {
-	return nil, NotImplementedError
+	return nil, types.NotImplementedError
 }
 
 func (ns *netNS) Close() error {
-	return NotImplementedError
+	return types.NotImplementedError
 }
 
 func (ns *netNS) Set() error {
-	return NotImplementedError
+	return types.NotImplementedError
 }

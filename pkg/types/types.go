@@ -16,6 +16,7 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -178,3 +179,6 @@ func prettyPrint(obj interface{}) error {
 	_, err = os.Stdout.Write(data)
 	return err
 }
+
+// NotImplementedError is used to indicate that a method is not implemented for the given platform
+var NotImplementedError = errors.New("Not Implemented")

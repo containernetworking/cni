@@ -25,6 +25,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// Returns an object representing the current OS thread's network namespace
+func GetCurrentNS() (NetNS, error) {
+	return GetNS(getCurrentThreadNetNSPath())
+}
+
 func getCurrentThreadNetNSPath() string {
 	// /proc/self/ns/net returns the namespace of the main thread, not
 	// of whatever thread this goroutine is running on.  Make sure we
