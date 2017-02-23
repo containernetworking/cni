@@ -178,9 +178,6 @@ The network configuration is described in JSON form. The configuration can be st
 - `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
 - `ipam`: Dictionary with IPAM specific values:
   - `type` (string): Refers to the filename of the IPAM plugin executable.
-  - `routes` (list): List of subnets (in CIDR notation) that the CNI plugin should ensure are reachable by routing them through the network. Each entry is a dictionary containing:
-    - `dst` (string): subnet in CIDR notation
-    - `gw` (string): IP address of the gateway to use. If not specified, the default gateway for the subnet is assumed (as determined by the IPAM plugin).
 - `dns`: Dictionary with DNS specific values:
   - `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
   - `domain` (string): the local domain used for short hostname lookups.
