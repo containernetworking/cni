@@ -24,10 +24,12 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 )
 
+// RawExec implements the PluginExec.RawExec interface.
 type RawExec struct {
 	Stderr io.Writer
 }
 
+// ExecPlugin runs the executable plugin.
 func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
 	stdout := &bytes.Buffer{}
 

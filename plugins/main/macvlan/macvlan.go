@@ -33,9 +33,11 @@ import (
 )
 
 const (
+	// IPv4InterfaceArpProxySysctlTemplate is a template string for a sysctl entry.
 	IPv4InterfaceArpProxySysctlTemplate = "net.ipv4.conf.%s.proxy_arp"
 )
 
+// NetConf contains configurations for creating a macvlan
 type NetConf struct {
 	types.NetConf
 	Master string `json:"master"`

@@ -22,14 +22,17 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 )
 
+// ExecPluginWithResult invokes network plugin and returns the result and error, if any.
 func ExecPluginWithResult(pluginPath string, netconf []byte, args CNIArgs) (types.Result, error) {
 	return defaultPluginExec.WithResult(pluginPath, netconf, args)
 }
 
+// ExecPluginWithoutResult invokes network plugin and returns an error, if any.
 func ExecPluginWithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
 	return defaultPluginExec.WithoutResult(pluginPath, netconf, args)
 }
 
+// GetVersionInfo returns network plugin version.
 func GetVersionInfo(pluginPath string) (version.PluginInfo, error) {
 	return defaultPluginExec.GetVersionInfo(pluginPath)
 }
@@ -39,6 +42,7 @@ var defaultPluginExec = &PluginExec{
 	VersionDecoder: &version.PluginDecoder{},
 }
 
+// PluginExec is a placeholder for a raw executable plugin.
 type PluginExec struct {
 	RawExec interface {
 		ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error)
@@ -48,6 +52,7 @@ type PluginExec struct {
 	}
 }
 
+// WithResult invokes network plugin and returns the result and error, if any.
 func (e *PluginExec) WithResult(pluginPath string, netconf []byte, args CNIArgs) (types.Result, error) {
 	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
 	if err != nil {
@@ -64,6 +69,7 @@ func (e *PluginExec) WithResult(pluginPath string, netconf []byte, args CNIArgs)
 	return version.NewResult(confVersion, stdoutBytes)
 }
 
+// WithoutResult invokes network plugin and returns an error, if any.
 func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
 	_, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
 	return err

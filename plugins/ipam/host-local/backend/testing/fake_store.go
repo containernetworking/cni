@@ -20,6 +20,7 @@ import (
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
 
+// FakeStore represents a fake store.
 type FakeStore struct {
 	ipMap          map[string]string
 	lastReservedIP net.IP
@@ -28,22 +29,27 @@ type FakeStore struct {
 // FakeStore implements the Store interface
 var _ backend.Store = &FakeStore{}
 
+// NewFakeStore returns a new fake store.
 func NewFakeStore(ipmap map[string]string, lastIP net.IP) *FakeStore {
 	return &FakeStore{ipmap, lastIP}
 }
 
+// Lock is a no-op.
 func (s *FakeStore) Lock() error {
 	return nil
 }
 
+// Unlock is a no-op.
 func (s *FakeStore) Unlock() error {
 	return nil
 }
 
+// Close is a no-op.
 func (s *FakeStore) Close() error {
 	return nil
 }
 
+// Reserve reserves an IP in the fake store.
 func (s *FakeStore) Reserve(id string, ip net.IP) (bool, error) {
 	key := ip.String()
 	if _, ok := s.ipMap[key]; !ok {
@@ -54,15 +60,18 @@ func (s *FakeStore) Reserve(id string, ip net.IP) (bool, error) {
 	return false, nil
 }
 
+// LastReservedIP returns last reserved IP in the fake store.
 func (s *FakeStore) LastReservedIP() (net.IP, error) {
 	return s.lastReservedIP, nil
 }
 
+// Release releases all IPs in the fake store.
 func (s *FakeStore) Release(ip net.IP) error {
 	delete(s.ipMap, ip.String())
 	return nil
 }
 
+// ReleaseByID releases an IP identified by id, in the fake store.
 func (s *FakeStore) ReleaseByID(id string) error {
 	toDelete := []string{}
 	for k, v := range s.ipMap {

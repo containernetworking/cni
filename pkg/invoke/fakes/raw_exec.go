@@ -14,6 +14,7 @@
 
 package fakes
 
+// RawExec represents fake RawExec.
 type RawExec struct {
 	ExecPluginCall struct {
 		Received struct {
@@ -28,6 +29,7 @@ type RawExec struct {
 	}
 }
 
+// ExecPlugin returns the fake result of fake RawExec execution.
 func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
 	e.ExecPluginCall.Received.PluginPath = pluginPath
 	e.ExecPluginCall.Received.StdinData = stdinData

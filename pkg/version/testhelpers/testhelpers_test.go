@@ -68,7 +68,7 @@ func main() { skel.PluginMain(c, c) }
 	})
 })
 
-var _ = Describe("LocateCurrentGitRepo", func() {
+var _ = Describe("locateCurrentGitRepo", func() {
 	It("returns the path to the root of the CNI git repo", func() {
 		path, err := testhelpers.LocateCurrentGitRepo()
 		Expect(err).NotTo(HaveOccurred())

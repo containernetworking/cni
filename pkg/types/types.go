@@ -21,11 +21,11 @@ import (
 	"os"
 )
 
-// like net.IPNet but adds JSON marshalling and unmarshalling
+// IPNet is like net.IPNet but adds JSON marshalling and unmarshalling.
 type IPNet net.IPNet
 
 // ParseCIDR takes a string like "10.2.3.1/24" and
-// return IPNet with "10.2.3.1" and /24 mask
+// returns IPNet with "10.2.3.1" and /24 mask.
 func ParseCIDR(s string) (*net.IPNet, error) {
 	ip, ipn, err := net.ParseCIDR(s)
 	if err != nil {
@@ -36,10 +36,12 @@ func ParseCIDR(s string) (*net.IPNet, error) {
 	return ipn, nil
 }
 
+// MarshalJSON returns the JSON encoding for IPNet.
 func (n IPNet) MarshalJSON() ([]byte, error) {
 	return json.Marshal((*net.IPNet)(&n).String())
 }
 
+// UnmarshalJSON unmarshals a JSON-encoded IPNet.
 func (n *IPNet) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
@@ -75,6 +77,7 @@ type NetConfList struct {
 	Plugins []*NetConf `json:"plugins,omitempty"`
 }
 
+// ResultFactoryFunc represents a Result factory function.
 type ResultFactoryFunc func([]byte) (Result, error)
 
 // Result is an interface that provides the result of plugin execution
@@ -94,6 +97,7 @@ type Result interface {
 	String() string
 }
 
+// PrintResult prints the result in JSON format.
 func PrintResult(result Result, version string) error {
 	newResult, err := result.GetAsVersion(version)
 	if err != nil {
@@ -110,11 +114,13 @@ type DNS struct {
 	Options     []string `json:"options,omitempty"`
 }
 
+// Route represents a routing table entry
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
 }
 
+// String prints a route.
 func (r *Route) String() string {
 	return fmt.Sprintf("%+v", *r)
 }
@@ -127,16 +133,19 @@ const (
 	ErrUnsupportedField                   // 2
 )
 
+// Error encapsulates a structured error message.
 type Error struct {
 	Code    uint   `json:"code"`
 	Msg     string `json:"msg"`
 	Details string `json:"details,omitempty"`
 }
 
+// Error prints the error message.
 func (e *Error) Error() string {
 	return e.Msg
 }
 
+// Print pretty prints the error message.
 func (e *Error) Print() error {
 	return prettyPrint(e)
 }
@@ -150,6 +159,7 @@ type route struct {
 	GW  net.IP `json:"gw,omitempty"`
 }
 
+// UnmarshalJSON unmarshals a JSON-encoded Route.
 func (r *Route) UnmarshalJSON(data []byte) error {
 	rt := route{}
 	if err := json.Unmarshal(data, &rt); err != nil {
@@ -161,6 +171,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON returns the JSON encoding for Route.
 func (r *Route) MarshalJSON() ([]byte, error) {
 	rt := route{
 		Dst: IPNet(r.Dst),

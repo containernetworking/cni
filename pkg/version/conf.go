@@ -19,9 +19,10 @@ import (
 	"fmt"
 )
 
-// ConfigDecoder can decode the CNI version available in network config data
+// ConfigDecoder can decode the CNI version available in network config data.
 type ConfigDecoder struct{}
 
+// Decode unmarshalls a ConfigDecoder from a JSON byte array.
 func (*ConfigDecoder) Decode(jsonBytes []byte) (string, error) {
 	var conf struct {
 		CNIVersion string `json:"cniVersion"`

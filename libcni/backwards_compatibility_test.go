@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
-	"github.com/containernetworking/cni/pkg/version/legacy_examples"
+	legacy_examples "github.com/containernetworking/cni/pkg/version/legacyexamples"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -60,7 +60,7 @@ var _ = Describe("Backwards compatibility", func() {
 			Fail("must be run as root")
 		}
 
-		example := legacy_examples.V010_Runtime
+		example := legacy_examples.V010Runtime
 
 		binPath, err := example.Build()
 		Expect(err).NotTo(HaveOccurred())

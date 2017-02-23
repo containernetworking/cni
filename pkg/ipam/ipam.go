@@ -27,16 +27,17 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+// ExecAdd delegates the ADD command execution to a named plugin.
 func ExecAdd(plugin string, netconf []byte) (types.Result, error) {
 	return invoke.DelegateAdd(plugin, netconf)
 }
 
+// ExecDel delegates the DEL command execution to a named plugin.
 func ExecDel(plugin string, netconf []byte) error {
 	return invoke.DelegateDel(plugin, netconf)
 }
 
-// ConfigureIface takes the result of IPAM plugin and
-// applies to the ifName interface
+// ConfigureIface applies the plugin ADD execution result to a named network interface.
 func ConfigureIface(ifName string, res *current.Result) error {
 	if len(res.Interfaces) == 0 {
 		return fmt.Errorf("no interfaces to configure")

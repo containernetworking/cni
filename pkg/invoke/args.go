@@ -19,6 +19,9 @@ import (
 	"strings"
 )
 
+// CNIArgs represents the arguments to be passed to the plugin via the process environment.
+// Sometimes these must be assembled from configuration.
+// Sometimes (when calling a plugin recursively) they must be inherited from the calling process.
 type CNIArgs interface {
 	// For use with os/exec; i.e., return nil to inherit the
 	// environment from this process
@@ -29,14 +32,16 @@ type inherited struct{}
 
 var inheritArgsFromEnv inherited
 
-func (_ *inherited) AsEnv() []string {
+func (i *inherited) AsEnv() []string {
 	return nil
 }
 
+// ArgsFromEnv returns CNIArgs by inheriting environment variables.
 func ArgsFromEnv() CNIArgs {
 	return &inheritArgsFromEnv
 }
 
+// Args defines the contents of CNIArgs.
 type Args struct {
 	Command       string
 	ContainerID   string
@@ -50,6 +55,7 @@ type Args struct {
 // Args implements the CNIArgs interface
 var _ CNIArgs = &Args{}
 
+// AsEnv returns args serialised as an array of environment variables.
 func (args *Args) AsEnv() []string {
 	env := os.Environ()
 	pluginArgsStr := args.PluginArgsStr

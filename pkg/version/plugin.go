@@ -48,7 +48,7 @@ func (p *pluginInfo) SupportedVersions() []string {
 }
 
 // PluginSupports returns a new PluginInfo that will report the given versions
-// as supported
+// as supported.
 func PluginSupports(supportedVersions ...string) PluginInfo {
 	if len(supportedVersions) < 1 {
 		panic("programmer error: you must support at least one version")
@@ -62,6 +62,7 @@ func PluginSupports(supportedVersions ...string) PluginInfo {
 // PluginDecoder can decode the response returned by a plugin's VERSION command
 type PluginDecoder struct{}
 
+// Decode unmarshalls a PluginDecoder from a JSON byte array.
 func (*PluginDecoder) Decode(jsonBytes []byte) (PluginInfo, error) {
 	var info pluginInfo
 	err := json.Unmarshal(jsonBytes, &info)

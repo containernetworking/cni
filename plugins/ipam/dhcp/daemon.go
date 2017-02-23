@@ -38,6 +38,7 @@ const resendCount = 3
 
 var errNoMoreTries = errors.New("no more tries")
 
+// DHCP represents a DHCP client daemon.
 type DHCP struct {
 	mux    sync.Mutex
 	leases map[string]*DHCPLease

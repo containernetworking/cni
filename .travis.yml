@@ -34,6 +34,7 @@ install:
  - go get ${TOOLS_CMD}/cover
  - go get github.com/modocache/gover
  - go get github.com/mattn/goveralls
+ - go get github.com/golang/lint/golint
 
 script:
  - >

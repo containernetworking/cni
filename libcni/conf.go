@@ -23,6 +23,7 @@ import (
 	"sort"
 )
 
+// ConfFromBytes loads a network config list from an array of bytes.
 func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	conf := &NetworkConfig{Bytes: bytes}
 	if err := json.Unmarshal(bytes, &conf.Network); err != nil {
@@ -31,6 +32,7 @@ func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	return conf, nil
 }
 
+// ConfFromFile loads a network config list from a file.
 func ConfFromFile(filename string) (*NetworkConfig, error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -39,6 +41,7 @@ func ConfFromFile(filename string) (*NetworkConfig, error) {
 	return ConfFromBytes(bytes)
 }
 
+// ConfListFromBytes loads a network config list from an array of bytes.
 func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 	rawList := make(map[string]interface{})
 	if err := json.Unmarshal(bytes, &rawList); err != nil {
@@ -97,6 +100,7 @@ func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 	return list, nil
 }
 
+// ConfListFromFile loads a network config list from a file.
 func ConfListFromFile(filename string) (*NetworkConfigList, error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -105,6 +109,7 @@ func ConfListFromFile(filename string) (*NetworkConfigList, error) {
 	return ConfListFromBytes(bytes)
 }
 
+// ConfFiles walks a path and returns any existing network configuration files.
 func ConfFiles(dir string, extensions []string) ([]string, error) {
 	// In part, adapted from rkt/networking/podenv.go#listFiles
 	files, err := ioutil.ReadDir(dir)
@@ -131,6 +136,7 @@ func ConfFiles(dir string, extensions []string) ([]string, error) {
 	return confFiles, nil
 }
 
+// LoadConf loads a network configuration from a specified path, with a name.
 func LoadConf(dir, name string) (*NetworkConfig, error) {
 	files, err := ConfFiles(dir, []string{".conf", ".json"})
 	switch {
@@ -153,6 +159,7 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 	return nil, fmt.Errorf(`no net configuration with name "%s" in %s`, name, dir)
 }
 
+// LoadConfList loads a network configuration list from a specified path, with a name.
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	files, err := ConfFiles(dir, []string{".conflist"})
 	switch {
@@ -175,6 +182,7 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	return nil, fmt.Errorf(`no net configuration list with name "%s" in %s`, name, dir)
 }
 
+// InjectConf returns a clone of the passed NetworkConfig with an updated value.
 func InjectConf(original *NetworkConfig, key string, newValue interface{}) (*NetworkConfig, error) {
 	config := make(map[string]interface{})
 	err := json.Unmarshal(original.Bytes, &config)

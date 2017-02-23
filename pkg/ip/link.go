@@ -90,6 +90,7 @@ func RandomVethName() (string, error) {
 	return fmt.Sprintf("veth%x", entropy), nil
 }
 
+// RenameLink renames a network link.
 func RenameLink(curName, newName string) error {
 	link, err := netlink.LinkByName(curName)
 	if err == nil {
@@ -172,6 +173,7 @@ func DelLinkByNameAddr(ifName string, family int) (*net.IPNet, error) {
 	return addrs[0].IPNet, nil
 }
 
+// SetHWAddrByIP sets MAC address for an interface link based on net family.
 func SetHWAddrByIP(ifName string, ip4 net.IP, ip6 net.IP) error {
 	iface, err := netlink.LinkByName(ifName)
 	if err != nil {

@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const LINK_NAME = "eth0"
+const LinkName = "eth0"
 
 func ipNetEqual(a, b *net.IPNet) bool {
 	aPrefix, aBits := a.Mask.Size()
@@ -57,11 +57,11 @@ var _ = Describe("IPAM Operations", func() {
 			// Add master
 			err = netlink.LinkAdd(&netlink.Dummy{
 				LinkAttrs: netlink.LinkAttrs{
-					Name: LINK_NAME,
+					Name: LinkName,
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			_, err = netlink.LinkByName(LINK_NAME)
+			_, err = netlink.LinkByName(LinkName)
 			Expect(err).NotTo(HaveOccurred())
 			return nil
 		})
@@ -135,12 +135,12 @@ var _ = Describe("IPAM Operations", func() {
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			err := ConfigureIface(LINK_NAME, result)
+			err := ConfigureIface(LinkName, result)
 			Expect(err).NotTo(HaveOccurred())
 
-			link, err := netlink.LinkByName(LINK_NAME)
+			link, err := netlink.LinkByName(LinkName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(link.Attrs().Name).To(Equal(LINK_NAME))
+			Expect(link.Attrs().Name).To(Equal(LinkName))
 
 			v4addrs, err := netlink.AddrList(link, syscall.AF_INET)
 			Expect(err).NotTo(HaveOccurred())
@@ -192,12 +192,12 @@ var _ = Describe("IPAM Operations", func() {
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			err := ConfigureIface(LINK_NAME, result)
+			err := ConfigureIface(LinkName, result)
 			Expect(err).NotTo(HaveOccurred())
 
-			link, err := netlink.LinkByName(LINK_NAME)
+			link, err := netlink.LinkByName(LinkName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(link.Attrs().Name).To(Equal(LINK_NAME))
+			Expect(link.Attrs().Name).To(Equal(LinkName))
 
 			// Ensure the v4 route, v6 route, and subnet route
 			routes, err := netlink.RouteList(link, 0)
@@ -228,7 +228,7 @@ var _ = Describe("IPAM Operations", func() {
 	It("returns an error when the interface index doesn't match the link name", func() {
 		result.IPs[0].Interface = 1
 		err := originalNS.Do(func(ns.NetNS) error {
-			return ConfigureIface(LINK_NAME, result)
+			return ConfigureIface(LinkName, result)
 		})
 		Expect(err).To(HaveOccurred())
 	})
@@ -236,7 +236,7 @@ var _ = Describe("IPAM Operations", func() {
 	It("returns an error when the interface index is too big", func() {
 		result.IPs[0].Interface = 2
 		err := originalNS.Do(func(ns.NetNS) error {
-			return ConfigureIface(LINK_NAME, result)
+			return ConfigureIface(LinkName, result)
 		})
 		Expect(err).To(HaveOccurred())
 	})
@@ -244,7 +244,7 @@ var _ = Describe("IPAM Operations", func() {
 	It("returns an error when there are no interfaces to configure", func() {
 		result.Interfaces = []*current.Interface{}
 		err := originalNS.Do(func(ns.NetNS) error {
-			return ConfigureIface(LINK_NAME, result)
+			return ConfigureIface(LinkName, result)
 		})
 		Expect(err).To(HaveOccurred())
 	})

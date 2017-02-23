@@ -16,11 +16,12 @@ package testutils
 
 import "errors"
 
-// BadReader is an io.Reader which always errors
+// BadReader is an io.Reader which always errors.
 type BadReader struct {
 	Error error
 }
 
+// Read always errors.
 func (r *BadReader) Read(buffer []byte) (int, error) {
 	if r.Error != nil {
 		return 0, r.Error
@@ -28,6 +29,7 @@ func (r *BadReader) Read(buffer []byte) (int, error) {
 	return 0, errors.New("banana")
 }
 
+// Close is a no-op.
 func (r *BadReader) Close() error {
 	return nil
 }

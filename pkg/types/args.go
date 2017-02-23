@@ -57,13 +57,13 @@ type CommonArgs struct {
 	IgnoreUnknown UnmarshallableBool `json:"ignoreunknown,omitempty"`
 }
 
-// GetKeyField is a helper function to receive Values
-// Values that represent a pointer to a struct
+// GetKeyField is a helper function to receive values that represent a pointer
+// to a struct.
 func GetKeyField(keyString string, v reflect.Value) reflect.Value {
 	return v.Elem().FieldByName(keyString)
 }
 
-// LoadArgs parses args from a string in the form "K=V;K2=V2;..."
+// LoadArgs parses args from a string in the form "K=V;K2=V2;...".
 func LoadArgs(args string, container interface{}) error {
 	if args == "" {
 		return nil

@@ -22,6 +22,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 )
 
+// DelegateAdd delegates the execution of ADD command to a named plug-in.
 func DelegateAdd(delegatePlugin string, netconf []byte) (types.Result, error) {
 	if os.Getenv("CNI_COMMAND") != "ADD" {
 		return nil, fmt.Errorf("CNI_COMMAND is not ADD")
@@ -37,6 +38,7 @@ func DelegateAdd(delegatePlugin string, netconf []byte) (types.Result, error) {
 	return ExecPluginWithResult(pluginPath, netconf, ArgsFromEnv())
 }
 
+// DelegateDel delegates the execution of DEL command to a named plug-in.
 func DelegateDel(delegatePlugin string, netconf []byte) error {
 	if os.Getenv("CNI_COMMAND") != "DEL" {
 		return fmt.Errorf("CNI_COMMAND is not DEL")

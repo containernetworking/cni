@@ -30,12 +30,12 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 )
 
-// RFC 2131 suggests using exponential backoff, starting with 4sec
-// and randomized to +/- 1sec
-const resendDelay0 = 4 * time.Second
-const resendDelayMax = 32 * time.Second
-
 const (
+	// RFC 2131 suggests using exponential backoff, starting with 4sec
+	// and randomized to +/- 1sec
+	resendDelay0   = 4 * time.Second
+	resendDelayMax = 32 * time.Second
+
 	leaseStateBound = iota
 	leaseStateRenewing
 	leaseStateRebinding
@@ -47,6 +47,7 @@ const (
 // namespace for network ops and using fewer threads. However, this
 // needs to be done carefully as dhcp4client ops are blocking.
 
+// DHCPLease is a placeholder for DHCP lease information.
 type DHCPLease struct {
 	clientID      string
 	ack           *dhcp4.Packet
@@ -59,9 +60,9 @@ type DHCPLease struct {
 	wg            sync.WaitGroup
 }
 
-// AcquireLease gets an DHCP lease and then maintains it in the background
+// AcquireLease acquires a DHCP lease and then maintains it in the background
 // by periodically renewing it. The acquired lease can be released by
-// calling DHCPLease.Stop()
+// calling DHCPLease.Stop().
 func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 	errCh := make(chan error, 1)
 	l := &DHCPLease{
@@ -104,7 +105,7 @@ func AcquireLease(clientID, netns, ifName string) (*DHCPLease, error) {
 }
 
 // Stop terminates the background task that maintains the lease
-// and issues a DHCP Release
+// and issues a DHCP release.
 func (l *DHCPLease) Stop() {
 	close(l.stop)
 	l.wg.Wait()
@@ -275,6 +276,7 @@ func (l *DHCPLease) release() error {
 	return nil
 }
 
+// IPNet returns the DHCP lease IP address information.
 func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	mask := parseSubnetMask(l.opts)
 	if mask == nil {
@@ -287,10 +289,12 @@ func (l *DHCPLease) IPNet() (*net.IPNet, error) {
 	}, nil
 }
 
+// Gateway returns the DHCP lease gateway IP addresss.
 func (l *DHCPLease) Gateway() net.IP {
 	return parseRouter(l.opts)
 }
 
+// Routes returns the DHCP lease routing table.
 func (l *DHCPLease) Routes() []*types.Route {
 	routes := parseRoutes(l.opts)
 	return append(routes, parseCIDRRoutes(l.opts)...)
@@ -302,7 +306,7 @@ func jitter(span time.Duration) time.Duration {
 }
 
 func backoffRetry(f func() (*dhcp4.Packet, error)) (*dhcp4.Packet, error) {
-	var baseDelay time.Duration = resendDelay0
+	var baseDelay = resendDelay0
 
 	for i := 0; i < resendCount; i++ {
 		pkt, err := f()

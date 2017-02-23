@@ -25,10 +25,12 @@ import (
 
 const implementedSpecVersion string = "0.2.0"
 
+// SupportedVersions contains all the supported versions.
 var SupportedVersions = []string{"", "0.1.0", implementedSpecVersion}
 
 // Compatibility types for CNI version 0.1.0 and 0.2.0
 
+// NewResult loads a new result from a JSON byte array.
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}
 	if err := json.Unmarshal(data, result); err != nil {
@@ -37,6 +39,7 @@ func NewResult(data []byte) (types.Result, error) {
 	return result, nil
 }
 
+// GetResult converts and returns the result.
 func GetResult(r types.Result) (*Result, error) {
 	// We expect version 0.1.0/0.2.0 results
 	result020, err := r.GetAsVersion(implementedSpecVersion)
@@ -50,17 +53,19 @@ func GetResult(r types.Result) (*Result, error) {
 	return result, nil
 }
 
-// Result is what gets returned from the plugin (via stdout) to the caller
+// Result is what gets returned from the plugin (via stdout) to the caller.
 type Result struct {
 	IP4 *IPConfig `json:"ip4,omitempty"`
 	IP6 *IPConfig `json:"ip6,omitempty"`
 	DNS types.DNS `json:"dns,omitempty"`
 }
 
+// Version returns the currently implemented version.
 func (r *Result) Version() string {
 	return implementedSpecVersion
 }
 
+// GetAsVersion makes sure the result has a supported version.
 func (r *Result) GetAsVersion(version string) (types.Result, error) {
 	for _, supportedVersion := range SupportedVersions {
 		if version == supportedVersion {
@@ -70,6 +75,7 @@ func (r *Result) GetAsVersion(version string) (types.Result, error) {
 	return nil, fmt.Errorf("cannot convert version %q to %s", SupportedVersions, version)
 }
 
+// Print prints the result to stdout.
 func (r *Result) Print() error {
 	data, err := json.MarshalIndent(r, "", "    ")
 	if err != nil {
@@ -110,6 +116,7 @@ type ipConfig struct {
 	Routes  []types.Route `json:"routes,omitempty"`
 }
 
+// MarshalJSON marshals an IPConfig to a JSON byte array.
 func (c *IPConfig) MarshalJSON() ([]byte, error) {
 	ipc := ipConfig{
 		IP:      types.IPNet(c.IP),
@@ -120,6 +127,7 @@ func (c *IPConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ipc)
 }
 
+// UnmarshalJSON unmarshals an IPConfig from a JSON byte array.
 func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	ipc := ipConfig{}
 	if err := json.Unmarshal(data, &ipc); err != nil {

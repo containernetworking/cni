@@ -31,7 +31,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const MASTER_NAME = "eth0"
+const MasterName = "eth0"
 
 var _ = Describe("ipvlan Operations", func() {
 	var originalNS ns.NetNS
@@ -48,11 +48,11 @@ var _ = Describe("ipvlan Operations", func() {
 			// Add master
 			err = netlink.LinkAdd(&netlink.Dummy{
 				LinkAttrs: netlink.LinkAttrs{
-					Name: MASTER_NAME,
+					Name: MasterName,
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
-			_, err = netlink.LinkByName(MASTER_NAME)
+			_, err = netlink.LinkByName(MasterName)
 			Expect(err).NotTo(HaveOccurred())
 			return nil
 		})
@@ -70,7 +70,7 @@ var _ = Describe("ipvlan Operations", func() {
 				Name:       "testConfig",
 				Type:       "ipvlan",
 			},
-			Master: MASTER_NAME,
+			Master: MasterName,
 			Mode:   "l2",
 			MTU:    1500,
 		}
@@ -114,7 +114,7 @@ var _ = Describe("ipvlan Operations", func() {
         "type": "host-local",
         "subnet": "10.1.2.0/24"
     }
-}`, MASTER_NAME)
+}`, MasterName)
 
 		targetNs, err := ns.NewNS()
 		Expect(err).NotTo(HaveOccurred())
