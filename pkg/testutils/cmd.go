@@ -46,13 +46,15 @@ func CmdAddWithResult(cniNetns, cniIfname string, conf []byte, f func() error) (
 	os.Stdout = w
 	err = f()
 	w.Close()
-	if err != nil {
-		return nil, nil, err
-	}
 
-	// parse the result
-	out, err := ioutil.ReadAll(r)
+	var out []byte
+	if err == nil {
+		out, err = ioutil.ReadAll(r)
+	}
 	os.Stdout = oldStdout
+
+	// Return errors after restoring stdout so Ginkgo will correctly
+	// emit verbose error information on stdout
 	if err != nil {
 		return nil, nil, err
 	}
