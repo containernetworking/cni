@@ -206,10 +206,22 @@ require some changes now, but should more-easily handle spec changes and
 new features going forward.
 
 For runtimes, the biggest changes to the Go libraries are in the `types` package.
-The top-level `types.Result` is now an opaque interface instead of a struct, and
-APIs exposed by other packages, such as the high-level `libcni` package, have
-been updated to use this interface.  Concrete types are available as subpackages.
-The `types/current` subpackage contains the latest (spec v0.3.0) types.
+It has been refactored to make working with versioned results simpler. The top-level 
+`types.Result` is now an opaque interface instead of a struct, and APIs exposed by
+other packages, such as the high-level `libcni` package, have been updated to use 
+this interface.  Concrete types are now per-version subpackages. The `types/current`
+subpackage contains the latest (spec v0.3.0) types.
+
+The versioned types understand how to convert between most versions. However, converting
+to a higher version will mean some fields are missing.
+
+| From   | 0.1 | 0.2 | 0.3 |
+|--------|-----|-----|-----|
+| To 0.1 |  ✔  | ✔   |     |
+| To 0.2 |  ✴  |  ✔  |  ✔  |
+| To 0.3 |     |  ✴  |  ✔  | 
+
+*(pairs marked with ✴ will have some missing data)*
 
 A container runtime should use `current.NewResultFromResult()` to convert the
 opaque  `types.Result` to a concrete `current.Result` struct.  It may then
