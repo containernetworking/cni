@@ -86,11 +86,11 @@ interface implemented by concrete struct types in the `types/current` and
 `types/020` subpackages.
 
 Internally, plugins should use the `types/current` structs, and convert
-to or from specific versions when required.  In most plugins, the only
-conversion required will at completion time, when it prints the result as
-JSON to stdout.  At that point, the result should be printed in the format
-requested by the `cniVersion` field present in the network configuration.
-Use the library function `types.PrintResult()` for that.
+to or from specific versions when required.  A typical plugin will only need
+to do a single conversion.  That is when it is about to complete and needs to
+print the result JSON in the correct format to stdout.  The library
+function `types.PrintResult()` simplifies this by converting and printing in
+a single call.
 
 Additionally, the plugin should advertise which CNI Spec versions it supports
 via the 3rd argument to `skel.PluginMain()`.
@@ -151,7 +151,7 @@ Other examples of spec v0.3.0-compatible plugins are the
 This section provides guidance for upgrading container runtimes to support
 CNI Spec Version 0.3.0.
 
-### General guidance for all runtimes
+### General guidance for all runtimes (language agnostic)
 
 #### Support multiple CNI spec versions
 To provide the smoothest upgrade path and support the broadest range of CNI
