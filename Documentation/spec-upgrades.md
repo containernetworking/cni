@@ -22,12 +22,17 @@ and Release v0.5.0 supports Spec v0.3.0.
 ## For CNI Users
 If you maintain CNI configuration files for a container runtime that uses CNI,
 ensure that the configuration files specify a `cniVersion` field and that the
-version there is supported by your container runtime and CNI plugins.  The CNI
-spec includes example configuration files for [single plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations)
+version there is supported by your container runtime and CNI plugins.
+Configuration files without the version field should be labeled version 0.2.0
+by default. The CNI spec includes example configuration files for 
+[single plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations)
 and for [lists of chained plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations).
 
 Consult the documentation for your runtime and plugins to determine what
-CNI spec versions they support.
+CNI spec versions they support. Test any plugin upgrades before deploying to 
+production. You may find [cnitool](https://github.com/containernetworking/cni/tree/master/cnitool)
+useful. Specifically, your configuration version should be the lowest common
+version supported by your plugins.
 
 ## For Plugin Authors
 This section provides guidance for upgrading plugins to CNI Spec Version 0.3.0.
