@@ -81,7 +81,7 @@ func testResult() *current.Result {
 	}
 }
 
-var _ = Describe("Ensures compatibility with the 0.3.0 spec", func() {
+var _ = Describe("Current types operations", func() {
 	It("correctly encodes a 0.3.0 Result", func() {
 		res := testResult()
 
@@ -150,29 +150,28 @@ var _ = Describe("Ensures compatibility with the 0.3.0 spec", func() {
 }`))
 	})
 
-	var _ = Describe("Ensures compatibility with the 0.1.0 spec", func() {
-		It("correctly encodes a 0.1.0 Result", func() {
-			res, err := testResult().GetAsVersion("0.1.0")
-			Expect(err).NotTo(HaveOccurred())
+	It("correctly encodes a 0.1.0 Result", func() {
+		res, err := testResult().GetAsVersion("0.1.0")
+		Expect(err).NotTo(HaveOccurred())
 
-			Expect(res.String()).To(Equal("IP4:{IP:{IP:1.2.3.30 Mask:ffffff00} Gateway:1.2.3.1 Routes:[{Dst:{IP:15.5.6.0 Mask:ffffff00} GW:15.5.6.8}]}, IP6:{IP:{IP:abcd:1234:ffff::cdde Mask:ffffffffffffffff0000000000000000} Gateway:abcd:1234:ffff::1 Routes:[{Dst:{IP:1111:dddd:: Mask:ffffffffffffffffffff000000000000} GW:1111:dddd::aaaa}]}, DNS:{Nameservers:[1.2.3.4 1::cafe] Domain:acompany.com Search:[somedomain.com otherdomain.net] Options:[foo bar]}"))
+		Expect(res.String()).To(Equal("IP4:{IP:{IP:1.2.3.30 Mask:ffffff00} Gateway:1.2.3.1 Routes:[{Dst:{IP:15.5.6.0 Mask:ffffff00} GW:15.5.6.8}]}, IP6:{IP:{IP:abcd:1234:ffff::cdde Mask:ffffffffffffffff0000000000000000} Gateway:abcd:1234:ffff::1 Routes:[{Dst:{IP:1111:dddd:: Mask:ffffffffffffffffffff000000000000} GW:1111:dddd::aaaa}]}, DNS:{Nameservers:[1.2.3.4 1::cafe] Domain:acompany.com Search:[somedomain.com otherdomain.net] Options:[foo bar]}"))
 
-			// Redirect stdout to capture JSON result
-			oldStdout := os.Stdout
-			r, w, err := os.Pipe()
-			Expect(err).NotTo(HaveOccurred())
+		// Redirect stdout to capture JSON result
+		oldStdout := os.Stdout
+		r, w, err := os.Pipe()
+		Expect(err).NotTo(HaveOccurred())
 
-			os.Stdout = w
-			err = res.Print()
-			w.Close()
-			Expect(err).NotTo(HaveOccurred())
+		os.Stdout = w
+		err = res.Print()
+		w.Close()
+		Expect(err).NotTo(HaveOccurred())
 
-			// parse the result
-			out, err := ioutil.ReadAll(r)
-			os.Stdout = oldStdout
-			Expect(err).NotTo(HaveOccurred())
+		// parse the result
+		out, err := ioutil.ReadAll(r)
+		os.Stdout = oldStdout
+		Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(out)).To(Equal(`{
+		Expect(string(out)).To(Equal(`{
     "ip4": {
         "ip": "1.2.3.30/24",
         "gateway": "1.2.3.1",
@@ -209,6 +208,5 @@ var _ = Describe("Ensures compatibility with the 0.3.0 spec", func() {
         ]
     }
 }`))
-		})
 	})
 })

@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestTypes010(t *testing.T) {
+func TestTypesCurrent(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "0.3.0 Types Suite")
+	RunSpecs(t, "Current Types Suite")
 }
