@@ -228,9 +228,13 @@ will be lost.
 | To 0.2 |  ✔  |  ✔  |  x  |
 | To 0.3 |  ✴  |  ✴  |  ✔  |
 
-✔ : lossless conversion
-✴ : higher-version output may have empty fields
-x : lower-version output is missing some data
+
+Key:
+> ✔ : lossless conversion <br>
+> ✴ : higher-version output may have empty fields <br>
+> x : lower-version output is missing some data <br>
+
+
 
 A container runtime should use `current.NewResultFromResult()` to convert the
 opaque  `types.Result` to a concrete `current.Result` struct.  It may then
