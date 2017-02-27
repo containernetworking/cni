@@ -217,16 +217,20 @@ other packages, such as the high-level `libcni` package, have been updated to us
 this interface.  Concrete types are now per-version subpackages. The `types/current`
 subpackage contains the latest (spec v0.3.0) types.
 
-The versioned types understand how to convert between most versions. However, converting
-to a higher version will mean some fields are missing.
+When up-converting older result types to spec v0.3.0, fields new in
+spec v0.3.0 (like `interfaces`) may be empty.  Conversely, when
+down-converting v0.3.0 results to an older version, any data in those fields
+will be lost.
 
 | From   | 0.1 | 0.2 | 0.3 |
 |--------|-----|-----|-----|
-| To 0.1 |  ✔  | ✔   |     |
-| To 0.2 |  ✴  |  ✔  |  ✔  |
-| To 0.3 |     |  ✴  |  ✔  | 
+| To 0.1 |  ✔  |  ✔  |  x  |
+| To 0.2 |  ✔  |  ✔  |  x  |
+| To 0.3 |  ✴  |  ✴  |  ✔  |
 
-*(pairs marked with ✴ will have some missing data)*
+✔ : lossless conversion
+✴ : higher-version output may have empty fields
+x : lower-version output is missing some data
 
 A container runtime should use `current.NewResultFromResult()` to convert the
 opaque  `types.Result` to a concrete `current.Result` struct.  It may then
