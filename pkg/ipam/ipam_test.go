@@ -120,9 +120,9 @@ var _ = Describe("IPAM Operations", func() {
 					Gateway:   ipgw6,
 				},
 			},
-			Routes: []*types.Route{
-				{Dst: *routev4, GW: routegwv4},
-				{Dst: *routev6, GW: routegwv6},
+			Routes: []*current.Route{
+				{Dst: *routev4, NextHops: []net.IP{routegwv4}},
+				{Dst: *routev6, NextHops: []net.IP{routegwv6}},
 			},
 		}
 	})
@@ -187,8 +187,8 @@ var _ = Describe("IPAM Operations", func() {
 	})
 
 	It("configures a link with routes using address gateways", func() {
-		result.Routes[0].GW = nil
-		result.Routes[1].GW = nil
+		result.Routes[0].NextHops = nil
+		result.Routes[1].NextHops = nil
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
@@ -219,6 +219,59 @@ var _ = Describe("IPAM Operations", func() {
 			}
 			Expect(v4found).To(Equal(true))
 			Expect(v6found).To(Equal(true))
+
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("configures routes with multiple NextHops", func() {
+		result.Routes[0].NextHops = []net.IP{routegwv4, ipgw4}
+		result.Routes[1].NextHops = []net.IP{routegwv6, ipgw6}
+		err := originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			err := ConfigureIface(LINK_NAME, result)
+			Expect(err).NotTo(HaveOccurred())
+
+			link, err := netlink.LinkByName(LINK_NAME)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(link.Attrs().Name).To(Equal(LINK_NAME))
+
+			// Ensure the v4 route, v6 route, and subnet route
+			// Use RouteListFiltered() without a filter to ensure
+			// we get MultiPath routes too, which have the OIF in
+			// each NextHop rather than the route itself
+			routes, err := netlink.RouteListFiltered(0, nil, 0)
+			Expect(err).NotTo(HaveOccurred())
+
+			var v4found, v6firstfound, v6secondfound bool
+			for _, route := range routes {
+				isv4 := route.Dst.IP.To4() != nil
+				if isv4 && ipNetEqual(route.Dst, routev4) {
+					Expect(len(route.MultiPath)).To(Equal(2))
+					Expect(route.MultiPath[0].Gw).To(Equal(routegwv4.To4()))
+					Expect(route.MultiPath[1].Gw).To(Equal(ipgw4.To4()))
+					v4found = true
+				}
+				if !isv4 && ipNetEqual(route.Dst, routev6) {
+					// Kernels >= 3.8 return multiple separate IPv6 routes
+					// rather than one route with multiple NextHops.
+					// See commit 51ebd3181572af8d5076808dab2682d800f6da5d.
+					if route.Gw.Equal(routegwv6) {
+						v6firstfound = true
+					} else if route.Gw.Equal(ipgw6) {
+						v6secondfound = true
+					}
+				}
+
+				if v4found && v6firstfound && v6secondfound {
+					break
+				}
+			}
+			Expect(v4found).Should(BeTrue())
+			Expect(v6firstfound).Should(BeTrue())
+			Expect(v6secondfound).Should(BeTrue())
 
 			return nil
 		})

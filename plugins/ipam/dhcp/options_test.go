@@ -18,25 +18,25 @@ import (
 	"net"
 	"testing"
 
-	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/d2g/dhcp4"
 )
 
-func validateRoutes(t *testing.T, routes []*types.Route) {
-	expected := []*types.Route{
-		&types.Route{
+func validateRoutes(t *testing.T, routes []*current.Route) {
+	expected := []*current.Route{
+		&current.Route{
 			Dst: net.IPNet{
 				IP:   net.IPv4(10, 0, 0, 0),
 				Mask: net.CIDRMask(8, 32),
 			},
-			GW: net.IPv4(10, 1, 2, 3),
+			NextHops: []net.IP{net.IPv4(10, 1, 2, 3)},
 		},
-		&types.Route{
+		&current.Route{
 			Dst: net.IPNet{
 				IP:   net.IPv4(192, 168, 1, 0),
 				Mask: net.CIDRMask(24, 32),
 			},
-			GW: net.IPv4(192, 168, 2, 3),
+			NextHops: []net.IP{net.IPv4(192, 168, 2, 3)},
 		},
 	}
 
@@ -52,8 +52,14 @@ func validateRoutes(t *testing.T, routes []*types.Route) {
 			t.Errorf("route.Dst mismatch: expected %v, got %v", e.Dst, a.Dst)
 		}
 
-		if !a.GW.Equal(e.GW) {
-			t.Errorf("route.GW mismatch: expected %v, got %v", e.GW, a.GW)
+		if len(a.NextHops) != len(e.NextHops) {
+			t.Errorf("route.NextHops length mismatch: expected %v, got %v", e.NextHops, a.NextHops)
+		}
+
+		for i, nh := range a.NextHops {
+			if !nh.Equal(e.NextHops[i]) {
+				t.Errorf("route.NextHops mismatch: expected %v, got %v", e.NextHops[i], nh)
+			}
 		}
 	}
 }

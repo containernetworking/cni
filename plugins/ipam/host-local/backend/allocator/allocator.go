@@ -20,7 +20,6 @@ import (
 	"net"
 
 	"github.com/containernetworking/cni/pkg/ip"
-	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/plugins/ipam/host-local/backend"
 )
@@ -130,7 +129,7 @@ func validateRangeIP(ip net.IP, ipnet *net.IPNet, start net.IP, end net.IP) erro
 }
 
 // Returns newly allocated IP along with its config
-func (a *IPAllocator) Get(id string) (*current.IPConfig, []*types.Route, error) {
+func (a *IPAllocator) Get(id string) (*current.IPConfig, []*current.Route, error) {
 	a.store.Lock()
 	defer a.store.Unlock()
 

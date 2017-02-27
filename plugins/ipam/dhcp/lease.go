@@ -27,7 +27,7 @@ import (
 	"github.com/vishvananda/netlink"
 
 	"github.com/containernetworking/cni/pkg/ns"
-	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 )
 
 // RFC 2131 suggests using exponential backoff, starting with 4sec
@@ -291,7 +291,7 @@ func (l *DHCPLease) Gateway() net.IP {
 	return parseRouter(l.opts)
 }
 
-func (l *DHCPLease) Routes() []*types.Route {
+func (l *DHCPLease) Routes() []*current.Route {
 	routes := parseRoutes(l.opts)
 	return append(routes, parseCIDRRoutes(l.opts)...)
 }

@@ -63,8 +63,7 @@ func convertFrom020(result types.Result) (*Result, error) {
 	}
 
 	newResult := &Result{
-		DNS:    oldResult.DNS,
-		Routes: []*types.Route{},
+		DNS: oldResult.DNS,
 	}
 
 	if oldResult.IP4 != nil {
@@ -79,9 +78,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 			if gw == nil {
 				gw = oldResult.IP4.Gateway
 			}
-			newResult.Routes = append(newResult.Routes, &types.Route{
-				Dst: route.Dst,
-				GW:  gw,
+			newResult.Routes = append(newResult.Routes, &Route{
+				Dst:      route.Dst,
+				NextHops: []net.IP{gw},
 			})
 		}
 	}
@@ -98,9 +97,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 			if gw == nil {
 				gw = oldResult.IP6.Gateway
 			}
-			newResult.Routes = append(newResult.Routes, &types.Route{
-				Dst: route.Dst,
-				GW:  gw,
+			newResult.Routes = append(newResult.Routes, &Route{
+				Dst:      route.Dst,
+				NextHops: []net.IP{gw},
 			})
 		}
 	}
@@ -134,10 +133,10 @@ func NewResultFromResult(result types.Result) (*Result, error) {
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
-	Interfaces []*Interface   `json:"interfaces,omitempty"`
-	IPs        []*IPConfig    `json:"ips,omitempty"`
-	Routes     []*types.Route `json:"routes,omitempty"`
-	DNS        types.DNS      `json:"dns,omitempty"`
+	Interfaces []*Interface `json:"interfaces,omitempty"`
+	IPs        []*IPConfig  `json:"ips,omitempty"`
+	Routes     []*Route     `json:"routes,omitempty"`
+	DNS        types.DNS    `json:"dns,omitempty"`
 }
 
 // Convert to the older 0.2.0 CNI spec Result type
@@ -167,16 +166,20 @@ func (r *Result) convertTo020() (*types020.Result, error) {
 	}
 
 	for _, route := range r.Routes {
+		var nextHop net.IP
+		if len(route.NextHops) > 0 {
+			nextHop = route.NextHops[0]
+		}
 		is4 := route.Dst.IP.To4() != nil
 		if is4 && oldResult.IP4 != nil {
-			oldResult.IP4.Routes = append(oldResult.IP4.Routes, types.Route{
+			oldResult.IP4.Routes = append(oldResult.IP4.Routes, types020.Route{
 				Dst: route.Dst,
-				GW:  route.GW,
+				GW:  nextHop,
 			})
 		} else if !is4 && oldResult.IP6 != nil {
-			oldResult.IP6.Routes = append(oldResult.IP6.Routes, types.Route{
+			oldResult.IP6.Routes = append(oldResult.IP6.Routes, types020.Route{
 				Dst: route.Dst,
-				GW:  route.GW,
+				GW:  nextHop,
 			})
 		}
 	}
@@ -288,4 +291,37 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	c.Address = net.IPNet(ipc.Address)
 	c.Gateway = ipc.Gateway
 	return nil
+}
+
+type Route struct {
+	Dst      net.IPNet
+	NextHops []net.IP
+}
+
+func (r *Route) String() string {
+	return fmt.Sprintf("%+v", *r)
+}
+
+type route struct {
+	Dst      types.IPNet `json:"dst"`
+	NextHops []net.IP    `json:"nextHops,omitempty"`
+}
+
+func (r *Route) UnmarshalJSON(data []byte) error {
+	rt := route{}
+	if err := json.Unmarshal(data, &rt); err != nil {
+		return err
+	}
+
+	r.Dst = net.IPNet(rt.Dst)
+	r.NextHops = rt.NextHops
+	return nil
+}
+
+func (r *Route) MarshalJSON() ([]byte, error) {
+	rt := route{
+		Dst:      types.IPNet(r.Dst),
+		NextHops: r.NextHops,
+	}
+	return json.Marshal(rt)
 }

@@ -286,10 +286,21 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 				for _, route := range result.Routes {
 					if defaultNet.String() == route.Dst.String() {
-						if route.GW != nil && !route.GW.Equal(ipc.Gateway) {
+						var gwFound bool
+						var firstHop net.IP
+						for i, nh := range route.NextHops {
+							if i == 0 {
+								firstHop = nh
+							}
+							if nh.Equal(ipc.Gateway) {
+								gwFound = true
+								break
+							}
+						}
+						if !gwFound {
 							return fmt.Errorf(
 								"isDefaultGateway ineffective because IPAM sets default route via %q",
-								route.GW,
+								firstHop,
 							)
 						}
 					}
@@ -297,7 +308,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 				result.Routes = append(
 					result.Routes,
-					&types.Route{Dst: *defaultNet, GW: ipc.Gateway},
+					&current.Route{Dst: *defaultNet, NextHops: []net.IP{ipc.Gateway}},
 				)
 			}
 		}
