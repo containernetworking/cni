@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"syscall"
 
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/utils/hwaddr"
@@ -44,6 +45,22 @@ func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {
 	}
 
 	return veth, nil
+}
+
+func makeTap(name string, mtu int) (netlink.Link, error) {
+	tap := &netlink.Tuntap{
+		LinkAttrs: netlink.LinkAttrs{
+			Name:  name,
+			Flags: net.FlagUp,
+			MTU:   mtu,
+		},
+		Mode: syscall.IFF_TAP,
+	}
+	if err := netlink.LinkAdd(tap); err != nil {
+		return nil, err
+	}
+
+	return tap, nil
 }
 
 func peerExists(name string) bool {
@@ -152,6 +169,46 @@ func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (net.Interface, ne
 		return net.Interface{}, net.Interface{}, err
 	}
 	return ifaceFromNetlinkLink(hostVeth), ifaceFromNetlinkLink(contVeth), nil
+}
+
+// SetupTap sets up a vm friendly tap interface and connects it to specified bridge
+func SetupTap(tapName string, mtu int, containerNS ns.NetNS, br *netlink.Bridge) (tap netlink.Link, err error) {
+	tap, err = makeTap(tapName, mtu)
+	if err != nil {
+		return
+	}
+
+	if err = netlink.LinkSetUp(tap); err != nil {
+		err = fmt.Errorf("failed to set %q up: %v", tapName, err)
+		return
+	}
+
+	tap, err = netlink.LinkByName(tapName)
+	if err != nil {
+		err = fmt.Errorf("failed to lookup %q: %v", tapName, err)
+		return
+	}
+
+	// connect tap to the bridge
+	err = netlink.LinkSetMaster(tap, br)
+	if err != nil {
+		err = fmt.Errorf("failed to connect %q to bridge %v: %v", tap.Attrs().Name, br.Attrs().Name, err)
+		return
+	}
+
+	err = netlink.LinkSetUp(tap)
+	if err != nil {
+		err = fmt.Errorf("failed to set %q up: %v", tapName, err)
+		return
+	}
+
+	err = netlink.LinkSetNsFd(tap, int(containerNS.Fd()))
+	if err != nil {
+		err = fmt.Errorf("failed to move tap to the container netns: %v", err)
+		return
+	}
+
+	return
 }
 
 // DelLinkByName removes an interface link.
