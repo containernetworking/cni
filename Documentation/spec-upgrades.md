@@ -23,8 +23,8 @@ and Release v0.5.0 supports Spec v0.3.0.
 If you maintain CNI configuration files for a container runtime that uses CNI,
 ensure that the configuration files specify a `cniVersion` field and that the
 version there is supported by your container runtime and CNI plugins.
-Configuration files without the version field should be labeled version 0.2.0
-by default. The CNI spec includes example configuration files for 
+Configuration files without a version field should be given version 0.2.0. 
+The CNI spec includes example configuration files for 
 [single plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations)
 and for [lists of chained plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations).
 
@@ -55,11 +55,11 @@ command with the following JSON data:
 ```
 
 Second, for the `ADD` command, a plugin must respect the `cniVersion` field
-provided in the [network configuration JSON](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration).
+provided in the [network configuration JSON](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration). 
 That field is a request for the plugin to return results of a particular format:
 
 - If the `cniVersion` field is not present, then spec v0.2.0 should be assumed
-	and v0.2.0 format JSON returned.
+	and v0.2.0 format result JSON returned.
 
 - If the plugin doesn't support the version, the plugin must error.
 
