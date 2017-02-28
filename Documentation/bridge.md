@@ -40,3 +40,4 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to the value chosen by the kernel.
 * `hairpinMode` (boolean, optional): set hairpin mode for interfaces on the bridge. Defaults to false.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
+* `noVethDefaultRt`(boolean, optional): Indicate if the default route inside the veth namespace should be removed. Defaults to false.

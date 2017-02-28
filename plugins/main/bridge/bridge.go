@@ -37,13 +37,14 @@ const defaultBrName = "cni0"
 
 type NetConf struct {
 	types.NetConf
-	BrName       string `json:"bridge"`
-	IsGW         bool   `json:"isGateway"`
-	IsDefaultGW  bool   `json:"isDefaultGateway"`
-	ForceAddress bool   `json:"forceAddress"`
-	IPMasq       bool   `json:"ipMasq"`
-	MTU          int    `json:"mtu"`
-	HairpinMode  bool   `json:"hairpinMode"`
+	BrName          string `json:"bridge"`
+	IsGW            bool   `json:"isGateway"`
+	IsDefaultGW     bool   `json:"isDefaultGateway"`
+	ForceAddress    bool   `json:"forceAddress"`
+	IPMasq          bool   `json:"ipMasq"`
+	MTU             int    `json:"mtu"`
+	HairpinMode     bool   `json:"hairpinMode"`
+	NoVethDefaultRt bool   `json:"noVethDefaultRt"`
 }
 
 func init() {
@@ -310,11 +311,28 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 
-		// Refetch the veth since its MAC address may changed
 		link, err := netlink.LinkByName(args.IfName)
 		if err != nil {
 			return fmt.Errorf("could not lookup %q: %v", args.IfName, err)
 		}
+
+		// Remove the default route for both ipv4 and ipv6 if this option was set
+		if n.NoVethDefaultRt {
+			// Get all the routes
+			routes, err := netlink.RouteList(link, netlink.FAMILY_ALL)
+			if err != nil {
+				return fmt.Errorf("Failed to get the route list inside container network namespace")
+			}
+			for _, r := range routes {
+				if r.Gw == nil {
+					if err = netlink.RouteDel(&r); err != nil {
+						return fmt.Errorf("Failed to delete the default route inside container network namespace")
+					}
+				}
+			}
+		}
+
+		// Refetch the veth since its MAC address may changed
 		containerInterface.Mac = link.Attrs().HardwareAddr.String()
 
 		return nil
