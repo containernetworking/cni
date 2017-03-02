@@ -54,16 +54,16 @@ func LoadIPAMConfig(bytes []byte, args string) (*IPAMConfig, string, error) {
 		return nil, "", err
 	}
 
+	if n.IPAM == nil {
+		return nil, "", fmt.Errorf("IPAM config missing 'ipam' key")
+	}
+
 	if args != "" {
 		n.IPAM.Args = &IPAMArgs{}
 		err := types.LoadArgs(args, n.IPAM.Args)
 		if err != nil {
 			return nil, "", err
 		}
-	}
-
-	if n.IPAM == nil {
-		return nil, "", fmt.Errorf("IPAM config missing 'ipam' key")
 	}
 
 	// Copy net name into IPAM so not to drag Net struct around
