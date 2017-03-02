@@ -216,4 +216,39 @@ var _ = Describe("host-local Operations", func() {
 		_, err = os.Stat(ipFilePath)
 		Expect(err).To(HaveOccurred())
 	})
+
+	It("does not output an error message upon initial subnet creation", func() {
+		const ifname string = "eth0"
+		const nspath string = "/some/where"
+
+		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(tmpDir)
+
+		conf := fmt.Sprintf(`{
+    "cniVersion": "0.2.0",
+    "name": "mynet",
+    "type": "ipvlan",
+    "master": "foo0",
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24",
+        "dataDir": "%s"
+    }
+}`, tmpDir)
+
+		args := &skel.CmdArgs{
+			ContainerID: "testing",
+			Netns:       nspath,
+			IfName:      ifname,
+			StdinData:   []byte(conf),
+		}
+
+		// Allocate the IP
+		_, out, err := testutils.CmdAddWithResult(nspath, ifname, []byte(conf), func() error {
+			return cmdAdd(args)
+		})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(strings.Index(string(out), "Error retriving last reserved ip")).To(Equal(-1))
+	})
 })
