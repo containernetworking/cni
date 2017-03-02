@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 
 	"github.com/containernetworking/cni/libcni"
@@ -35,19 +36,25 @@ type pluginInfo struct {
 	debugFilePath string
 	debug         *noop_debug.Debug
 	config        string
+	stdinData     []byte
 }
 
-func addNameToConfig(name, config string) ([]byte, error) {
-	obj := make(map[string]interface{})
-	err := json.Unmarshal([]byte(config), &obj)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal existing network bytes: %s", err)
+type portMapping struct {
+	HostPort      int    `json:"hostPort"`
+	ContainerPort int    `json:"containerPort"`
+	Protocol      string `json:"protocol"`
+}
+
+func stringInList(s string, list []string) bool {
+	for _, item := range list {
+		if s == item {
+			return true
+		}
 	}
-	obj["name"] = name
-	return json.Marshal(obj)
+	return false
 }
 
-func newPluginInfo(configKey, configValue, prevResult string, injectDebugFilePath bool, result string) pluginInfo {
+func newPluginInfo(configValue, prevResult string, injectDebugFilePath bool, result string, runtimeConfig map[string]interface{}, capabilities []string) pluginInfo {
 	debugFile, err := ioutil.TempFile("", "cni_debug")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(debugFile.Close()).To(Succeed())
@@ -58,23 +65,155 @@ func newPluginInfo(configKey, configValue, prevResult string, injectDebugFilePat
 	}
 	Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
-	config := fmt.Sprintf(`{"type": "noop", "%s": "%s", "cniVersion": "0.3.0"`, configKey, configValue)
+	// config is what would be in the plugin's on-disk configuration
+	// without runtime injected keys
+	config := fmt.Sprintf(`{"type": "noop", "some-key": "%s"`, configValue)
 	if prevResult != "" {
 		config += fmt.Sprintf(`, "prevResult": %s`, prevResult)
 	}
 	if injectDebugFilePath {
 		config += fmt.Sprintf(`, "debugFile": "%s"`, debugFilePath)
 	}
+	if len(capabilities) > 0 {
+		config += `, "capabilities": {`
+		for i, c := range capabilities {
+			if i > 0 {
+				config += ", "
+			}
+			config += fmt.Sprintf(`"%s": true`, c)
+		}
+		config += "}"
+	}
 	config += "}"
+
+	// stdinData is what the runtime should pass to the plugin's stdin,
+	// including injected keys like 'name', 'cniVersion', and 'runtimeConfig'
+	newConfig := make(map[string]interface{})
+	err = json.Unmarshal([]byte(config), &newConfig)
+	Expect(err).NotTo(HaveOccurred())
+	newConfig["name"] = "some-list"
+	newConfig["cniVersion"] = "0.3.0"
+
+	// Only include standard runtime config and capability args that this plugin advertises
+	newRuntimeConfig := make(map[string]interface{})
+	for key, value := range runtimeConfig {
+		if stringInList(key, capabilities) {
+			newRuntimeConfig[key] = value
+		}
+	}
+	if len(newRuntimeConfig) > 0 {
+		newConfig["runtimeConfig"] = newRuntimeConfig
+	}
+
+	stdinData, err := json.Marshal(newConfig)
+	Expect(err).NotTo(HaveOccurred())
 
 	return pluginInfo{
 		debugFilePath: debugFilePath,
 		debug:         debug,
 		config:        config,
+		stdinData:     stdinData,
 	}
 }
 
 var _ = Describe("Invoking plugins", func() {
+	Describe("Capabilities", func() {
+		var (
+			debugFilePath string
+			debug         *noop_debug.Debug
+			pluginConfig  []byte
+			cniConfig     libcni.CNIConfig
+			runtimeConfig *libcni.RuntimeConf
+			netConfig     *libcni.NetworkConfig
+		)
+
+		BeforeEach(func() {
+			debugFile, err := ioutil.TempFile("", "cni_debug")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debugFile.Close()).To(Succeed())
+			debugFilePath = debugFile.Name()
+
+			debug = &noop_debug.Debug{}
+			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
+
+			pluginConfig = []byte(`{ "type": "noop", "cniVersion": "0.3.0", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
+			netConfig, err = libcni.ConfFromBytes(pluginConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			cniConfig = libcni.CNIConfig{Path: []string{filepath.Dir(pluginPaths["noop"])}}
+
+			runtimeConfig = &libcni.RuntimeConf{
+				ContainerID: "some-container-id",
+				NetNS:       "/some/netns/path",
+				IfName:      "some-eth0",
+				Args:        [][2]string{{"DEBUG", debugFilePath}},
+				CapabilityArgs: map[string]interface{}{
+					"portMappings": []portMapping{
+						{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
+					},
+					"somethingElse": []string{"foobar", "baz"},
+					"noCapability":  true,
+					"notAdded":      []bool{true, false},
+				},
+			}
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(debugFilePath)).To(Succeed())
+		})
+
+		It("adds correct runtime config for capabilities to stdin", func() {
+			_, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			debug, err = noop_debug.ReadDebug(debugFilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debug.Command).To(Equal("ADD"))
+
+			conf := make(map[string]interface{})
+			err = json.Unmarshal(debug.CmdArgs.StdinData, &conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			// We expect runtimeConfig keys only for portMappings and somethingElse
+			rawRc := conf["runtimeConfig"]
+			rc, ok := rawRc.(map[string]interface{})
+			Expect(ok).To(Equal(true))
+			expectedKeys := []string{"portMappings", "somethingElse"}
+			Expect(len(rc)).To(Equal(len(expectedKeys)))
+			for _, key := range expectedKeys {
+				_, ok := rc[key]
+				Expect(ok).To(Equal(true))
+			}
+		})
+
+		It("adds no runtimeConfig when the plugin advertises no used capabilities", func() {
+			// Replace CapabilityArgs with ones we know the plugin
+			// doesn't support
+			runtimeConfig.CapabilityArgs = map[string]interface{}{
+				"portMappings22": []portMapping{
+					{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
+				},
+				"somethingElse22": []string{"foobar", "baz"},
+			}
+
+			_, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			debug, err = noop_debug.ReadDebug(debugFilePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debug.Command).To(Equal("ADD"))
+
+			conf := make(map[string]interface{})
+			err = json.Unmarshal(debug.CmdArgs.StdinData, &conf)
+			Expect(err).NotTo(HaveOccurred())
+
+			// No intersection of plugin capabilities and CapabilityArgs,
+			// so plugin should not receive a "runtimeConfig" key
+			_, ok := conf["runtimeConfig"]
+			Expect(ok).Should(BeFalse())
+		})
+	})
+
 	Describe("Invoking a single plugin", func() {
 		var (
 			debugFilePath string
@@ -99,12 +238,19 @@ var _ = Describe("Invoking plugins", func() {
 			}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
+			portMappings := []portMapping{
+				{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
+			}
+
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.0" }`
+			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.0", "capabilities": { "portMappings": true } }`
 			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
 			netConfig = &libcni.NetworkConfig{
 				Network: &types.NetConf{
 					Type: "noop",
+					Capabilities: map[string]bool{
+						"portMappings": true,
+					},
 				},
 				Bytes: []byte(pluginConfig),
 			}
@@ -112,8 +258,21 @@ var _ = Describe("Invoking plugins", func() {
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
 				IfName:      "some-eth0",
-				Args:        [][2]string{[2]string{"DEBUG", debugFilePath}},
+				Args:        [][2]string{{"DEBUG", debugFilePath}},
+				CapabilityArgs: map[string]interface{}{
+					"portMappings": portMappings,
+				},
 			}
+
+			// inject runtime args into the expected plugin config
+			conf := make(map[string]interface{})
+			err = json.Unmarshal([]byte(pluginConfig), &conf)
+			Expect(err).NotTo(HaveOccurred())
+			conf["runtimeConfig"] = map[string]interface{}{
+				"portMappings": portMappings,
+			}
+			newBytes, err := json.Marshal(conf)
+			Expect(err).NotTo(HaveOccurred())
 
 			expectedCmdArgs = skel.CmdArgs{
 				ContainerID: "some-container-id",
@@ -121,8 +280,12 @@ var _ = Describe("Invoking plugins", func() {
 				IfName:      "some-eth0",
 				Args:        "DEBUG=" + debugFilePath,
 				Path:        cniBinPath,
-				StdinData:   []byte(pluginConfig),
+				StdinData:   newBytes,
 			}
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(debugFilePath)).To(Succeed())
 		})
 
 		Describe("AddNetwork", func() {
@@ -149,6 +312,7 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(debug.Command).To(Equal("ADD"))
 				Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
+				Expect(string(debug.CmdArgs.StdinData)).To(ContainSubstring("\"portMappings\":"))
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -184,6 +348,7 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(debug.Command).To(Equal("DEL"))
 				Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
+				Expect(string(debug.CmdArgs.StdinData)).To(ContainSubstring("\"portMappings\":"))
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -241,10 +406,49 @@ var _ = Describe("Invoking plugins", func() {
 		)
 
 		BeforeEach(func() {
+			var err error
+
+			capabilityArgs := map[string]interface{}{
+				"portMappings": []portMapping{
+					{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
+				},
+				"otherCapability": 33,
+			}
+
+			cniBinPath = filepath.Dir(pluginPaths["noop"])
+			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
+			runtimeConfig = &libcni.RuntimeConf{
+				ContainerID:    "some-container-id",
+				NetNS:          "/some/netns/path",
+				IfName:         "some-eth0",
+				Args:           [][2]string{{"FOO", "BAR"}},
+				CapabilityArgs: capabilityArgs,
+			}
+
+			expectedCmdArgs = skel.CmdArgs{
+				ContainerID: runtimeConfig.ContainerID,
+				Netns:       runtimeConfig.NetNS,
+				IfName:      runtimeConfig.IfName,
+				Args:        "FOO=BAR",
+				Path:        cniBinPath,
+			}
+
+			rc := map[string]interface{}{
+				"containerId": runtimeConfig.ContainerID,
+				"netNs":       runtimeConfig.NetNS,
+				"ifName":      runtimeConfig.IfName,
+				"args": map[string]string{
+					"FOO": "BAR",
+				},
+				"portMappings":    capabilityArgs["portMappings"],
+				"otherCapability": capabilityArgs["otherCapability"],
+			}
+
+			ipResult := `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`
 			plugins = make([]pluginInfo, 3, 3)
-			plugins[0] = newPluginInfo("some-key", "some-value", "", true, `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`)
-			plugins[1] = newPluginInfo("some-key", "some-other-value", `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, true, "PASSTHROUGH")
-			plugins[2] = newPluginInfo("some-key", "yet-another-value", `{"dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, true, "INJECT-DNS")
+			plugins[0] = newPluginInfo("some-value", "", true, ipResult, rc, []string{"portMappings", "otherCapability"})
+			plugins[1] = newPluginInfo("some-other-value", ipResult, true, "PASSTHROUGH", rc, []string{"otherCapability"})
+			plugins[2] = newPluginInfo("yet-another-value", ipResult, true, "INJECT-DNS", rc, []string{})
 
 			configList := []byte(fmt.Sprintf(`{
   "name": "some-list",
@@ -256,25 +460,13 @@ var _ = Describe("Invoking plugins", func() {
   ]
 }`, plugins[0].config, plugins[1].config, plugins[2].config))
 
-			var err error
 			netConfigList, err = libcni.ConfListFromBytes(configList)
 			Expect(err).NotTo(HaveOccurred())
+		})
 
-			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
-			runtimeConfig = &libcni.RuntimeConf{
-				ContainerID: "some-container-id",
-				NetNS:       "/some/netns/path",
-				IfName:      "some-eth0",
-				Args:        [][2]string{{"FOO", "BAR"}},
-			}
-
-			expectedCmdArgs = skel.CmdArgs{
-				ContainerID: "some-container-id",
-				Netns:       "/some/netns/path",
-				IfName:      "some-eth0",
-				Args:        "FOO=BAR",
-				Path:        cniBinPath,
+		AfterEach(func() {
+			for _, p := range plugins {
+				Expect(os.RemoveAll(p.debugFilePath)).To(Succeed())
 			}
 		})
 
@@ -307,13 +499,10 @@ var _ = Describe("Invoking plugins", func() {
 					debug, err := noop_debug.ReadDebug(plugins[i].debugFilePath)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(debug.Command).To(Equal("ADD"))
-					newConfig, err := addNameToConfig("some-list", plugins[i].config)
-					Expect(err).NotTo(HaveOccurred())
 
 					// Must explicitly match JSON due to dict element ordering
-					debugJSON := debug.CmdArgs.StdinData
+					Expect(debug.CmdArgs.StdinData).To(MatchJSON(plugins[i].stdinData))
 					debug.CmdArgs.StdinData = nil
-					Expect(debugJSON).To(MatchJSON(newConfig))
 					Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 				}
 			})
@@ -351,13 +540,10 @@ var _ = Describe("Invoking plugins", func() {
 					debug, err := noop_debug.ReadDebug(plugins[i].debugFilePath)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(debug.Command).To(Equal("DEL"))
-					newConfig, err := addNameToConfig("some-list", plugins[i].config)
-					Expect(err).NotTo(HaveOccurred())
 
 					// Must explicitly match JSON due to dict element ordering
-					debugJSON := debug.CmdArgs.StdinData
+					Expect(debug.CmdArgs.StdinData).To(MatchJSON(plugins[i].stdinData))
 					debug.CmdArgs.StdinData = nil
-					Expect(debugJSON).To(MatchJSON(newConfig))
 					Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 				}
 			})
