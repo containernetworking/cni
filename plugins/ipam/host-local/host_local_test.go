@@ -109,6 +109,9 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 		defer os.RemoveAll(tmpDir)
 
+		err = ioutil.WriteFile(filepath.Join(tmpDir, "resolv.conf"), []byte("nameserver 192.0.2.3"), 0644)
+		Expect(err).NotTo(HaveOccurred())
+
 		conf := fmt.Sprintf(`{
     "cniVersion": "0.1.0",
     "name": "mynet",
@@ -117,9 +120,10 @@ var _ = Describe("host-local Operations", func() {
     "ipam": {
         "type": "host-local",
         "subnet": "10.1.2.0/24",
-        "dataDir": "%s"
+        "dataDir": "%s",
+	"resolvConf": "%s/resolv.conf"
     }
-}`, tmpDir)
+}`, tmpDir, tmpDir)
 
 		args := &skel.CmdArgs{
 			ContainerID: "dummy",
@@ -175,7 +179,7 @@ var _ = Describe("host-local Operations", func() {
 		defer os.RemoveAll(tmpDir)
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.3.0",
     "name": "mynet",
     "type": "ipvlan",
     "master": "foo0",
