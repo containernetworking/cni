@@ -2,6 +2,14 @@
 [![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
 [![Slack Status](https://cryptic-tundra-43194.herokuapp.com/badge.svg)](https://cryptic-tundra-43194.herokuapp.com/)
 
+---
+
+# Community Sync Meeting
+
+The CNI community is aiming to hold a community sync meeting for users and developers every 1-2 months. The next (and first) meeting will help on a Google Hangout and link is in the [agenda](https://docs.google.com/document/d/10ECyT2mBGewsJUcmYmS8QNo1AcNgy2ZIe2xS7lShYhE/edit?usp=sharing) (Please add to it). It will be held on *March 15th* at *3:00pm UTC* [Add to Calendar](http://bit.ly/2nfWIJd).
+
+---
+
 # CNI - the Container Network Interface
 
 ## What is CNI?
