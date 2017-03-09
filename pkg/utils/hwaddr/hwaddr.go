@@ -20,37 +20,38 @@ import (
 )
 
 const (
-	ipRelevantByteLen      = 4
-	PrivateMACPrefixString = "0a:58"
+	ipRelevantByteLen       = 4
+	PrivateMACPrefixString  = "0a:58"
+	PrivateMACPrefixString6 = "6a:58"
 )
 
 var (
 	// private mac prefix safe to use
-	PrivateMACPrefix = []byte{0x0a, 0x58}
+	PrivateMACPrefix  = []byte{0x0a, 0x58}
+	PrivateMACPrefix6 = []byte{0x6a, 0x58}
 )
 
-type SupportIp4OnlyErr struct{ msg string }
+type InvalidIP4Err struct{ msg string }
 
-func (e SupportIp4OnlyErr) Error() string { return e.msg }
-
-type MacParseErr struct{ msg string }
-
-func (e MacParseErr) Error() string { return e.msg }
+func (e InvalidIP4Err) Error() string { return e.msg }
 
 type InvalidPrefixLengthErr struct{ msg string }
 
 func (e InvalidPrefixLengthErr) Error() string { return e.msg }
 
-// GenerateHardwareAddr4 generates 48 bit virtual mac addresses based on the IP4 input.
+// GenerateHardwareAddr4 generates 48 bit virtual mac addresses based on
+// an IPv4 address.
 func GenerateHardwareAddr4(ip net.IP, prefix []byte) (net.HardwareAddr, error) {
 	switch {
 
 	case ip.To4() == nil:
-		return nil, SupportIp4OnlyErr{msg: "GenerateHardwareAddr4 only supports valid IPv4 address as input"}
+		return nil, InvalidIP4Err{msg: fmt.Sprintf(
+			"Invalid IPv4 address: %s", ip.String()),
+		}
 
 	case len(prefix) != len(PrivateMACPrefix):
 		return nil, InvalidPrefixLengthErr{msg: fmt.Sprintf(
-			"Prefix has length %d instead  of %d", len(prefix), len(PrivateMACPrefix)),
+			"Prefix has length %d instead of %d", len(prefix), len(PrivateMACPrefix)),
 		}
 	}
 
@@ -60,4 +61,20 @@ func GenerateHardwareAddr4(ip net.IP, prefix []byte) (net.HardwareAddr, error) {
 			prefix,
 			ip[ipByteLen-ipRelevantByteLen:ipByteLen]...),
 	), nil
+}
+
+// GenerateHardwareAddr6 generates 48 bit virtual mac address for an
+// interface by taking the existing, presumably random mac address
+// and overwriting the first 2 octets with an easily discernible
+// 2-byte hard-coded prefix (6a:58).
+func GenerateHardwareAddr6(mac net.HardwareAddr, prefix []byte) (net.HardwareAddr, error) {
+
+	if len(prefix) != len(PrivateMACPrefix) {
+		return nil, InvalidPrefixLengthErr{msg: fmt.Sprintf(
+			"Prefix has length %d instead of %d", len(prefix),
+			len(PrivateMACPrefix6)),
+		}
+	}
+
+	return (net.HardwareAddr)(append(prefix, mac[len(prefix):]...)), nil
 }

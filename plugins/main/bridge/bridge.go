@@ -302,11 +302,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 			}
 		}
 
-		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+		if err := ip.SetHWAddrByIP(args.IfName, result.IPs[0].Address.IP, nil /* TODO IPv6 */); err != nil {
 			return err
 		}
 
-		if err := ip.SetHWAddrByIP(args.IfName, result.IPs[0].Address.IP, nil /* TODO IPv6 */); err != nil {
+		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
 			return err
 		}
 
