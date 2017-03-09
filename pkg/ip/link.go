@@ -98,30 +98,49 @@ func RenameLink(curName, newName string) error {
 	return err
 }
 
+type LinkAttrs struct {
+	Name         string
+	HardwareAddr net.HardwareAddr
+	Index        int
+}
+
+type link struct {
+	netlink.Link
+}
+
+func (l *link) Attrs() LinkAttrs {
+	a := l.Link.Attrs()
+	return LinkAttrs{
+		Name:         a.Name,
+		HardwareAddr: a.HardwareAddr,
+		Index:        a.Index,
+	}
+}
+
+type Link interface {
+	Attrs() LinkAttrs
+}
+
 // SetupVeth sets up a virtual ethernet link.
 // Should be in container netns, and will switch back to hostNS to set the host
 // veth end up.
-func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (hostVeth, contVeth netlink.Link, err error) {
-	var hostVethName string
-	hostVethName, contVeth, err = makeVeth(contVethName, mtu)
+func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (Link, Link, error) {
+	hostVethName, contVeth, err := makeVeth(contVethName, mtu)
 	if err != nil {
-		return
+		return nil, nil, err
 	}
 
 	if err = netlink.LinkSetUp(contVeth); err != nil {
-		err = fmt.Errorf("failed to set %q up: %v", contVethName, err)
-		return
+		return nil, nil, fmt.Errorf("failed to set %q up: %v", contVethName, err)
 	}
 
-	hostVeth, err = netlink.LinkByName(hostVethName)
+	hostVeth, err := netlink.LinkByName(hostVethName)
 	if err != nil {
-		err = fmt.Errorf("failed to lookup %q: %v", hostVethName, err)
-		return
+		return nil, nil, fmt.Errorf("failed to lookup %q: %v", hostVethName, err)
 	}
 
 	if err = netlink.LinkSetNsFd(hostVeth, int(hostNS.Fd())); err != nil {
-		err = fmt.Errorf("failed to move veth to host netns: %v", err)
-		return
+		return nil, nil, fmt.Errorf("failed to move veth to host netns: %v", err)
 	}
 
 	err = hostNS.Do(func(_ ns.NetNS) error {
@@ -135,7 +154,10 @@ func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (hostVeth, contVet
 		}
 		return nil
 	})
-	return
+	if err != nil {
+		return nil, nil, err
+	}
+	return &link{hostVeth}, &link{contVeth}, nil
 }
 
 // DelLinkByName removes an interface link.

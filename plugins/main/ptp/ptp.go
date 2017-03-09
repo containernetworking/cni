@@ -63,14 +63,14 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 	containerInterface := &current.Interface{}
 
 	err := netns.Do(func(hostNS ns.NetNS) error {
-		hostVeth, contVeth, err := ip.SetupVeth(ifName, mtu, hostNS)
+		hostVeth, contVeth0, err := ip.SetupVeth(ifName, mtu, hostNS)
 		if err != nil {
 			return err
 		}
 		hostInterface.Name = hostVeth.Attrs().Name
 		hostInterface.Mac = hostVeth.Attrs().HardwareAddr.String()
-		containerInterface.Name = contVeth.Attrs().Name
-		containerInterface.Mac = contVeth.Attrs().HardwareAddr.String()
+		containerInterface.Name = contVeth0.Attrs().Name
+		containerInterface.Mac = contVeth0.Attrs().HardwareAddr.String()
 		containerInterface.Sandbox = netns.Path()
 
 		var firstV4Addr net.IP
@@ -103,12 +103,12 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 			return err
 		}
 
-		if err := ip.SetHWAddrByIP(contVeth.Attrs().Name, firstV4Addr, nil /* TODO IPv6 */); err != nil {
+		if err := ip.SetHWAddrByIP(contVeth0.Attrs().Name, firstV4Addr, nil /* TODO IPv6 */); err != nil {
 			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
 		// Re-fetch container veth to update attributes
-		contVeth, err = netlink.LinkByName(ifName)
+		contVeth, err := netlink.LinkByName(ifName)
 		if err != nil {
 			return fmt.Errorf("failed to look up %q: %v", ifName, err)
 		}

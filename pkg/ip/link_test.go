@@ -46,8 +46,8 @@ var _ = Describe("Link", func() {
 		hostNetNS         ns.NetNS
 		containerNetNS    ns.NetNS
 		ifaceCounter      int = 0
-		hostVeth          netlink.Link
-		containerVeth     netlink.Link
+		hostVeth          ip.Link
+		containerVeth     ip.Link
 		hostVethName      string
 		containerVethName string
 
