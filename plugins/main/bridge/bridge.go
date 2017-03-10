@@ -168,10 +168,10 @@ func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int, hairp
 		if err != nil {
 			return err
 		}
-		contIface.Name = containerVeth.Attrs().Name
-		contIface.Mac = containerVeth.Attrs().HardwareAddr.String()
+		contIface.Name = containerVeth.Name
+		contIface.Mac = containerVeth.HardwareAddr.String()
 		contIface.Sandbox = netns.Path()
-		hostIface.Name = hostVeth.Attrs().Name
+		hostIface.Name = hostVeth.Name
 		return nil
 	})
 	if err != nil {

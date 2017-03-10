@@ -67,10 +67,10 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 		if err != nil {
 			return err
 		}
-		hostInterface.Name = hostVeth.Attrs().Name
-		hostInterface.Mac = hostVeth.Attrs().HardwareAddr.String()
-		containerInterface.Name = contVeth0.Attrs().Name
-		containerInterface.Mac = contVeth0.Attrs().HardwareAddr.String()
+		hostInterface.Name = hostVeth.Name
+		hostInterface.Mac = hostVeth.HardwareAddr.String()
+		containerInterface.Name = contVeth0.Name
+		containerInterface.Mac = contVeth0.HardwareAddr.String()
 		containerInterface.Sandbox = netns.Path()
 
 		var firstV4Addr net.IP
@@ -87,7 +87,7 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 
 		if firstV4Addr != nil {
 			err = hostNS.Do(func(_ ns.NetNS) error {
-				hostVethName := hostVeth.Attrs().Name
+				hostVethName := hostVeth.Name
 				if err := ip.SetHWAddrByIP(hostVethName, firstV4Addr, nil /* TODO IPv6 */); err != nil {
 					return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 				}
@@ -103,7 +103,7 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 			return err
 		}
 
-		if err := ip.SetHWAddrByIP(contVeth0.Attrs().Name, firstV4Addr, nil /* TODO IPv6 */); err != nil {
+		if err := ip.SetHWAddrByIP(contVeth0.Name, firstV4Addr, nil /* TODO IPv6 */); err != nil {
 			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
