@@ -263,33 +263,55 @@ var _ = Describe("host-local ip allocator", func() {
 		})
 
 		It("RangeStart must be in the given subnet", func() {
-			subnet, err := types.ParseCIDR("192.168.1.0/24")
-			Expect(err).ToNot(HaveOccurred())
-
-			conf := IPAMConfig{
-				Name:       "test",
-				Type:       "host-local",
-				Subnet:     types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
-				RangeStart: net.ParseIP("10.0.0.1"),
+			testcases := []struct {
+				name  string
+				ipnet string
+				start string
+			}{
+				{"outside-subnet", "192.168.1.0/24", "10.0.0.1"},
+				{"zero-ip", "10.1.0.0/16", "10.1.0.0"},
 			}
-			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
-			_, err = NewIPAllocator(&conf, store)
-			Expect(err).To(HaveOccurred())
+
+			for _, tc := range testcases {
+				subnet, err := types.ParseCIDR(tc.ipnet)
+				Expect(err).ToNot(HaveOccurred())
+
+				conf := IPAMConfig{
+					Name:       tc.name,
+					Type:       "host-local",
+					Subnet:     types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+					RangeStart: net.ParseIP(tc.start),
+				}
+				store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+				_, err = NewIPAllocator(&conf, store)
+				Expect(err).To(HaveOccurred())
+			}
 		})
 
 		It("RangeEnd must be in the given subnet", func() {
-			subnet, err := types.ParseCIDR("192.168.1.0/24")
-			Expect(err).ToNot(HaveOccurred())
-
-			conf := IPAMConfig{
-				Name:     "test",
-				Type:     "host-local",
-				Subnet:   types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
-				RangeEnd: net.ParseIP("10.0.0.1"),
+			testcases := []struct {
+				name  string
+				ipnet string
+				end   string
+			}{
+				{"outside-subnet", "192.168.1.0/24", "10.0.0.1"},
+				{"broadcast-ip", "10.1.0.0/16", "10.1.255.255"},
 			}
-			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
-			_, err = NewIPAllocator(&conf, store)
-			Expect(err).To(HaveOccurred())
+
+			for _, tc := range testcases {
+				subnet, err := types.ParseCIDR(tc.ipnet)
+				Expect(err).ToNot(HaveOccurred())
+
+				conf := IPAMConfig{
+					Name:     tc.name,
+					Type:     "host-local",
+					Subnet:   types.IPNet{IP: subnet.IP, Mask: subnet.Mask},
+					RangeEnd: net.ParseIP(tc.end),
+				}
+				store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
+				_, err = NewIPAllocator(&conf, store)
+				Expect(err).To(HaveOccurred())
+			}
 		})
 
 		It("RangeEnd must be after RangeStart in the given subnet", func() {

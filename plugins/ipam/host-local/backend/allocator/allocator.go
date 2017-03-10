@@ -56,13 +56,13 @@ func NewIPAllocator(conf *IPAMConfig, store backend.Store) (*IPAllocator, error)
 	start = ip.NextIP(start)
 
 	if conf.RangeStart != nil {
-		if err := validateRangeIP(conf.RangeStart, (*net.IPNet)(&conf.Subnet), nil, nil); err != nil {
+		if err := validateRangeIP(conf.RangeStart, (*net.IPNet)(&conf.Subnet), start, end); err != nil {
 			return nil, err
 		}
 		start = conf.RangeStart
 	}
 	if conf.RangeEnd != nil {
-		if err := validateRangeIP(conf.RangeEnd, (*net.IPNet)(&conf.Subnet), start, nil); err != nil {
+		if err := validateRangeIP(conf.RangeEnd, (*net.IPNet)(&conf.Subnet), start, end); err != nil {
 			return nil, err
 		}
 		end = conf.RangeEnd
