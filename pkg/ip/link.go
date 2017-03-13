@@ -109,9 +109,10 @@ func ifaceFromNetlinkLink(l netlink.Link) net.Interface {
 	}
 }
 
-// SetupVeth sets up a virtual ethernet link.
-// Should be in container netns, and will switch back to hostNS to set the host
-// veth end up.
+// SetupVeth sets up a pair of virtual ethernet devices.
+// Call SetupVeth from inside the container netns.  It will create both veth
+// devices and move the host-side veth into the provided hostNS namespace.
+// On success, SetupVeth returns (hostVeth, containerVeth, nil)
 func SetupVeth(contVethName string, mtu int, hostNS ns.NetNS) (net.Interface, net.Interface, error) {
 	hostVethName, contVeth, err := makeVeth(contVethName, mtu)
 	if err != nil {
