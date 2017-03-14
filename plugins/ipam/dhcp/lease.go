@@ -292,7 +292,14 @@ func (l *DHCPLease) Gateway() net.IP {
 }
 
 func (l *DHCPLease) Routes() []*types.Route {
-	routes := parseRoutes(l.opts)
+	routes := []*types.Route{}
+
+	// If there is a default router, then a route to 0.0.0.0 is assumed
+	if gw := l.Gateway(); gw != nil {
+		_, defaultRoute, _ := net.ParseCIDR("0.0.0.0/0")
+		routes = append(routes, &types.Route{Dst: *defaultRoute, GW: gw})
+	}
+	routes = append(routes, parseRoutes(l.opts)...)
 	return append(routes, parseCIDRRoutes(l.opts)...)
 }
 
