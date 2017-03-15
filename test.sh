@@ -9,7 +9,7 @@
 #
 set -e
 
-source ./build
+source ./build.sh
 
 TESTABLE="libcni plugins/ipam/dhcp plugins/ipam/host-local plugins/ipam/host-local/backend/allocator plugins/main/loopback pkg/invoke pkg/ns pkg/skel pkg/types pkg/types/current pkg/types/020 pkg/utils plugins/main/ipvlan plugins/main/macvlan plugins/main/bridge plugins/main/ptp plugins/test/noop pkg/utils/hwaddr pkg/ip pkg/version pkg/version/testhelpers plugins/meta/flannel pkg/ipam"
 FORMATTABLE="$TESTABLE pkg/testutils plugins/meta/flannel plugins/meta/tuning"
@@ -40,13 +40,13 @@ function testrun {
 if [ ! -z "${COVERALLS}" ]; then
     echo "with coverage profile generation..."
     i=0
-    for t in ${TEST}; do 
+    for t in ${TEST}; do
         testrun "-coverprofile ${i}.coverprofile ${t}"
         i=$((i+1))
-    done 
+    done
     gover
     goveralls -service=travis-ci -coverprofile=gover.coverprofile -repotoken=$COVERALLS_TOKEN
-else 
+else
     echo "without coverage profile generation..."
     testrun "${TEST}"
 fi
