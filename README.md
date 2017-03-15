@@ -46,6 +46,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Cilium - BPF & XDP for containers](https://github.com/cilium/cilium)
 - [Infoblox - enterprise IP address management for containers](https://github.com/infobloxopen/cni-infoblox)
 - [Multus - a Multi plugin](https://github.com/Intel-Corp/multus-cni)
+- [Romana - Layer 3 CNI plugin supporting network policy for Kubernetes](https://github.com/romana/kube)
 
 The CNI team also maintains some [core plugins](plugins).
 
