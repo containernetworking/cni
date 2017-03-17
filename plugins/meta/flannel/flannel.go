@@ -142,6 +142,7 @@ func saveScratchNetConf(containerID, dataDir string, netconf []byte) error {
 
 func consumeScratchNetConf(containerID, dataDir string) ([]byte, error) {
 	path := filepath.Join(dataDir, containerID)
+	// Ignore errors when removing - Per spec safe to continue during DEL
 	defer os.Remove(path)
 
 	return ioutil.ReadFile(path)
@@ -245,6 +246,10 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	netconfBytes, err := consumeScratchNetConf(args.ContainerID, nc.DataDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// Per spec should ignore error if resources are missing / already removed
+			return nil
+		}
 		return err
 	}
 
