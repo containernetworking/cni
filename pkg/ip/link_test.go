@@ -46,8 +46,8 @@ var _ = Describe("Link", func() {
 		hostNetNS         ns.NetNS
 		containerNetNS    ns.NetNS
 		ifaceCounter      int = 0
-		hostVeth          netlink.Link
-		containerVeth     netlink.Link
+		hostVeth          net.Interface
+		containerVeth     net.Interface
 		hostVethName      string
 		containerVethName string
 
@@ -78,8 +78,8 @@ var _ = Describe("Link", func() {
 			}
 			Expect(err).NotTo(HaveOccurred())
 
-			hostVethName = hostVeth.Attrs().Name
-			containerVethName = containerVeth.Attrs().Name
+			hostVethName = hostVeth.Name
+			containerVethName = containerVeth.Name
 
 			return nil
 		})
@@ -98,7 +98,7 @@ var _ = Describe("Link", func() {
 
 			containerVethFromName, err := netlink.LinkByName(containerVethName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(containerVethFromName.Attrs().Index).To(Equal(containerVeth.Attrs().Index))
+			Expect(containerVethFromName.Attrs().Index).To(Equal(containerVeth.Index))
 
 			return nil
 		})
@@ -108,7 +108,7 @@ var _ = Describe("Link", func() {
 
 			hostVethFromName, err := netlink.LinkByName(hostVethName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(hostVethFromName.Attrs().Index).To(Equal(hostVeth.Attrs().Index))
+			Expect(hostVethFromName.Attrs().Index).To(Equal(hostVeth.Index))
 
 			return nil
 		})
@@ -156,7 +156,7 @@ var _ = Describe("Link", func() {
 
 				hostVeth, _, err := ip.SetupVeth(containerVethName, mtu, hostNetNS)
 				Expect(err).NotTo(HaveOccurred())
-				hostVethName = hostVeth.Attrs().Name
+				hostVethName = hostVeth.Name
 				return nil
 			})
 
