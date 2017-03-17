@@ -130,9 +130,10 @@ const (
 )
 
 type Error struct {
-	Code    uint   `json:"code"`
-	Msg     string `json:"msg"`
-	Details string `json:"details,omitempty"`
+	CniVersion string `json:"cniversion,omitempty"`
+	Code       uint   `json:"code"`
+	Msg        string `json:"msg"`
+	Details    string `json:"details,omitempty"`
 }
 
 func (e *Error) Error() string {

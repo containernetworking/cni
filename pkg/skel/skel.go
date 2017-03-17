@@ -141,8 +141,9 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 
 func createTypedError(f string, args ...interface{}) *types.Error {
 	return &types.Error{
-		Code: 100,
-		Msg:  fmt.Sprintf(f, args...),
+		CniVersion: version.Current(),
+		Code:       100,
+		Msg:        fmt.Sprintf(f, args...),
 	}
 }
 
@@ -180,11 +181,21 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionIn
 	}
 
 	if err != nil {
+		configVersion, verr := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
+		if verr != nil {
+			configVersion = "0.2.0"
+		}
 		if e, ok := err.(*types.Error); ok {
 			// don't wrap Error in Error
+			if e.CniVersion == "" {
+				e.CniVersion = configVersion
+			}
 			return e
 		}
-		return createTypedError(err.Error())
+
+		e := createTypedError(err.Error())
+		e.CniVersion = configVersion
+		return e
 	}
 	return nil
 }

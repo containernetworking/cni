@@ -196,7 +196,8 @@ var _ = Describe("No-op plugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "banana" }`))
+			str := fmt.Sprintf("{\"cniversion\": %q, \"code\": 100, \"msg\": \"banana\" }", version.Current())
+			Expect(session.Out.Contents()).To(MatchJSON(str))
 		})
 	})
 

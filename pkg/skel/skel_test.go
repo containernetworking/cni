@@ -93,8 +93,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 		err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 		if isRequired {
 			Expect(err).To(Equal(&types.Error{
-				Code: 100,
-				Msg:  "required env variables missing",
+				CniVersion: version.Current(),
+				Code:       100,
+				Msg:        "required env variables missing",
 			}))
 			Expect(stderr.String()).To(ContainSubstring(envVar + " env variable missing\n"))
 		} else {
@@ -281,8 +282,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).To(Equal(&types.Error{
-				Code: 100,
-				Msg:  "unknown CNI_COMMAND: NOPE",
+				CniVersion: version.Current(),
+				Code:       100,
+				Msg:        "unknown CNI_COMMAND: NOPE",
 			}))
 		})
 	})
@@ -303,8 +305,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).To(Equal(&types.Error{
-				Code: 100,
-				Msg:  "error reading from stdin: banana",
+				CniVersion: version.Current(),
+				Code:       100,
+				Msg:        "error reading from stdin: banana",
 			}))
 		})
 	})
@@ -313,8 +316,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 		Context("when it is a typed Error", func() {
 			BeforeEach(func() {
 				cmdAdd.Returns.Error = &types.Error{
-					Code: 1234,
-					Msg:  "insufficient something",
+					CniVersion: version.Current(),
+					Code:       1234,
+					Msg:        "insufficient something",
 				}
 			})
 
@@ -322,8 +326,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 				Expect(err).To(Equal(&types.Error{
-					Code: 1234,
-					Msg:  "insufficient something",
+					CniVersion: version.Current(),
+					Code:       1234,
+					Msg:        "insufficient something",
 				}))
 			})
 		})
@@ -337,8 +342,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 				Expect(err).To(Equal(&types.Error{
-					Code: 100,
-					Msg:  "potato",
+					CniVersion: "9.8.7",
+					Code:       100,
+					Msg:        "potato",
 				}))
 			})
 		})
