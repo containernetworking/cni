@@ -350,7 +350,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	if n.IPMasq {
-		chain := utils.FormatChainName(n.Name, args.ContainerID)
+		chain := utils.FormatChainName("", n.Name, args.ContainerID)
 		comment := utils.FormatComment(n.Name, args.ContainerID)
 		for _, ipc := range result.IPs {
 			if err = ip.SetupIPMasq(ip.Network(&ipc.Address), chain, comment); err != nil {
@@ -397,7 +397,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	if n.IPMasq {
-		chain := utils.FormatChainName(n.Name, args.ContainerID)
+		chain := utils.FormatChainName("", n.Name, args.ContainerID)
 		comment := utils.FormatComment(n.Name, args.ContainerID)
 		if err = ip.TeardownIPMasq(ipn, chain, comment); err != nil {
 			return err
