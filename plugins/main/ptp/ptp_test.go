@@ -111,4 +111,42 @@ var _ = Describe("ptp Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	})
+	It("deconfigures an unconfigured ptp link with DEL", func() {
+		const IFNAME = "ptp0"
+
+		conf := `{
+    "cniVersion": "0.3.0",
+    "name": "mynet",
+    "type": "ptp",
+    "ipMasq": true,
+    "mtu": 5000,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24"
+    }
+}`
+
+		targetNs, err := ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+		defer targetNs.Close()
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       targetNs.Path(),
+			IfName:      IFNAME,
+			StdinData:   []byte(conf),
+		}
+
+		// Call the plugins with the DEL command. It should not error even though the veth doesn't exist.
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			err := testutils.CmdDelWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdDel(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
 })

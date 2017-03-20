@@ -273,6 +273,49 @@ var _ = Describe("bridge Operations", func() {
 		})
 	})
 
+	It("deconfigures an unconfigured bridge with DEL", func() {
+		const BRNAME = "cni0"
+		const IFNAME = "eth0"
+
+		_, subnet, err := net.ParseCIDR("10.1.2.1/24")
+		Expect(err).NotTo(HaveOccurred())
+
+		conf := fmt.Sprintf(`{
+    "cniVersion": "0.3.0",
+    "name": "mynet",
+    "type": "bridge",
+    "bridge": "%s",
+    "isDefaultGateway": true,
+    "ipMasq": false,
+    "ipam": {
+        "type": "host-local",
+        "subnet": "%s"
+    }
+}`, BRNAME, subnet.String())
+
+		targetNs, err := ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+		defer targetNs.Close()
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       targetNs.Path(),
+			IfName:      IFNAME,
+			StdinData:   []byte(conf),
+		}
+
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			err := testutils.CmdDelWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdDel(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("configures and deconfigures a bridge and veth with default route with ADD/DEL for 0.1.0 config", func() {
 		const BRNAME = "cni0"
 		const IFNAME = "eth0"

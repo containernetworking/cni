@@ -127,6 +127,20 @@ var _ = Describe("Link", func() {
 		})
 	})
 
+	Context("deleting an non-existent device", func() {
+		It("returns known error", func() {
+			_ = containerNetNS.Do(func(ns.NetNS) error {
+				defer GinkgoRecover()
+
+				// This string should match the expected error codes in the cmdDel functions of some of the plugins
+				_, err := ip.DelLinkByNameAddr("THIS_DONT_EXIST", netlink.FAMILY_V4)
+				Expect(err).To(Equal(ip.ErrLinkNotFound))
+
+				return nil
+			})
+		})
+	})
+
 	Context("when there is no name available for the host-side", func() {
 		BeforeEach(func() {
 			//adding different interface to container ns
