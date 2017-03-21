@@ -140,6 +140,14 @@ FLANNEL_IPMASQ=true
 
 				By("check that plugin removes net config from state dir")
 				Expect(path).ShouldNot(BeAnExistingFile())
+
+				By("calling DEL again")
+				err = testutils.CmdDelWithResult(targetNs.Path(), IFNAME, func() error {
+					return cmdDel(args)
+				})
+				By("check that plugin does not fail due to missing net config")
+				Expect(err).NotTo(HaveOccurred())
+
 				return nil
 			})
 			Expect(err).NotTo(HaveOccurred())
