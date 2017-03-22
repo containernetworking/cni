@@ -123,7 +123,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			configDir, err = ioutil.TempDir("", "plugin-conf")
 			Expect(err).NotTo(HaveOccurred())
 
-			pluginConfig := []byte(`{ "name": "some-plugin", "type": "noop", "cniVersion": "0.3.0", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
+			pluginConfig := []byte(`{ "name": "some-plugin", "type": "noop", "cniVersion": "0.3.1", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
 			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
 		})
 
@@ -397,7 +397,7 @@ var _ = Describe("ConfListFromConf", func() {
 	var testNetConfig *libcni.NetworkConfig
 
 	BeforeEach(func() {
-		pb := []byte(`{"name":"some-plugin","cniVersion":"0.3.0" }`)
+		pb := []byte(`{"name":"some-plugin","cniVersion":"0.3.1" }`)
 		tc, err := libcni.ConfFromBytes(pb)
 		Expect(err).NotTo(HaveOccurred())
 		testNetConfig = tc
@@ -415,7 +415,7 @@ var _ = Describe("ConfListFromConf", func() {
 
 		Expect(ncl).To(Equal(&libcni.NetworkConfigList{
 			Name:       "some-plugin",
-			CNIVersion: "0.3.0",
+			CNIVersion: "0.3.1",
 			Plugins:    []*libcni.NetworkConfig{testNetConfig},
 		}))
 

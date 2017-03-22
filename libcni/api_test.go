@@ -92,7 +92,7 @@ func newPluginInfo(configValue, prevResult string, injectDebugFilePath bool, res
 	err = json.Unmarshal([]byte(config), &newConfig)
 	Expect(err).NotTo(HaveOccurred())
 	newConfig["name"] = "some-list"
-	newConfig["cniVersion"] = "0.3.0"
+	newConfig["cniVersion"] = "0.3.1"
 
 	// Only include standard runtime config and capability args that this plugin advertises
 	newRuntimeConfig := make(map[string]interface{})
@@ -136,7 +136,7 @@ var _ = Describe("Invoking plugins", func() {
 			debug = &noop_debug.Debug{}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
-			pluginConfig = []byte(`{ "type": "noop", "cniVersion": "0.3.0", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
+			pluginConfig = []byte(`{ "type": "noop", "cniVersion": "0.3.1", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
 			netConfig, err = libcni.ConfFromBytes(pluginConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -243,7 +243,7 @@ var _ = Describe("Invoking plugins", func() {
 			}
 
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.0", "capabilities": { "portMappings": true } }`
+			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.1", "capabilities": { "portMappings": true } }`
 			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
 			netConfig = &libcni.NetworkConfig{
 				Network: &types.NetConf{
@@ -381,7 +381,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				Expect(versionInfo).NotTo(BeNil())
 				Expect(versionInfo.SupportedVersions()).To(Equal([]string{
-					"0.-42.0", "0.1.0", "0.2.0", "0.3.0",
+					"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1",
 				}))
 			})
 
@@ -452,7 +452,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			configList := []byte(fmt.Sprintf(`{
   "name": "some-list",
-  "cniVersion": "0.3.0",
+  "cniVersion": "0.3.1",
   "plugins": [
     %s,
     %s,

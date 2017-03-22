@@ -43,7 +43,7 @@ var _ = Describe("ptp Operations", func() {
 		const IFNAME = "ptp0"
 
 		conf := `{
-    "cniVersion": "0.3.0",
+    "cniVersion": "0.3.1",
     "name": "mynet",
     "type": "ptp",
     "ipMasq": true,

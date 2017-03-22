@@ -24,9 +24,9 @@ import (
 	"github.com/containernetworking/cni/pkg/types/020"
 )
 
-const implementedSpecVersion string = "0.3.0"
+const implementedSpecVersion string = "0.3.1"
 
-var SupportedVersions = []string{implementedSpecVersion}
+var SupportedVersions = []string{"0.3.0", implementedSpecVersion}
 
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}
@@ -129,7 +129,7 @@ func NewResultFromResult(result types.Result) (*Result, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("unsupported CNI result version %q", version)
+	return nil, fmt.Errorf("unsupported CNI result22 version %q", version)
 }
 
 // Result is what gets returned from the plugin (via stdout) to the caller
@@ -194,12 +194,12 @@ func (r *Result) Version() string {
 
 func (r *Result) GetAsVersion(version string) (types.Result, error) {
 	switch version {
-	case implementedSpecVersion:
+	case "0.3.0", implementedSpecVersion:
 		return r, nil
 	case types020.SupportedVersions[0], types020.SupportedVersions[1], types020.SupportedVersions[2]:
 		return r.convertTo020()
 	}
-	return nil, fmt.Errorf("cannot convert version 0.3.0 to %q", version)
+	return nil, fmt.Errorf("cannot convert version 0.3.x to %q", version)
 }
 
 func (r *Result) Print() error {
