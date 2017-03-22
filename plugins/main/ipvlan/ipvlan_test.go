@@ -187,4 +187,41 @@ var _ = Describe("ipvlan Operations", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("deconfigures an unconfigured ipvlan link with DEL", func() {
+		const IFNAME = "ipvl0"
+
+		conf := fmt.Sprintf(`{
+    "cniVersion": "0.3.0",
+    "name": "mynet",
+    "type": "ipvlan",
+    "master": "%s",
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24"
+    }
+}`, MASTER_NAME)
+
+		targetNs, err := ns.NewNS()
+		Expect(err).NotTo(HaveOccurred())
+		defer targetNs.Close()
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       targetNs.Path(),
+			IfName:      IFNAME,
+			StdinData:   []byte(conf),
+		}
+
+		err = originalNS.Do(func(ns.NetNS) error {
+			defer GinkgoRecover()
+
+			err = testutils.CmdDelWithResult(targetNs.Path(), IFNAME, func() error {
+				return cmdDel(args)
+			})
+			Expect(err).NotTo(HaveOccurred())
+			return nil
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
 })

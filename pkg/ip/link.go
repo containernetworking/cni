@@ -16,6 +16,7 @@ package ip
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -23,6 +24,10 @@ import (
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/utils/hwaddr"
 	"github.com/vishvananda/netlink"
+)
+
+var (
+	ErrLinkNotFound = errors.New("link not found")
 )
 
 func makeVethPair(name, peer string, mtu int) (netlink.Link, error) {
@@ -168,6 +173,9 @@ func DelLinkByName(ifName string) error {
 func DelLinkByNameAddr(ifName string, family int) (*net.IPNet, error) {
 	iface, err := netlink.LinkByName(ifName)
 	if err != nil {
+		if err != nil && err.Error() == "Link not found" {
+			return nil, ErrLinkNotFound
+		}
 		return nil, fmt.Errorf("failed to lookup %q: %v", ifName, err)
 	}
 

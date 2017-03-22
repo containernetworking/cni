@@ -101,6 +101,40 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("doesn't error when passed an unknown ID on DEL", func() {
+		const ifname string = "eth0"
+		const nspath string = "/some/where"
+
+		tmpDir, err := ioutil.TempDir("", "host_local_artifacts")
+		Expect(err).NotTo(HaveOccurred())
+		defer os.RemoveAll(tmpDir)
+
+		conf := fmt.Sprintf(`{
+    "cniVersion": "0.3.0",
+    "name": "mynet",
+    "type": "ipvlan",
+    "master": "foo0",
+    "ipam": {
+        "type": "host-local",
+        "subnet": "10.1.2.0/24",
+        "dataDir": "%s"
+    }
+}`, tmpDir)
+
+		args := &skel.CmdArgs{
+			ContainerID: "dummy",
+			Netns:       nspath,
+			IfName:      ifname,
+			StdinData:   []byte(conf),
+		}
+
+		// Release the IP
+		err = testutils.CmdDelWithResult(nspath, ifname, func() error {
+			return cmdDel(args)
+		})
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	It("allocates and releases an address with ADD/DEL and 0.1.0 config", func() {
 		const ifname string = "eth0"
 		const nspath string = "/some/where"
