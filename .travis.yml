@@ -9,26 +9,32 @@ go:
 
 env:
   global:
-    - TOOLS_CMD=golang.org/x/tools/cmd
-    - PATH=$GOROOT/bin:$PATH
-    - GO15VENDOREXPERIMENT=1
+  - TOOLS_CMD=golang.org/x/tools/cmd
+  - PATH=$GOROOT/bin:$PATH
+  - GO15VENDOREXPERIMENT=1
   matrix:
-   - TARGET=amd64
-   - TARGET=arm
-   - TARGET=arm64
-   - TARGET=ppc64le
+  - TARGET=amd64
+  - TARGET=arm
+  - TARGET=arm64
+  - TARGET=ppc64le
+  - TARGET=s390x
 
 matrix:
   fast_finish: true
   allow_failures:
-    - go: tip
+  - go: tip
   exclude:
-    - go: tip
-      env: arm
-    - go: tip
-      env: arm64
-    - go: tip
-      env: ppc64le
+  - go: tip
+    env: TARGET=arm
+  - go: tip
+    env: TARGET=arm64
+  - go: tip
+    env: TARGET=ppc64le
+  - go: tip
+    env: TARGET=s390x
+  - go: 1.6.x
+    env: TARGET=s390x
+
 
 install:
  - go get ${TOOLS_CMD}/cover
