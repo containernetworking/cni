@@ -66,6 +66,9 @@ type NetConf struct {
 	IPAM         struct {
 		Type string `json:"type,omitempty"`
 	} `json:"ipam,omitempty"`
+	IPAM6 struct {
+		Type string `json:"type,omitempty"`
+	} `json:"ipam6,omitempty"`
 	DNS DNS `json:"dns"`
 }
 
