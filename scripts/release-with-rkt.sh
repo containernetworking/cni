@@ -27,7 +27,7 @@ sudo -E rkt run \
     --exec /bin/bash \
     -- -xe -c "\
     ${FEDORA_INSTALL}; cd /opt/src; umask 0022; 
-    for arch in amd64 arm arm64 ppc64le; do \
+    for arch in amd64 arm arm64 ppc64le s390x; do \
         CGO_ENABLED=0 GOARCH=\$arch ./build ${BUILDFLAGS}; \
         for format in txz tbz2 tgz; do \
             FILENAME=cni-\$arch-${TAG}.\$format; \
