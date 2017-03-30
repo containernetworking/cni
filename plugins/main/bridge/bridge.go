@@ -37,13 +37,14 @@ const defaultBrName = "cni0"
 
 type NetConf struct {
 	types.NetConf
-	BrName       string `json:"bridge"`
-	IsGW         bool   `json:"isGateway"`
-	IsDefaultGW  bool   `json:"isDefaultGateway"`
-	ForceAddress bool   `json:"forceAddress"`
-	IPMasq       bool   `json:"ipMasq"`
-	MTU          int    `json:"mtu"`
-	HairpinMode  bool   `json:"hairpinMode"`
+	BrName        string                 `json:"bridge"`
+	IsGW          bool                   `json:"isGateway"`
+	IsDefaultGW   bool                   `json:"isDefaultGateway"`
+	ForceAddress  bool                   `json:"forceAddress"`
+	IPMasq        bool                   `json:"ipMasq"`
+	MTU           int                    `json:"mtu"`
+	HairpinMode   bool                   `json:"hairpinMode"`
+	RuntimeConfig map[string]interface{} `json:"runtimeConfig"`
 }
 
 func init() {
@@ -158,6 +159,37 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 	return br, nil
 }
 
+func setupTap(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int, hairpinMode bool) (*current.Interface, *current.Interface, error) {
+	iface := &current.Interface{}
+	hostIface := &current.Interface{}
+
+	// create a tap interface, connect it to the bridge and move it the container ns
+	tap, err := ip.SetupTap(ifName, mtu, netns, br)
+	if err != nil {
+		return nil, nil, err
+	}
+	iface.Name = tap.Attrs().Name
+	iface.Mac = tap.Attrs().HardwareAddr.String()
+	iface.Sandbox = netns.Path()
+	hostIface.Name = tap.Attrs().Name
+
+	// need to lookup tap again as its index may have changed during ns move
+	err = netns.Do(func(hostNS ns.NetNS) error {
+		tap, err := netlink.LinkByName(iface.Name)
+		if err != nil {
+			return fmt.Errorf("failed to lookup %q: %v", iface.Name, err)
+		}
+		iface.Mac = tap.Attrs().HardwareAddr.String()
+		return nil
+	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return hostIface, iface, nil
+}
+
 func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int, hairpinMode bool) (*current.Interface, *current.Interface, error) {
 	contIface := &current.Interface{}
 	hostIface := &current.Interface{}
@@ -217,6 +249,8 @@ func setupBridge(n *NetConf) (*netlink.Bridge, *current.Interface, error) {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	var hostInterface, containerInterface *current.Interface
+	var isVMRuntime bool
 	n, cniVersion, err := loadNetConf(args.StdinData)
 	if err != nil {
 		return err
@@ -237,7 +271,17 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
-	hostInterface, containerInterface, err := setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)
+	vmRuntime, ok := n.RuntimeConfig["configureVM"]
+	if ok {
+		isVMRuntime, ok = vmRuntime.(bool)
+	}
+
+	if isVMRuntime {
+		hostInterface, containerInterface, err = setupTap(netns, br, args.IfName, n.MTU, n.HairpinMode)
+	} else {
+		hostInterface, containerInterface, err = setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -310,7 +354,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 
-		// Refetch the veth since its MAC address may changed
+		// Refetch the interface since its MAC address may changed
 		link, err := netlink.LinkByName(args.IfName)
 		if err != nil {
 			return fmt.Errorf("could not lookup %q: %v", args.IfName, err)
