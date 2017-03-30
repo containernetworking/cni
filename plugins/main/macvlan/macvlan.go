@@ -38,9 +38,10 @@ const (
 
 type NetConf struct {
 	types.NetConf
-	Master string `json:"master"`
-	Mode   string `json:"mode"`
-	MTU    int    `json:"mtu"`
+	Master        string                 `json:"master"`
+	Mode          string                 `json:"mode"`
+	MTU           int                    `json:"mtu"`
+	RuntimeConfig map[string]interface{} `json:"runtimeConfig"`
 }
 
 func init() {
@@ -77,6 +78,8 @@ func modeFromString(s string) (netlink.MacvlanMode, error) {
 }
 
 func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) (*current.Interface, error) {
+	var isVMRuntime bool
+	var mv netlink.Link
 	macvlan := &current.Interface{}
 
 	mode, err := modeFromString(conf.Mode)
@@ -96,18 +99,41 @@ func createMacvlan(conf *NetConf, ifName string, netns ns.NetNS) (*current.Inter
 		return nil, err
 	}
 
-	mv := &netlink.Macvlan{
-		LinkAttrs: netlink.LinkAttrs{
-			MTU:         conf.MTU,
-			Name:        tmpName,
-			ParentIndex: m.Attrs().Index,
-			Namespace:   netlink.NsFd(int(netns.Fd())),
-		},
-		Mode: mode,
+	vmRuntime, ok := conf.RuntimeConfig["configureVM"]
+	if ok {
+		isVMRuntime, ok = vmRuntime.(bool)
 	}
 
-	if err := netlink.LinkAdd(mv); err != nil {
-		return nil, fmt.Errorf("failed to create macvlan: %v", err)
+	if isVMRuntime {
+		mv = &netlink.Macvtap{
+			Macvlan: netlink.Macvlan{
+				LinkAttrs: netlink.LinkAttrs{
+					MTU:         conf.MTU,
+					Name:        tmpName,
+					ParentIndex: m.Attrs().Index,
+					Namespace:   netlink.NsFd(int(netns.Fd())),
+				},
+				Mode: mode,
+			},
+		}
+
+		if err := netlink.LinkAdd(mv); err != nil {
+			return nil, fmt.Errorf("failed to create macvtap: %v", err)
+		}
+	} else {
+		mv = &netlink.Macvlan{
+			LinkAttrs: netlink.LinkAttrs{
+				MTU:         conf.MTU,
+				Name:        tmpName,
+				ParentIndex: m.Attrs().Index,
+				Namespace:   netlink.NsFd(int(netns.Fd())),
+			},
+			Mode: mode,
+		}
+
+		if err := netlink.LinkAdd(mv); err != nil {
+			return nil, fmt.Errorf("failed to create macvlan: %v", err)
+		}
 	}
 
 	err = netns.Do(func(_ ns.NetNS) error {
