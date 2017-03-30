@@ -16,7 +16,6 @@ package libcni
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -33,7 +32,13 @@ func (e NotFoundError) Error() string {
 	return fmt.Sprintf(`no net configuration with name "%s" in %s`, e.Name, e.Dir)
 }
 
-var NoConfigsFoundError = errors.New("no net configurations found")
+type NoConfigsFoundError struct {
+	Dir string
+}
+
+func (e NoConfigsFoundError) Error() string {
+	return fmt.Sprintf(`no net configurations found in %s`, e.Dir)
+}
 
 func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	conf := &NetworkConfig{Bytes: bytes}
@@ -149,7 +154,7 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 	case err != nil:
 		return nil, err
 	case len(files) == 0:
-		return nil, NoConfigsFoundError
+		return nil, NoConfigsFoundError{Dir: dir}
 	}
 	sort.Strings(files)
 
@@ -187,16 +192,12 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	singleConf, err := LoadConf(dir, name)
 	if err != nil {
 		// A little extra logic so the error makes sense
-		switch {
-		// neither configlists nor config files found
-		case len(files) == 0 && err == NoConfigsFoundError:
-			return nil, err
-		// config lists found but no config files found
-		case len(files) != 0 && err == NoConfigsFoundError:
+		if _, ok := err.(NoConfigsFoundError); len(files) != 0 && ok {
+			// Config lists found but no config files found
 			return nil, NotFoundError{dir, name}
-		default: // either not found or parse error
-			return nil, err
 		}
+
+		return nil, err
 	}
 	return ConfListFromConf(singleConf)
 }
