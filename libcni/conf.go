@@ -190,6 +190,7 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	// Try and load a network configuration file (instead of list)
 	// from the same name, then upconvert.
 	singleConf, err := LoadConf(dir, name)
+
 	if err != nil {
 		// A little extra logic so the error makes sense
 		if _, ok := err.(NoConfigsFoundError); len(files) != 0 && ok {

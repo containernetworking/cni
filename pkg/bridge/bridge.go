@@ -16,10 +16,10 @@ package bridge
 
 import (
 	"fmt"
+	"net"
 	"syscall"
 
 	"github.com/containernetworking/cni/pkg/ip"
-	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/vishvananda/netlink"
 )
@@ -84,44 +84,58 @@ func FindByName(name string) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-// SetupVeth creates a new veth pair inside the given network namespace and
-// assigns one end of the same to the specified bridge
-func SetupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int, hairpinMode bool) (*current.Interface, *current.Interface, error) {
-	contIface := &current.Interface{}
-	hostIface := &current.Interface{}
+func EnsureBridgeAddr(br *netlink.Bridge, ipn *net.IPNet, forceAddress bool) error {
+	addrs, err := netlink.AddrList(br, syscall.AF_INET)
+	if err != nil && err != syscall.ENOENT {
+		return fmt.Errorf("could not get list of IP addresses: %v", err)
+	}
 
-	err := netns.Do(func(hostNS ns.NetNS) error {
-		// create the veth pair in the container and move host end into host netns
-		hostVeth, containerVeth, err := ip.SetupVeth(ifName, mtu, hostNS)
-		if err != nil {
-			return err
+	// if there're no addresses on the bridge, it's ok -- we'll add one
+	if len(addrs) > 0 {
+		ipnStr := ipn.String()
+		for _, a := range addrs {
+			// string comp is actually easiest for doing IPNet comps
+			if a.IPNet.String() == ipnStr {
+				return nil
+			}
+
+			// If forceAddress is set to true then reconfigure IP address otherwise throw error
+			if forceAddress {
+				if err = DeleteBridgeAddr(br, a.IPNet); err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("%q already has an IP address different from %v", br.Name, ipn.String())
+			}
 		}
-		contIface.Name = containerVeth.Name
-		contIface.Mac = containerVeth.HardwareAddr.String()
-		contIface.Sandbox = netns.Path()
-		hostIface.Name = hostVeth.Name
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 
-	// need to lookup hostVeth again as its index has changed during ns move
-	hostVeth, err := netlink.LinkByName(hostIface.Name)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to lookup %q: %v", hostIface.Name, err)
+	addr := &netlink.Addr{IPNet: ipn, Label: ""}
+	if err := netlink.AddrAdd(br, addr); err != nil {
+		return fmt.Errorf("could not add IP address to %q: %v", br.Name, err)
 	}
-	hostIface.Mac = hostVeth.Attrs().HardwareAddr.String()
+	return nil
+}
 
-	// connect host veth end to the bridge
-	if err := netlink.LinkSetMaster(hostVeth, br); err != nil {
-		return nil, nil, fmt.Errorf("failed to connect %q to bridge %v: %v", hostVeth.Attrs().Name, br.Attrs().Name, err)
-	}
+func DeleteBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
+	addr := &netlink.Addr{IPNet: ipn, Label: ""}
 
-	// set hairpin mode
-	if err = netlink.LinkSetHairpin(hostVeth, hairpinMode); err != nil {
-		return nil, nil, fmt.Errorf("failed to setup hairpin mode for %v: %v", hostVeth.Attrs().Name, err)
+	if err := netlink.LinkSetDown(br); err != nil {
+		return fmt.Errorf("could not set down bridge %q: %v", br.Name, err)
 	}
 
-	return hostIface, contIface, nil
+	if err := netlink.AddrDel(br, addr); err != nil {
+		return fmt.Errorf("could not remove IP address from %q: %v", br.Name, err)
+	}
+
+	if err := netlink.LinkSetUp(br); err != nil {
+		return fmt.Errorf("could not set up bridge %q: %v", br.Name, err)
+	}
+
+	return nil
+}
+
+func CalcGatewayIP(ipn *net.IPNet) net.IP {
+	nid := ipn.IP.Mask(ipn.Mask)
+	return ip.NextIP(nid)
 }
