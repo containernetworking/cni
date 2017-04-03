@@ -20,6 +20,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/containernetworking/cni/pkg/bridge"
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/testutils"
@@ -67,7 +68,7 @@ var _ = Describe("bridge Operations", func() {
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			bridge, _, err := setupBridge(conf)
+			bridge, _, err := bridge.Setup(conf.BrName, conf.MTU)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bridge.Attrs().Name).To(Equal(IFNAME))
 
@@ -108,7 +109,7 @@ var _ = Describe("bridge Operations", func() {
 				IPMasq: false,
 			}
 
-			bridge, _, err := setupBridge(conf)
+			bridge, _, err := bridge.Setup(conf.BrName, conf.MTU)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bridge.Attrs().Name).To(Equal(IFNAME))
 			Expect(bridge.Attrs().Index).To(Equal(ifindex))
@@ -480,7 +481,7 @@ var _ = Describe("bridge Operations", func() {
 		err := originalNS.Do(func(ns.NetNS) error {
 			defer GinkgoRecover()
 
-			bridge, _, err := setupBridge(conf)
+			bridge, _, err := bridge.Setup(conf.BrName, conf.MTU)
 			Expect(err).NotTo(HaveOccurred())
 			// Check if ForceAddress has default value
 			Expect(conf.ForceAddress).To(Equal(false))
