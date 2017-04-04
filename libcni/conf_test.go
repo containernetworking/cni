@@ -61,7 +61,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConf(configDir, "some-plugin")
-				Expect(err).To(MatchError("no net configurations found"))
+				Expect(err).To(MatchError(libcni.NoConfigsFoundError{Dir: configDir}))
 			})
 		})
 
@@ -244,7 +244,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConfList(configDir, "some-plugin")
-				Expect(err).To(MatchError("no net configurations found"))
+				Expect(err).To(MatchError(libcni.NoConfigsFoundError{Dir: configDir}))
 			})
 		})
 
