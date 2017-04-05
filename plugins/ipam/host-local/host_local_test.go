@@ -45,7 +45,7 @@ var _ = Describe("host-local Operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.3.0",
+    "cniVersion": "0.3.1",
     "name": "mynet",
     "type": "ipvlan",
     "master": "foo0",
@@ -213,7 +213,7 @@ var _ = Describe("host-local Operations", func() {
 		defer os.RemoveAll(tmpDir)
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.3.0",
+    "cniVersion": "0.3.1",
     "name": "mynet",
     "type": "ipvlan",
     "master": "foo0",

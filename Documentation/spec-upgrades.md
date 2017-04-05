@@ -1,3 +1,9 @@
+# How to upgrade to CNI Specification v0.3.1
+
+The 0.3.0 specification contained a small error. The Result structure's `ip` field should have been renamed to `ips` to be consistent with the IPAM result structure definition; this rename was missed when updating the Result to accommodate multiple IP addresses and interfaces. All first-party CNI plugins (bridge, host-local, etc) were updated to use `ips` (and thus be inconsistent with the 0.3.0 specification) and most other plugins have not been updated to the 0.3.0 specification yet, so few (if any) users should be impacted by this change.
+
+The 0.3.1 specification corrects the Result structure to use the `ips` field name as originally intended.  This is the only change between 0.3.0 and 0.3.1.
+
 # How to upgrade to CNI Specification v0.3.0
 
 Version 0.3.0 of the [CNI Specification](../SPEC.md) provides rich information

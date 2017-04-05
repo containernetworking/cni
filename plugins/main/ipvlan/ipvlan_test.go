@@ -66,7 +66,7 @@ var _ = Describe("ipvlan Operations", func() {
 	It("creates an ipvlan link in a non-default namespace", func() {
 		conf := &NetConf{
 			NetConf: types.NetConf{
-				CNIVersion: "0.3.0",
+				CNIVersion: "0.3.1",
 				Name:       "testConfig",
 				Type:       "ipvlan",
 			},
@@ -106,7 +106,7 @@ var _ = Describe("ipvlan Operations", func() {
 		const IFNAME = "ipvl0"
 
 		conf := fmt.Sprintf(`{
-    "cniVersion": "0.3.0",
+    "cniVersion": "0.3.1",
     "name": "mynet",
     "type": "ipvlan",
     "master": "%s",

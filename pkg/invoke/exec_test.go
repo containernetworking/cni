@@ -50,7 +50,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 			VersionDecoder: versionDecoder,
 		}
 		pluginPath = "/some/plugin/path"
-		netconf = []byte(`{ "some": "stdin", "cniVersion": "0.3.0" }`)
+		netconf = []byte(`{ "some": "stdin", "cniVersion": "0.3.1" }`)
 		cniargs = &fakes.CNIArgs{}
 		cniargs.AsEnvCall.Returns.Env = []string{"SOME=ENV"}
 	})

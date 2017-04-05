@@ -42,7 +42,7 @@ var _ = Describe("No-op plugin", func() {
 	BeforeEach(func() {
 		debug = &noop_debug.Debug{
 			ReportResult:         reportResult,
-			ReportVersionSupport: []string{"0.1.0", "0.2.0", "0.3.0"},
+			ReportVersionSupport: []string{"0.1.0", "0.2.0", "0.3.0", "0.3.1"},
 		}
 
 		debugFile, err := ioutil.TempFile("", "cni_debug")
@@ -64,14 +64,14 @@ var _ = Describe("No-op plugin", func() {
 			// Keep this last
 			"CNI_ARGS=" + args,
 		}
-		cmd.Stdin = strings.NewReader(`{"some":"stdin-json", "cniVersion": "0.3.0"}`)
+		cmd.Stdin = strings.NewReader(`{"some":"stdin-json", "cniVersion": "0.3.1"}`)
 		expectedCmdArgs = skel.CmdArgs{
 			ContainerID: "some-container-id",
 			Netns:       "/some/netns/path",
 			IfName:      "some-eth0",
 			Args:        args,
 			Path:        "/some/bin/path",
-			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.3.0"}`),
+			StdinData:   []byte(`{"some":"stdin-json", "cniVersion": "0.3.1"}`),
 		}
 	})
 
@@ -102,7 +102,7 @@ var _ = Describe("No-op plugin", func() {
 
 		cmd.Stdin = strings.NewReader(`{
 	"some":"stdin-json",
-	"cniVersion": "0.3.0",
+	"cniVersion": "0.3.1",
 	"prevResult": {
 		"ips": [{"version": "4", "address": "10.1.2.15/24"}]
 	}
@@ -119,7 +119,7 @@ var _ = Describe("No-op plugin", func() {
 
 		cmd.Stdin = strings.NewReader(`{
 	"some":"stdin-json",
-	"cniVersion": "0.3.0",
+	"cniVersion": "0.3.1",
 	"prevResult": {
 		"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 		"dns": {}
@@ -139,7 +139,7 @@ var _ = Describe("No-op plugin", func() {
 		// Remove the DEBUG option from CNI_ARGS and regular args
 		newArgs := "FOO=BAR"
 		cmd.Env[len(cmd.Env)-1] = "CNI_ARGS=" + newArgs
-		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.3.0", "debugFile": "%s"}`, debugFileName)
+		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.3.1", "debugFile": "%s"}`, debugFileName)
 		cmd.Stdin = strings.NewReader(newStdin)
 		expectedCmdArgs.Args = newArgs
 		expectedCmdArgs.StdinData = []byte(newStdin)
