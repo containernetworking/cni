@@ -3,9 +3,8 @@ sudo: required
 dist: trusty
 
 go:
-  - 1.6.x
   - 1.7.x
-  - tip
+  - 1.8.x
 
 env:
   global:
@@ -21,20 +20,6 @@ env:
 
 matrix:
   fast_finish: true
-  allow_failures:
-  - go: tip
-  exclude:
-  - go: tip
-    env: TARGET=arm
-  - go: tip
-    env: TARGET=arm64
-  - go: tip
-    env: TARGET=ppc64le
-  - go: tip
-    env: TARGET=s390x
-  - go: 1.6.x
-    env: TARGET=s390x
-
 
 install:
  - go get ${TOOLS_CMD}/cover
