@@ -40,7 +40,7 @@ This is a rough outline of how to prepare a contribution:
 - If you changed code:
    - add automated tests to cover your changes, using the [Ginkgo](http://onsi.github.io/ginkgo/) & [Gomega](http://onsi.github.io/gomega/) style
    - if the package did not previously have any test coverage, add it to the list
-   of `TESTABLE` packages in the `test` script.
+   of `TESTABLE` packages in the `test.sh` script.
    - run the full test script and ensure it passes
 - Make sure any new code files have a license header (this is now enforced by automated tests)
 - Submit a pull request to the original repository.
@@ -59,7 +59,7 @@ sudo su
 cd /go/src/github.com/containernetworking/cni
 
 # to run the full test suite
-./test
+./test.sh
 
 # to focus on a particular test suite
 cd plugins/main/loopback
