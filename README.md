@@ -47,6 +47,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Infoblox - enterprise IP address management for containers](https://github.com/infobloxopen/cni-infoblox)
 - [Multus - a Multi plugin](https://github.com/Intel-Corp/multus-cni)
 - [Romana - Layer 3 CNI plugin supporting network policy for Kubernetes](https://github.com/romana/kube)
+- [CNI-Genie - generic CNI network plugin](https://github.com/Huawei-PaaS/CNI-Genie)
 
 The CNI team also maintains some [core plugins](plugins).
 
