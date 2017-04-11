@@ -99,4 +99,10 @@ The use of `CNI_ARGS` is deprecated and "args" should be used instead.
 | Field  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ------             | ------  | ------                  | ------                 |  
 | IP     | Request a specific IP from IPAM plugins | IP=192.168.10.4 | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/cni/blob/master/Documentation/host-local.md#supported-arguments).|
-                                                                                                                  
+
+## Chained Plugins
+If plugins are agnostic about the type of interface created, they SHOULD work in a chained mode and configure existing interfaces. Plugins MAY also create the desired interface when not run in a chain.
+
+For example, the `bridge` plugin adds the host-side interface to a bridge. So, it should accept any previous result that includes a host-side interface, including `tap` devices. If not called as a chained plugin, it creates a `veth` pair first.
+
+Plugins that meet this convention are usable by a larger set of runtimes and interfaces, including hypervisors and DPDK providers.
