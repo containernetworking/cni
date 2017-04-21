@@ -111,7 +111,7 @@ The directory `/etc/cni/net.d` is the default location in which the scripts will
 Next, build the plugins:
 
 ```bash
-$ ./build
+$ ./build.sh
 ```
 
 Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined the `mynet` network:
