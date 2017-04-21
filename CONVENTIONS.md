@@ -31,8 +31,8 @@ This method of passing information to a plugin is recommended when the following
 
 Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtimeConfig` section.
 
-| Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
-| ------ | ------ | ------             | ------  | ------                  | ------                 |  
+| Area  | Purpose | Spec and Example | Runtime implementations | Plugin Implementations |
+| ----- | ------- | ---------------- | ----------------------- | ---------------------  |
 | port mappings | Pass mapping from ports on the host to ports in the container network namespace. | Operators can ask runtimes to pass port mapping information to plugins, by setting the following in the CNI config <pre>"capabilities": {"portMappings": true} </pre> Runtimes should fill in the actual port mappings when the config is passed to plugins. It should be placed in a new section of the config "runtimeConfig" e.g. <pre>"runtimeConfig": {<br />  "portMappings" : [<br />    { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" },<br />    { "hostPort": 8000, "containerPort": 8001, "protocol": "udp" }<br />  ]<br />}</pre> | none | none |
 
 For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration-lists).
@@ -87,7 +87,7 @@ For example:
 ```
 
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
-| ------ | ------ | ------             | ------  | ------                  | ------                 |  
+| ----- | ------ | ------------     | ----------------------- | ---------------------- |
 | labels | Pass`key=value` labels to plugins | <pre>"labels" : [<br />  { "key" : "app", "value" : "myapp" },<br />  { "key" : "env", "value" : "prod" }<br />] </pre> | none | none |
 
 ## CNI_ARGS
@@ -97,6 +97,6 @@ CNI_ARGS formed part of the original CNI spec and have been present since the in
 The use of `CNI_ARGS` is deprecated and "args" should be used instead.
 
 | Field  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
-| ------ | ------ | ------             | ------  | ------                  | ------                 |  
+| ------ | ------ | ---------------- | ----------------------- | ---------------------- |
 | IP     | Request a specific IP from IPAM plugins | IP=192.168.10.4 | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/cni/blob/master/Documentation/host-local.md#supported-arguments).|
                                                                                                                   
