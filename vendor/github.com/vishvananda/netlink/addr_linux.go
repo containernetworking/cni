@@ -27,6 +27,19 @@ func (h *Handle) AddrAdd(link Link, addr *Addr) error {
 	return h.addrHandle(link, addr, req)
 }
 
+// AddrReplace will replace (or, if not present, add) an IP address on a link device.
+// Equivalent to: `ip addr replace $addr dev $link`
+func AddrReplace(link Link, addr *Addr) error {
+	return pkgHandle.AddrReplace(link, addr)
+}
+
+// AddrReplace will replace (or, if not present, add) an IP address on a link device.
+// Equivalent to: `ip addr replace $addr dev $link`
+func (h *Handle) AddrReplace(link Link, addr *Addr) error {
+	req := h.newNetlinkRequest(syscall.RTM_NEWADDR, syscall.NLM_F_CREATE|syscall.NLM_F_REPLACE|syscall.NLM_F_ACK)
+	return h.addrHandle(link, addr, req)
+}
+
 // AddrDel will delete an IP address from a link device.
 // Equivalent to: `ip addr del $addr dev $link`
 func AddrDel(link Link, addr *Addr) error {
@@ -186,6 +199,10 @@ func parseAddr(m []byte) (addr Addr, family, index int, err error) {
 			addr.Label = string(attr.Value[:len(attr.Value)-1])
 		case IFA_FLAGS:
 			addr.Flags = int(native.Uint32(attr.Value[0:4]))
+		case nl.IFA_CACHEINFO:
+			ci := nl.DeserializeIfaCacheInfo(attr.Value)
+			addr.PreferedLft = int(ci.IfaPrefered)
+			addr.ValidLft = int(ci.IfaValid)
 		}
 	}
 
@@ -203,6 +220,10 @@ func parseAddr(m []byte) (addr Addr, family, index int, err error) {
 type AddrUpdate struct {
 	LinkAddress net.IPNet
 	LinkIndex   int
+	Flags       int
+	Scope       int
+	PreferedLft int
+	ValidLft    int
 	NewAddr     bool // true=added false=deleted
 }
 
@@ -250,7 +271,13 @@ func addrSubscribe(newNs, curNs netns.NsHandle, ch chan<- AddrUpdate, done <-cha
 					continue
 				}
 
-				ch <- AddrUpdate{LinkAddress: *addr.IPNet, LinkIndex: ifindex, NewAddr: msgType == syscall.RTM_NEWADDR}
+				ch <- AddrUpdate{LinkAddress: *addr.IPNet,
+					LinkIndex:   ifindex,
+					NewAddr:     msgType == syscall.RTM_NEWADDR,
+					Flags:       addr.Flags,
+					Scope:       addr.Scope,
+					PreferedLft: addr.PreferedLft,
+					ValidLft:    addr.ValidLft}
 			}
 		}
 	}()

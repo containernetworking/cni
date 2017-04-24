@@ -58,6 +58,44 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 	}
 }
 
+func (h *Handle) LinkSetARPOff(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change |= syscall.IFF_NOARP
+	msg.Flags |= syscall.IFF_NOARP
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func LinkSetARPOff(link Link) error {
+	return pkgHandle.LinkSetARPOff(link)
+}
+
+func (h *Handle) LinkSetARPOn(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(syscall.RTM_SETLINK, syscall.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
+	msg.Change |= syscall.IFF_NOARP
+	msg.Flags &= ^uint32(syscall.IFF_NOARP)
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(syscall.NETLINK_ROUTE, 0)
+	return err
+}
+
+func LinkSetARPOn(link Link) error {
+	return pkgHandle.LinkSetARPOn(link)
+}
+
 func (h *Handle) SetPromiscOn(link Link) error {
 	base := link.Attrs()
 	h.ensureIndex(base)
@@ -65,7 +103,7 @@ func (h *Handle) SetPromiscOn(link Link) error {
 
 	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
 	msg.Change = syscall.IFF_PROMISC
-	msg.Flags = syscall.IFF_UP
+	msg.Flags = syscall.IFF_PROMISC
 	msg.Index = int32(base.Index)
 	req.AddData(msg)
 
@@ -84,7 +122,7 @@ func (h *Handle) SetPromiscOff(link Link) error {
 
 	msg := nl.NewIfInfomsg(syscall.AF_UNSPEC)
 	msg.Change = syscall.IFF_PROMISC
-	msg.Flags = 0 & ^syscall.IFF_UP
+	msg.Flags = 0 & ^syscall.IFF_PROMISC
 	msg.Index = int32(base.Index)
 	req.AddData(msg)
 
@@ -1250,6 +1288,22 @@ func (h *Handle) LinkSetFlood(link Link, mode bool) error {
 	return h.setProtinfoAttr(link, mode, nl.IFLA_BRPORT_UNICAST_FLOOD)
 }
 
+func LinkSetBrProxyArp(link Link, mode bool) error {
+	return pkgHandle.LinkSetBrProxyArp(link, mode)
+}
+
+func (h *Handle) LinkSetBrProxyArp(link Link, mode bool) error {
+	return h.setProtinfoAttr(link, mode, nl.IFLA_BRPORT_PROXYARP)
+}
+
+func LinkSetBrProxyArpWiFi(link Link, mode bool) error {
+	return pkgHandle.LinkSetBrProxyArpWiFi(link, mode)
+}
+
+func (h *Handle) LinkSetBrProxyArpWiFi(link Link, mode bool) error {
+	return h.setProtinfoAttr(link, mode, nl.IFLA_BRPORT_PROXYARP_WIFI)
+}
+
 func (h *Handle) setProtinfoAttr(link Link, mode bool, attr int) error {
 	base := link.Attrs()
 	h.ensureIndex(base)
@@ -1332,7 +1386,7 @@ func parseVxlanData(link Link, data []syscall.NetlinkRouteAttr) {
 }
 
 func parseBondData(link Link, data []syscall.NetlinkRouteAttr) {
-	bond := NewLinkBond(NewLinkAttrs())
+	bond := link.(*Bond)
 	for i := range data {
 		switch data[i].Attr.Type {
 		case nl.IFLA_BOND_MODE:
