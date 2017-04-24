@@ -44,6 +44,7 @@ type NetConf struct {
 	IPMasq       bool   `json:"ipMasq"`
 	MTU          int    `json:"mtu"`
 	HairpinMode  bool   `json:"hairpinMode"`
+	PromiscMode  bool   `json:"promiscMode"`
 }
 
 func init() {
@@ -126,7 +127,7 @@ func bridgeByName(name string) (*netlink.Bridge, error) {
 	return br, nil
 }
 
-func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
+func ensureBridge(brName string, mtu int, promiscMode bool) (*netlink.Bridge, error) {
 	br := &netlink.Bridge{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: brName,
@@ -142,6 +143,12 @@ func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
 	err := netlink.LinkAdd(br)
 	if err != nil && err != syscall.EEXIST {
 		return nil, fmt.Errorf("could not add %q: %v", brName, err)
+	}
+
+	if promiscMode {
+		if err := netlink.SetPromiscOn(br); err != nil {
+			return nil, fmt.Errorf("could not set promiscuous mode on %q: %v", brName, err)
+		}
 	}
 
 	// Re-fetch link to read all attributes and if it already existed,
@@ -205,7 +212,7 @@ func calcGatewayIP(ipn *net.IPNet) net.IP {
 
 func setupBridge(n *NetConf) (*netlink.Bridge, *current.Interface, error) {
 	// create bridge if necessary
-	br, err := ensureBridge(n.BrName, n.MTU)
+	br, err := ensureBridge(n.BrName, n.MTU, n.PromiscMode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create bridge %q: %v", n.BrName, err)
 	}
@@ -224,6 +231,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if n.IsDefaultGW {
 		n.IsGW = true
+	}
+
+	if n.HairpinMode && n.PromiscMode {
+		return fmt.Errorf("cannot set hairpin mode and promiscous mode at the same time.")
 	}
 
 	br, brInterface, err := setupBridge(n)

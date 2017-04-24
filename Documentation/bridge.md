@@ -39,4 +39,5 @@ If the bridge is missing, the plugin will create one on first use and, if gatewa
 * `ipMasq` (boolean, optional): set up IP Masquerade on the host for traffic originating from this network and destined outside of it. Defaults to false.
 * `mtu` (integer, optional): explicitly set MTU to the specified value. Defaults to the value chosen by the kernel.
 * `hairpinMode` (boolean, optional): set hairpin mode for interfaces on the bridge. Defaults to false.
+* `promiscMode` (boolean, optional): set promiscuous mode on the bridge. Defaults to false.
 * `ipam` (dictionary, required): IPAM configuration to be used for this network.
