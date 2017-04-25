@@ -18,21 +18,34 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/containernetworking/cni/libcni"
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 const (
-	EnvCNIPath = "CNI_PATH"
-	EnvNetDir  = "NETCONFPATH"
+	EnvCNICommand = "CNI_COMMAND"
+	EnvCNIPath    = "CNI_PATH"
+	EnvNetDir     = "NETCONFPATH"
 
 	DefaultNetDir = "/etc/cni/net.d"
 
-	CmdAdd = "add"
-	CmdDel = "del"
+	CmdAdd     = "add"
+	CmdDel     = "del"
+	CmdVersion = "version"
 )
 
 func main() {
+	cniCommand := strings.ToLower(os.Getenv(EnvCNICommand))
+	if len(os.Args) > 1 {
+		cniCommand = os.Args[1]
+	}
+
+	if cniCommand == CmdVersion {
+		exit(version.All.Encode(os.Stdout))
+	}
+
 	if len(os.Args) < 3 {
 		usage()
 		return
