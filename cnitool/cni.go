@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,8 +24,9 @@ import (
 )
 
 const (
-	EnvCNIPath = "CNI_PATH"
-	EnvNetDir  = "NETCONFPATH"
+	EnvCNIPath        = "CNI_PATH"
+	EnvNetDir         = "NETCONFPATH"
+	EnvCapabilityArgs = "CAP_ARGS"
 
 	DefaultNetDir = "/etc/cni/net.d"
 
@@ -47,6 +49,14 @@ func main() {
 		exit(err)
 	}
 
+	var capabilityArgs map[string]interface{}
+	args := os.Getenv(EnvCapabilityArgs)
+	if len(args) > 0 {
+		if err = json.Unmarshal([]byte(args), &capabilityArgs); err != nil {
+			exit(err)
+		}
+	}
+
 	netns := os.Args[3]
 
 	cninet := &libcni.CNIConfig{
@@ -54,9 +64,10 @@ func main() {
 	}
 
 	rt := &libcni.RuntimeConf{
-		ContainerID: "cni",
-		NetNS:       netns,
-		IfName:      "eth0",
+		ContainerID:    "cni",
+		NetNS:          netns,
+		IfName:         "eth0",
+		CapabilityArgs: capabilityArgs,
 	}
 
 	switch os.Args[1] {
