@@ -355,7 +355,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
   "prevResult": {
     "ip4": {
       "ip": "10.1.0.3/16",
-      "gateway": "10.1.0.1",
+      "gateway": "10.1.0.1"
     },
     "dns": {
       "nameservers": [ "10.1.0.1" ]
