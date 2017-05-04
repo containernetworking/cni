@@ -31,7 +31,7 @@ type AllocatorTestCase struct {
 	lastIP       string
 }
 
-func (t AllocatorTestCase) run() (*current.IPConfig, []*types.Route, error) {
+func (t AllocatorTestCase) run() (*current.IPConfig, []*current.Route, error) {
 	subnet, err := types.ParseCIDR(t.subnet)
 	if err != nil {
 		return nil, nil, err
@@ -373,6 +373,44 @@ var _ = Describe("host-local ip allocator", func() {
 			store := fakestore.NewFakeStore(map[string]string{}, net.ParseIP(""))
 			_, err = NewIPAllocator(&conf, store)
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	Context("when config is given", func() {
+		It("requires IPAM configuration", func() {
+			conf := []byte(`{
+	"name": "foobar",
+	"type": "some-plugin"
+}`)
+			_, _, err := LoadIPAMConfig(conf, "")
+			Expect(err).To(MatchError("IPAM config missing 'ipam' key"))
+		})
+
+		It("moves route gateways into NextHops", func() {
+			conf := []byte(`{
+	"name": "foobar",
+	"type": "some-plugin",
+	"ipam": {
+		"type": "host-local",
+		"routes": [
+			{
+				"dst": "1.2.3.0/24",
+				"gw": "1.2.3.1"
+			},
+			{
+				"dst": "10.25.0.0/32",
+				"gw": "192.168.0.1"
+			}
+		]
+	}
+}`)
+			ipc, _, err := LoadIPAMConfig(conf, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(ipc.Routes)).To(Equal(2))
+			Expect(len(ipc.Routes[0].NextHops)).To(Equal(1))
+			Expect(ipc.Routes[0].NextHops[0].Equal(net.ParseIP("1.2.3.1"))).Should(BeTrue())
+			Expect(len(ipc.Routes[1].NextHops)).To(Equal(1))
+			Expect(ipc.Routes[1].NextHops[0].Equal(net.ParseIP("192.168.0.1"))).Should(BeTrue())
 		})
 	})
 })

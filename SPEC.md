@@ -121,7 +121,11 @@ Success is indicated by a return code of zero and the following JSON printed to 
   "routes": [                                                (optional)
       {
           "dst": "<ip-and-prefix-in-cidr>",
-          "gw": "<ip-of-next-hop>"                           (optional)
+          "nextHops": [                                      (optional)
+              "<ip-of-next-hop-1>",                          (optional)
+              "<ip-of-next-hop-2>",                          (optional)
+              ...
+          ]
       },
       ...
   ]
@@ -236,7 +240,7 @@ Plugins may define additional fields that they accept and may generate an error 
   // ipam specific
   "ipam": {
     "type": "dhcp",
-    "routes": [ { "dst": "10.0.0.0/8", "gw": "10.0.0.1" } ]
+    "routes": [ { "dst": "10.0.0.0/8", "nextHops": ["10.0.0.1"] } ]
   },
   "dns": {
     "nameservers": [ "10.0.0.1" ]
@@ -432,7 +436,11 @@ Success is indicated by a zero return code and the following JSON being printed 
   "routes": [                                       (optional)
       {
           "dst": "<ip-and-prefix-in-cidr>",
-          "gw": "<ip-of-next-hop>"                  (optional)
+          "nextHops": [                             (optional)
+              "<ip-of-next-hop-1>",                 (optional)
+              "<ip-of-next-hop-2>",                 (optional)
+              ...
+          ]
       },
       ...
   ]
@@ -499,7 +507,11 @@ All properties known to the plugin should be provided, even if not strictly requ
   "routes": [
       {
           "dst": "<ip-and-prefix-in-cidr>",
-          "gw": "<ip-of-next-hop>"               (optional)
+          "nextHops": [                          (optional)
+              "<ip-of-next-hop-1>",              (optional)
+              "<ip-of-next-hop-2>",              (optional)
+              ...
+          ]
       },
       ...
   ]
@@ -507,7 +519,7 @@ All properties known to the plugin should be provided, even if not strictly requ
 
 - Each `routes` entry is a dictionary with the following fields.  All IP addresses in the `routes` entry must be the same IP version, either 4 or 6.
   - `dst` (string): destination subnet specified in CIDR notation.
-  - `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
+  - `nextHops` (array of string): one or more IP addresses of gateways to which packets for the `dst` should be directed. If omitted, a default gateway is assumed (as determined by the CNI plugin).
 
 #### DNS
 

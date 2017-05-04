@@ -32,6 +32,7 @@ import (
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -228,8 +229,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	n.Delegate["ipam"] = map[string]interface{}{
 		"type":   "host-local",
 		"subnet": fenv.sn.String(),
-		"routes": []types.Route{
-			types.Route{
+		"routes": []*current.Route{
+			&current.Route{
 				Dst: *fenv.nw,
 			},
 		},

@@ -17,7 +17,6 @@ package types
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 )
@@ -112,15 +111,6 @@ type DNS struct {
 	Options     []string `json:"options,omitempty"`
 }
 
-type Route struct {
-	Dst net.IPNet
-	GW  net.IP
-}
-
-func (r *Route) String() string {
-	return fmt.Sprintf("%+v", *r)
-}
-
 // Well known error codes
 // see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
 const (
@@ -141,35 +131,6 @@ func (e *Error) Error() string {
 
 func (e *Error) Print() error {
 	return prettyPrint(e)
-}
-
-// net.IPNet is not JSON (un)marshallable so this duality is needed
-// for our custom IPNet type
-
-// JSON (un)marshallable types
-type route struct {
-	Dst IPNet  `json:"dst"`
-	GW  net.IP `json:"gw,omitempty"`
-}
-
-func (r *Route) UnmarshalJSON(data []byte) error {
-	rt := route{}
-	if err := json.Unmarshal(data, &rt); err != nil {
-		return err
-	}
-
-	r.Dst = net.IPNet(rt.Dst)
-	r.GW = rt.GW
-	return nil
-}
-
-func (r *Route) MarshalJSON() ([]byte, error) {
-	rt := route{
-		Dst: IPNet(r.Dst),
-		GW:  r.GW,
-	}
-
-	return json.Marshal(rt)
 }
 
 func prettyPrint(obj interface{}) error {

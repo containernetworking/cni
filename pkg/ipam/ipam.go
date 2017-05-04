@@ -73,18 +73,17 @@ func ConfigureIface(ifName string, res *current.Result) error {
 
 	for _, r := range res.Routes {
 		routeIsV4 := r.Dst.IP.To4() != nil
-		gw := r.GW
-		if gw == nil {
+		if len(r.NextHops) == 0 {
 			if routeIsV4 && v4gw != nil {
-				gw = v4gw
+				r.NextHops = []net.IP{v4gw}
 			} else if !routeIsV4 && v6gw != nil {
-				gw = v6gw
+				r.NextHops = []net.IP{v6gw}
 			}
 		}
-		if err = ip.AddRoute(&r.Dst, gw, link); err != nil {
+		if err = ip.AddRoute(&r.Dst, r.NextHops, link); err != nil {
 			// we skip over duplicate routes as we assume the first one wins
 			if !os.IsExist(err) {
-				return fmt.Errorf("failed to add route '%v via %v dev %v': %v", r.Dst, gw, ifName, err)
+				return fmt.Errorf("failed to add route '%v via %v dev %v': %v", r.Dst, r.NextHops, ifName, err)
 			}
 		}
 	}
