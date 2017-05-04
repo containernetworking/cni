@@ -18,7 +18,7 @@ func (matcher *BeClosedMatcher) Match(actual interface{}) (success bool, err err
 	channelValue := reflect.ValueOf(actual)
 
 	if channelType.ChanDir() == reflect.SendDir {
-		return false, fmt.Errorf("BeClosed matcher cannot determine if a send-only channel is closed or open.  Got:\n%s", format.Object(actual, 1))
+		return false, fmt.Errorf("BeClosed matcher cannot determine if a send-only channel is closed or opened.  Got:\n%s", format.Object(actual, 1))
 	}
 
 	winnerIndex, _, open := reflect.Select([]reflect.SelectCase{
