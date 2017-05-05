@@ -176,36 +176,31 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	result.Interfaces = []*current.Interface{macvlanInterface}
 
-	var firstV4Addr net.IP
 	for _, ipc := range result.IPs {
 		// All addresses apply to the container macvlan interface
 		ipc.Interface = 0
-
-		if ipc.Address.IP.To4() != nil && firstV4Addr == nil {
-			firstV4Addr = ipc.Address.IP
-		}
 	}
 
-	if firstV4Addr != nil {
-		err = netns.Do(func(_ ns.NetNS) error {
-			if err := ip.SetHWAddrByIP(args.IfName, firstV4Addr, nil /* TODO IPv6 */); err != nil {
-				return err
-			}
+	// Apply the IPAM configuration to the IF
+	err = netns.Do(func(_ ns.NetNS) error {
+		if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+			return err
+		}
 
-			return ipam.ConfigureIface(args.IfName, result)
-		})
+		iface, err := net.InterfaceByName(args.IfName)
 		if err != nil {
 			return err
 		}
-	}
 
-	// Re-fetch macvlan interface as its MAC address may have changed
-	err = netns.Do(func(_ ns.NetNS) error {
-		link, err := netlink.LinkByName(args.IfName)
-		if err != nil {
-			return fmt.Errorf("failed to re-fetch macvlan interface: %v", err)
+		// Send a gratuitous arp for every v4 address in case the IP was
+		// recently used
+		for _, ipc := range result.IPs {
+			addr := ipc.Address.IP.To4()
+			if addr != nil {
+				// Swallow this error; this isn't a critical condition
+				_ = ip.GratuitousArp(iface, addr)
+			}
 		}
-		macvlanInterface.Mac = link.Attrs().HardwareAddr.String()
 		return nil
 	})
 	if err != nil {

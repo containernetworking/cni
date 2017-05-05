@@ -24,7 +24,6 @@ import (
 	"github.com/containernetworking/cni/pkg/testutils"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
-	"github.com/containernetworking/cni/pkg/utils/hwaddr"
 
 	"github.com/vishvananda/netlink"
 
@@ -152,9 +151,6 @@ var _ = Describe("macvlan Operations", func() {
 			link, err := netlink.LinkByName(IFNAME)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(IFNAME))
-
-			hwaddrString := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-			Expect(hwaddrString).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 			hwaddr, err := net.ParseMAC(result.Interfaces[0].Mac)
 			Expect(err).NotTo(HaveOccurred())

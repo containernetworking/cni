@@ -306,16 +306,17 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 
-		if err := ip.SetHWAddrByIP(args.IfName, result.IPs[0].Address.IP, nil /* TODO IPv6 */); err != nil {
-			return err
-		}
-
-		// Refetch the veth since its MAC address may changed
-		link, err := netlink.LinkByName(args.IfName)
+		// Send a gratuitous arp for every IPv4 address
+		iface, err := net.InterfaceByName(args.IfName)
 		if err != nil {
 			return fmt.Errorf("could not lookup %q: %v", args.IfName, err)
 		}
-		containerInterface.Mac = link.Attrs().HardwareAddr.String()
+		for _, ipc := range result.IPs {
+			addr := ipc.Address.IP.To4()
+			if addr != nil {
+				ip.GratuitousArp(iface, addr)
+			}
+		}
 
 		return nil
 	}); err != nil {
@@ -323,23 +324,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	if n.IsGW {
-		var firstV4Addr net.IP
 		for _, ipc := range result.IPs {
 			gwn := &net.IPNet{
 				IP:   ipc.Gateway,
 				Mask: ipc.Address.Mask,
 			}
-			if ipc.Gateway.To4() != nil && firstV4Addr == nil {
-				firstV4Addr = ipc.Gateway
-			}
 
 			if err = ensureBridgeAddr(br, gwn, n.ForceAddress); err != nil {
-				return err
-			}
-		}
-
-		if firstV4Addr != nil {
-			if err := ip.SetHWAddrByIP(n.BrName, firstV4Addr, nil /* TODO IPv6 */); err != nil {
 				return err
 			}
 		}

@@ -51,8 +51,6 @@ var _ = Describe("Link", func() {
 		hostVethName      string
 		containerVethName string
 
-		ip4one             = net.ParseIP("1.1.1.1")
-		ip4two             = net.ParseIP("1.1.1.2")
 		originalRandReader = rand.Reader
 	)
 
@@ -230,43 +228,6 @@ var _ = Describe("Link", func() {
 
 			var ipNetNil *net.IPNet
 			Expect(addr).To(Equal(ipNetNil))
-			return nil
-		})
-	})
-
-	It("SetHWAddrByIP must change the interface hwaddr and be predictable", func() {
-
-		_ = containerNetNS.Do(func(ns.NetNS) error {
-			defer GinkgoRecover()
-
-			var err error
-			hwaddrBefore := getHwAddr(containerVethName)
-
-			err = ip.SetHWAddrByIP(containerVethName, ip4one, nil)
-			Expect(err).NotTo(HaveOccurred())
-			hwaddrAfter1 := getHwAddr(containerVethName)
-
-			Expect(hwaddrBefore).NotTo(Equal(hwaddrAfter1))
-			Expect(hwaddrAfter1).To(Equal(ip4onehwaddr))
-
-			return nil
-		})
-	})
-
-	It("SetHWAddrByIP must be injective", func() {
-
-		_ = containerNetNS.Do(func(ns.NetNS) error {
-			defer GinkgoRecover()
-
-			err := ip.SetHWAddrByIP(containerVethName, ip4one, nil)
-			Expect(err).NotTo(HaveOccurred())
-			hwaddrAfter1 := getHwAddr(containerVethName)
-
-			err = ip.SetHWAddrByIP(containerVethName, ip4two, nil)
-			Expect(err).NotTo(HaveOccurred())
-			hwaddrAfter2 := getHwAddr(containerVethName)
-
-			Expect(hwaddrAfter1).NotTo(Equal(hwaddrAfter2))
 			return nil
 		})
 	})
