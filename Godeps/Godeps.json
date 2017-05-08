@@ -27,6 +27,21 @@
 		{
 			"ImportPath": "github.com/j-keck/arping",
 			"Rev": "2cf9dc699c5640a7e2c81403a44127bf28033600"
+        },
+        {
+			"ImportPath": "github.com/google/gopacket",
+			"Comment": "v1.1.12-60-geb9a4a9",
+			"Rev": "eb9a4a92b3b915bbc31bb5c73e633f0a50474af9"
+		},
+		{
+			"ImportPath": "github.com/google/gopacket/layers",
+			"Comment": "v1.1.12-60-geb9a4a9",
+			"Rev": "eb9a4a92b3b915bbc31bb5c73e633f0a50474af9"
+		},
+		{
+			"ImportPath": "github.com/google/gopacket/pcap",
+			"Comment": "v1.1.12-60-geb9a4a9",
+			"Rev": "eb9a4a92b3b915bbc31bb5c73e633f0a50474af9"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
