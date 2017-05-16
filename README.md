@@ -2,6 +2,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
 [![Slack Status](https://cryptic-tundra-43194.herokuapp.com/badge.svg)](https://cryptic-tundra-43194.herokuapp.com/)
 
+![CNI Logo](logo.png)
+
 ---
 
 # Community Sync Meeting
