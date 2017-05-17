@@ -24,7 +24,7 @@ import (
 )
 
 var _ = Describe("Hwaddr", func() {
-	Context("Generate Hardware Address", func() {
+	Context("Generate Hardware Address for IPv4", func() {
 		It("generate hardware address based on ipv4 address", func() {
 			testCases := []struct {
 				ip          net.IP
@@ -55,20 +55,66 @@ var _ = Describe("Hwaddr", func() {
 			}
 		})
 
-		It("return error if input is not ipv4 address", func() {
-			testCases := []net.IP{
-				net.ParseIP(""),
-				net.ParseIP("2001:db8:0:1:1:1:1:1"),
+		It("return error if IPv4 address is nil", func() {
+			_, err := hwaddr.GenerateHardwareAddr4(nil, hwaddr.PrivateMACPrefix)
+			Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidIP4Err{}))
+		})
+
+		It("return error if IPv4 address is invalid", func() {
+			badIPs := []net.IP{
+				net.ParseIP("10.0.0.2")[:1], // Invalid, 3 octets
+				net.ParseIP("2001:db8::1"),  // IPv6 used as IPv4 address
 			}
-			for _, tc := range testCases {
-				_, err := hwaddr.GenerateHardwareAddr4(tc, hwaddr.PrivateMACPrefix)
-				Expect(err).To(BeAssignableToTypeOf(hwaddr.SupportIp4OnlyErr{}))
+			for _, badIP := range badIPs {
+				_, err := hwaddr.GenerateHardwareAddr4(badIP, hwaddr.PrivateMACPrefix)
+				Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidIP4Err{}))
 			}
 		})
 
-		It("return error if prefix is invalid", func() {
+		It("return error if IPv4 hardware address prefix is invalid", func() {
 			_, err := hwaddr.GenerateHardwareAddr4(net.ParseIP("10.0.0.2"), []byte{0x58})
 			Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidPrefixLengthErr{}))
 		})
+	})
+
+	Context("Generate Hardware Address for IPv6", func() {
+		It("generate hardware address that includes a hard-coded prefix", func() {
+			prefix := hwaddr.PrivateMACPrefixString6
+			testCases := []struct {
+				startMAC    string
+				expectedMAC string
+			}{
+				{
+					startMAC:    "02:42:d1:0e:5d:54",
+					expectedMAC: prefix + ":d1:0e:5d:54",
+				},
+				{
+					startMAC:    "1e:f7:4c:4e:1b:91",
+					expectedMAC: prefix + ":4c:4e:1b:91",
+				},
+				{
+					startMAC:    "52:54:00:80:f2:81",
+					expectedMAC: prefix + ":00:80:f2:81",
+				},
+			}
+			for _, tc := range testCases {
+				hwaddrBefore, err := net.ParseMAC(tc.startMAC)
+				Expect(err).NotTo(HaveOccurred())
+				hwaddrAfter, err := hwaddr.GenerateHardwareAddr6(
+					hwaddrBefore, hwaddr.PrivateMACPrefix6)
+				Expect(err).NotTo(HaveOccurred())
+				hwaddrExpected, err := net.ParseMAC(tc.expectedMAC)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hwaddrAfter).To(Equal(hwaddrExpected))
+			}
+		})
+
+		It("return error if IPv6 hardware address prefix is invalid", func() {
+			hwaddrBefore, err := net.ParseMAC("0e:01:02:03:04:05")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = hwaddr.GenerateHardwareAddr6(hwaddrBefore, []byte{0x58})
+			Expect(err).To(BeAssignableToTypeOf(hwaddr.InvalidPrefixLengthErr{}))
+		})
+
 	})
 })
