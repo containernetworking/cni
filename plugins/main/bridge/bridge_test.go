@@ -27,8 +27,6 @@ import (
 	"github.com/containernetworking/cni/pkg/types/020"
 	"github.com/containernetworking/cni/pkg/types/current"
 
-	"github.com/containernetworking/cni/pkg/utils/hwaddr"
-
 	"github.com/vishvananda/netlink"
 
 	. "github.com/onsi/ginkgo"
@@ -89,8 +87,6 @@ func checkBridgeConfig03x(version string, originalNS ns.NetNS) {
 		Expect(link.Attrs().Name).To(Equal(BRNAME))
 		Expect(link).To(BeAssignableToTypeOf(&netlink.Bridge{}))
 		Expect(link.Attrs().HardwareAddr.String()).To(Equal(result.Interfaces[0].Mac))
-		hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-		Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 		// Ensure bridge has gateway address
 		addrs, err := netlink.AddrList(link, syscall.AF_INET)
@@ -131,9 +127,6 @@ func checkBridgeConfig03x(version string, originalNS ns.NetNS) {
 		addrs, err := netlink.AddrList(link, syscall.AF_INET)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(addrs)).To(Equal(1))
-
-		hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-		Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 		// Ensure the default route
 		routes, err := netlink.RouteList(link, 0)
@@ -374,8 +367,6 @@ var _ = Describe("bridge Operations", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(link.Attrs().Name).To(Equal(BRNAME))
 			Expect(link).To(BeAssignableToTypeOf(&netlink.Bridge{}))
-			hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-			Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 			// Ensure bridge has gateway address
 			addrs, err := netlink.AddrList(link, syscall.AF_INET)
@@ -414,9 +405,6 @@ var _ = Describe("bridge Operations", func() {
 			addrs, err := netlink.AddrList(link, syscall.AF_INET)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(addrs)).To(Equal(1))
-
-			hwAddr := fmt.Sprintf("%s", link.Attrs().HardwareAddr)
-			Expect(hwAddr).To(HavePrefix(hwaddr.PrivateMACPrefixString))
 
 			// Ensure the default route
 			routes, err := netlink.RouteList(link, 0)

@@ -73,38 +73,15 @@ func setupContainerVeth(netns ns.NetNS, ifName string, mtu int, pr *current.Resu
 		containerInterface.Mac = contVeth0.HardwareAddr.String()
 		containerInterface.Sandbox = netns.Path()
 
-		var firstV4Addr net.IP
 		for _, ipc := range pr.IPs {
 			// All addresses apply to the container veth interface
 			ipc.Interface = 1
-
-			if ipc.Address.IP.To4() != nil && firstV4Addr == nil {
-				firstV4Addr = ipc.Address.IP
-			}
 		}
 
 		pr.Interfaces = []*current.Interface{hostInterface, containerInterface}
 
-		if firstV4Addr != nil {
-			err = hostNS.Do(func(_ ns.NetNS) error {
-				hostVethName := hostVeth.Name
-				if err := ip.SetHWAddrByIP(hostVethName, firstV4Addr, nil /* TODO IPv6 */); err != nil {
-					return fmt.Errorf("failed to set hardware addr by IP: %v", err)
-				}
-
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-		}
-
 		if err = ipam.ConfigureIface(ifName, pr); err != nil {
 			return err
-		}
-
-		if err := ip.SetHWAddrByIP(contVeth0.Name, firstV4Addr, nil /* TODO IPv6 */); err != nil {
-			return fmt.Errorf("failed to set hardware addr by IP: %v", err)
 		}
 
 		// Re-fetch container veth to update attributes
