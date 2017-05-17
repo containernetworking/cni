@@ -223,6 +223,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if !hasKey(n.Delegate, "isGateway") {
 			n.Delegate["isGateway"] = true
 		}
+		if !hasKey(n.Delegate, "forceAddress") {
+			n.Delegate["forceAddress"] = true
+		}
 	}
 
 	n.Delegate["ipam"] = map[string]interface{}{
