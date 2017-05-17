@@ -56,6 +56,10 @@ func (n *IPNet) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (n *IPNet) String() string {
+	return (*net.IPNet)(n).String()
+}
+
 // NetConf describes a network.
 type NetConf struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
