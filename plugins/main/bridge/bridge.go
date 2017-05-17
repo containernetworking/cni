@@ -22,6 +22,7 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/containernetworking/cni/pkg/bridge"
 	"github.com/containernetworking/cni/pkg/ip"
 	"github.com/containernetworking/cni/pkg/ipam"
 	"github.com/containernetworking/cni/pkg/ns"
@@ -114,106 +115,9 @@ func deleteBridgeAddr(br *netlink.Bridge, ipn *net.IPNet) error {
 	return nil
 }
 
-func bridgeByName(name string) (*netlink.Bridge, error) {
-	l, err := netlink.LinkByName(name)
-	if err != nil {
-		return nil, fmt.Errorf("could not lookup %q: %v", name, err)
-	}
-	br, ok := l.(*netlink.Bridge)
-	if !ok {
-		return nil, fmt.Errorf("%q already exists but is not a bridge", name)
-	}
-	return br, nil
-}
-
-func ensureBridge(brName string, mtu int) (*netlink.Bridge, error) {
-	br := &netlink.Bridge{
-		LinkAttrs: netlink.LinkAttrs{
-			Name: brName,
-			MTU:  mtu,
-			// Let kernel use default txqueuelen; leaving it unset
-			// means 0, and a zero-length TX queue messes up FIFO
-			// traffic shapers which use TX queue length as the
-			// default packet limit
-			TxQLen: -1,
-		},
-	}
-
-	err := netlink.LinkAdd(br)
-	if err != nil && err != syscall.EEXIST {
-		return nil, fmt.Errorf("could not add %q: %v", brName, err)
-	}
-
-	// Re-fetch link to read all attributes and if it already existed,
-	// ensure it's really a bridge with similar configuration
-	br, err = bridgeByName(brName)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := netlink.LinkSetUp(br); err != nil {
-		return nil, err
-	}
-
-	return br, nil
-}
-
-func setupVeth(netns ns.NetNS, br *netlink.Bridge, ifName string, mtu int, hairpinMode bool) (*current.Interface, *current.Interface, error) {
-	contIface := &current.Interface{}
-	hostIface := &current.Interface{}
-
-	err := netns.Do(func(hostNS ns.NetNS) error {
-		// create the veth pair in the container and move host end into host netns
-		hostVeth, containerVeth, err := ip.SetupVeth(ifName, mtu, hostNS)
-		if err != nil {
-			return err
-		}
-		contIface.Name = containerVeth.Name
-		contIface.Mac = containerVeth.HardwareAddr.String()
-		contIface.Sandbox = netns.Path()
-		hostIface.Name = hostVeth.Name
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// need to lookup hostVeth again as its index has changed during ns move
-	hostVeth, err := netlink.LinkByName(hostIface.Name)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to lookup %q: %v", hostIface.Name, err)
-	}
-	hostIface.Mac = hostVeth.Attrs().HardwareAddr.String()
-
-	// connect host veth end to the bridge
-	if err := netlink.LinkSetMaster(hostVeth, br); err != nil {
-		return nil, nil, fmt.Errorf("failed to connect %q to bridge %v: %v", hostVeth.Attrs().Name, br.Attrs().Name, err)
-	}
-
-	// set hairpin mode
-	if err = netlink.LinkSetHairpin(hostVeth, hairpinMode); err != nil {
-		return nil, nil, fmt.Errorf("failed to setup hairpin mode for %v: %v", hostVeth.Attrs().Name, err)
-	}
-
-	return hostIface, contIface, nil
-}
-
 func calcGatewayIP(ipn *net.IPNet) net.IP {
 	nid := ipn.IP.Mask(ipn.Mask)
 	return ip.NextIP(nid)
-}
-
-func setupBridge(n *NetConf) (*netlink.Bridge, *current.Interface, error) {
-	// create bridge if necessary
-	br, err := ensureBridge(n.BrName, n.MTU)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create bridge %q: %v", n.BrName, err)
-	}
-
-	return br, &current.Interface{
-		Name: br.Attrs().Name,
-		Mac:  br.Attrs().HardwareAddr.String(),
-	}, nil
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -226,7 +130,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		n.IsGW = true
 	}
 
-	br, brInterface, err := setupBridge(n)
+	br, brInterface, err := bridge.Setup(n.BrName, n.MTU)
 	if err != nil {
 		return err
 	}
@@ -237,7 +141,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer netns.Close()
 
-	hostInterface, containerInterface, err := setupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)
+	hostInterface, containerInterface, err := bridge.SetupVeth(netns, br, args.IfName, n.MTU, n.HairpinMode)
 	if err != nil {
 		return err
 	}
@@ -361,7 +265,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	// Refetch the bridge since its MAC address may change when the first
 	// veth is added or after its IP address is set
-	br, err = bridgeByName(n.BrName)
+	br, err = bridge.FindByName(n.BrName)
 	if err != nil {
 		return err
 	}
