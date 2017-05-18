@@ -44,6 +44,7 @@ type NetConf struct {
 	IPMasq       bool   `json:"ipMasq"`
 	MTU          int    `json:"mtu"`
 	HairpinMode  bool   `json:"hairpinMode"`
+	Promisc      bool   `json:"promisc"`
 }
 
 func init() {
@@ -210,6 +211,15 @@ func setupBridge(n *NetConf) (*netlink.Bridge, *current.Interface, error) {
 		return nil, nil, fmt.Errorf("failed to create bridge %q: %v", n.BrName, err)
 	}
 
+	if n.Promisc {
+		if err := netlink.SetPromiscOn(br); err != nil {
+			return nil, nil, fmt.Errorf("failed to set promisc on for %q: %v", n.BrName, err)
+		}
+	} else {
+		if err := netlink.SetPromiscOff(br); err != nil {
+			return nil, nil, fmt.Errorf("failed to set promisc off for %q: %v", n.BrName, err)
+		}
+	}
 	return br, &current.Interface{
 		Name: br.Attrs().Name,
 		Mac:  br.Attrs().HardwareAddr.String(),
