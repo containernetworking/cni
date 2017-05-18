@@ -23,9 +23,11 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"sync"
+	"syscall"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -128,7 +130,25 @@ func getListener() (net.Listener, error) {
 		if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
 			return nil, err
 		}
-		return net.Listen("unix", socketPath)
+		l, err := net.Listen("unix", socketPath)
+		if err == nil {
+			signalChan := make(chan os.Signal, 1)
+			signal.Notify(signalChan, os.Interrupt)
+			signal.Notify(signalChan, syscall.SIGTERM)
+			go func() {
+				signal := <-signalChan
+
+				signum := 0
+				switch signal := signal.(type) {
+				case syscall.Signal:
+					signum = int(signal)
+				}
+
+				l.Close()
+				os.Exit(128 + signum)
+			}()
+		}
+		return l, err
 
 	case len(l) == 1:
 		if l[0] == nil {
