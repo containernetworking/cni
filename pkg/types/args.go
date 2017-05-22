@@ -85,8 +85,11 @@ func LoadArgs(args string, container interface{}) error {
 			unknownArgs = append(unknownArgs, pair)
 			continue
 		}
-
-		u := keyField.Addr().Interface().(encoding.TextUnmarshaler)
+		keyFieldIface := keyField.Addr().Interface()
+		u, ok := keyFieldIface.(encoding.TextUnmarshaler)
+		if !ok {
+			return fmt.Errorf("ARGS: '%s' cannot be unmarshalled from textual form for pair %q", keyField, pair)
+		}
 		err := u.UnmarshalText([]byte(valueString))
 		if err != nil {
 			return fmt.Errorf("ARGS: error parsing value of pair %q: %v)", pair, err)
