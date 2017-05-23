@@ -225,12 +225,21 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
+	_, IPAny, IPAnyErr := net.ParseCIDR("0.0.0.0/0")
+
+	if IPAnyErr != nil {
+		return IPAnyErr
+	}
+
 	n.Delegate["ipam"] = map[string]interface{}{
 		"type":   "host-local",
 		"subnet": fenv.sn.String(),
 		"routes": []types.Route{
 			types.Route{
 				Dst: *fenv.nw,
+			},
+			types.Route{
+				Dst: *IPAny,
 			},
 		},
 	}
