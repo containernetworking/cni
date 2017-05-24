@@ -69,14 +69,14 @@ CNI requires Go 1.5+ to build.
 Go 1.5 users will need to set GO15VENDOREXPERIMENT=1 to get vendored
 dependencies. This flag is set by default in 1.6.
 
-### Included Plugins
+### Reference Plugins
 
-This repository includes a number of common plugins in the `plugins/` directory.
-Please see the [Documentation/](Documentation/) directory for documentation about particular plugins.
+The CNI project maintains a set of [reference plugins](https://github.com/containernetworking/plugins) that implement the CNI specification.
+NOTE: the reference plugins used to live in [https://github.com/containernetworking/cni](https://github.com/containernetworking/cni) but have been split out to their [current location](https://github.com/containernetworking/plugins) as of May 2017.
 
 ### Running the plugins
 
-The scripts/ directory contains two scripts, `priv-net-run.sh` and `docker-run.sh`, that can be used to exercise the plugins.
+After building and installing the [reference plugins](https://github.com/containernetworking/plugins), you can use the `priv-net-run.sh` and `docker-run.sh` scripts in the `scripts/` directory to exercise the plugins.
 
 **note - priv-net-run.sh depends on `jq`**
 
