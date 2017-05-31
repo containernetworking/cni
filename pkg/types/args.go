@@ -63,6 +63,12 @@ func GetKeyField(keyString string, v reflect.Value) reflect.Value {
 	return v.Elem().FieldByName(keyString)
 }
 
+// UnmarshalableArgsError is used to indicate error unmarshalling args
+// from the args-string in the form "K=V;K2=V2;..."
+type UnmarshalableArgsError struct {
+	error
+}
+
 // LoadArgs parses args from a string in the form "K=V;K2=V2;..."
 func LoadArgs(args string, container interface{}) error {
 	if args == "" {
@@ -88,7 +94,9 @@ func LoadArgs(args string, container interface{}) error {
 		keyFieldIface := keyField.Addr().Interface()
 		u, ok := keyFieldIface.(encoding.TextUnmarshaler)
 		if !ok {
-			return fmt.Errorf("ARGS: '%s' cannot be unmarshalled from textual form for pair %q", keyField, pair)
+			return UnmarshalableArgsError{fmt.Errorf(
+				"ARGS: cannot unmarshal into field '%s' - type '%s' does not implement encoding.TextUnmarshaler",
+				keyString, reflect.TypeOf(keyFieldIface))}
 		}
 		err := u.UnmarshalText([]byte(valueString))
 		if err != nil {
