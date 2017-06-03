@@ -58,7 +58,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 ```
 
 ## "args" in network config
-`args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.1.0` CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
+`args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.2.0` release of the CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
 > args (dictionary): Optional additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under args.
 
 `args` provide a way of providing more structured data than the flat strings that CNI_ARGS can support.
