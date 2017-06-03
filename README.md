@@ -52,6 +52,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Romana - Layer 3 CNI plugin supporting network policy for Kubernetes](https://github.com/romana/kube)
 - [CNI-Genie - generic CNI network plugin](https://github.com/Huawei-PaaS/CNI-Genie)
 - [Nuage CNI - Nuage Networks SDN plugin for network policy kubernetes support ](https://github.com/nuagenetworks/nuage-cni)
+- [Silk - a CNI plugin designed for Cloud Foundry](https://github.com/cloudfoundry-incubator/silk)
 
 The CNI team also maintains some [core plugins](plugins).
 
