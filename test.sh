@@ -11,8 +11,8 @@ set -e
 
 source ./build.sh
 
-TESTABLE="libcni pkg/invoke pkg/ns pkg/skel pkg/types pkg/types/current pkg/types/020 pkg/utils plugins/test/noop pkg/utils/hwaddr pkg/ip pkg/version pkg/version/testhelpers pkg/ipam"
-FORMATTABLE="$TESTABLE pkg/testutils"
+TESTABLE="libcni pkg/invoke pkg/skel pkg/types pkg/types/current pkg/types/020 pkg/version pkg/version/testhelpers plugins/test/noop"
+FORMATTABLE="$TESTABLE"
 
 # user has not provided PKG override
 if [ -z "$PKG" ]; then
