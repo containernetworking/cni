@@ -16,7 +16,7 @@ There is a community sync meeting for users and developers every 1-2 months. The
 
 ## What is CNI?
 
-The CNI (_Container Network Interface_) project consists of a specification and libraries for writing plugins to configure network interfaces in Linux containers, along with a number of supported plugins.
+CNI (_Container Network Interface_), a [Cloud Native Computing Foundation](https://cncf.io) project, consists of a specification and libraries for writing plugins to configure network interfaces in Linux containers, along with a number of supported plugins.
 CNI concerns itself only with network connectivity of containers and removing allocated resources when the container is deleted.
 Because of this focus, CNI has a wide range of support and the specification is simple to implement.
 
@@ -132,7 +132,7 @@ eth0      Link encap:Ethernet  HWaddr f2:c2:6f:54:b8:2b
           UP BROADCAST MULTICAST  MTU:1500  Metric:1
           RX packets:1 errors:0 dropped:0 overruns:0 frame:0
           TX packets:0 errors:0 dropped:1 overruns:0 carrier:0
-          collisions:0 txqueuelen:0 
+          collisions:0 txqueuelen:0
           RX bytes:90 (90.0 B)  TX bytes:0 (0.0 B)
 
 lo        Link encap:Local Loopback  
@@ -141,7 +141,7 @@ lo        Link encap:Local Loopback
           UP LOOPBACK RUNNING  MTU:65536  Metric:1
           RX packets:0 errors:0 dropped:0 overruns:0 frame:0
           TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0 
+          collisions:0 txqueuelen:0
           RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 ```
 
@@ -162,7 +162,7 @@ eth0      Link encap:Ethernet  HWaddr fa:60:70:aa:07:d1
           UP BROADCAST MULTICAST  MTU:1500  Metric:1
           RX packets:1 errors:0 dropped:0 overruns:0 frame:0
           TX packets:0 errors:0 dropped:1 overruns:0 carrier:0
-          collisions:0 txqueuelen:0 
+          collisions:0 txqueuelen:0
           RX bytes:90 (90.0 B)  TX bytes:0 (0.0 B)
 
 lo        Link encap:Local Loopback  
@@ -171,7 +171,7 @@ lo        Link encap:Local Loopback
           UP LOOPBACK RUNNING  MTU:65536  Metric:1
           RX packets:0 errors:0 dropped:0 overruns:0 frame:0
           TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0 
+          collisions:0 txqueuelen:0
           RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 ```
 
