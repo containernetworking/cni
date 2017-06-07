@@ -116,14 +116,15 @@ The directory `/etc/cni/net.d` is the default location in which the scripts will
 Next, build the plugins:
 
 ```bash
+$ cd $GOPATH/src/github.com/containernetworking/plugins
 $ ./build.sh
 ```
 
 Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined the `mynet` network:
 
 ```bash
-$ CNI_PATH=`pwd`/bin
-$ cd scripts
+$ CNI_PATH=$GOPATH/src/github.com/containernetworking/plugins/bin
+$ cd $GOPATH/src/github.com/containernetworking/cni/scripts
 $ sudo CNI_PATH=$CNI_PATH ./priv-net-run.sh ifconfig
 eth0      Link encap:Ethernet  HWaddr f2:c2:6f:54:b8:2b  
           inet addr:10.22.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
@@ -152,8 +153,8 @@ Use the instructions in the previous section to define a netconf and build the p
 Next, docker-run.sh script wraps `docker run`, to execute the plugins prior to entering the container:
 
 ```bash
-$ CNI_PATH=`pwd`/bin
-$ cd scripts
+$ CNI_PATH=$GOPATH/src/github.com/containernetworking/plugins/bin
+$ cd $GOPATH/src/github.com/containernetworking/cni/scripts
 $ sudo CNI_PATH=$CNI_PATH ./docker-run.sh --rm busybox:latest ifconfig
 eth0      Link encap:Ethernet  HWaddr fa:60:70:aa:07:d1  
           inet addr:10.22.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
