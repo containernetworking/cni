@@ -24,7 +24,7 @@ const (
 )
 
 // SupportedNlFamilies contains the list of netlink families this netlink package supports
-var SupportedNlFamilies = []int{syscall.NETLINK_ROUTE, syscall.NETLINK_XFRM, syscall.NETLINK_NETFILTER}
+var SupportedNlFamilies = []int{syscall.NETLINK_ROUTE, syscall.NETLINK_XFRM}
 
 var nextSeqNr uint32
 
@@ -321,7 +321,6 @@ func (a *RtAttr) Serialize() []byte {
 type NetlinkRequest struct {
 	syscall.NlMsghdr
 	Data    []NetlinkRequestData
-	RawData []byte
 	Sockets map[int]*SocketHandle
 }
 
@@ -333,8 +332,6 @@ func (req *NetlinkRequest) Serialize() []byte {
 		dataBytes[i] = data.Serialize()
 		length = length + len(dataBytes[i])
 	}
-	length += len(req.RawData)
-
 	req.Len = uint32(length)
 	b := make([]byte, length)
 	hdr := (*(*[syscall.SizeofNlMsghdr]byte)(unsafe.Pointer(req)))[:]
@@ -346,23 +343,12 @@ func (req *NetlinkRequest) Serialize() []byte {
 			next = next + 1
 		}
 	}
-	// Add the raw data if any
-	if len(req.RawData) > 0 {
-		copy(b[next:length], req.RawData)
-	}
 	return b
 }
 
 func (req *NetlinkRequest) AddData(data NetlinkRequestData) {
 	if data != nil {
 		req.Data = append(req.Data, data)
-	}
-}
-
-// AddRawData adds raw bytes to the end of the NetlinkRequest object during serialization
-func (req *NetlinkRequest) AddRawData(data []byte) {
-	if data != nil {
-		req.RawData = append(req.RawData, data...)
 	}
 }
 
@@ -465,7 +451,7 @@ type NetlinkSocket struct {
 }
 
 func getNetlinkSocket(protocol int) (*NetlinkSocket, error) {
-	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW|syscall.SOCK_CLOEXEC, protocol)
+	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, protocol)
 	if err != nil {
 		return nil, err
 	}
