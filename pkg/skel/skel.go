@@ -173,6 +173,11 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionIn
 		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdAdd)
 	case "DEL":
 		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdDel)
+		// From SPEC 3.0"
+		// Plugins should generally complete a DEL action without error even if some resources are missing
+		if os.IsNotExist(err) {
+			err = nil
+		}
 	case "VERSION":
 		err = versionInfo.Encode(t.Stdout)
 	default:
