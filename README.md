@@ -20,7 +20,7 @@ CNI (_Container Network Interface_), a [Cloud Native Computing Foundation](https
 CNI concerns itself only with network connectivity of containers and removing allocated resources when the container is deleted.
 Because of this focus, CNI has a wide range of support and the specification is simple to implement.
 
-As well as the [specification](SPEC.md), this repository contains the Go source code of a library for integrating CNI into applications, an example command-line tool, a template for making new plugins, and the supported plugins.
+As well as the [specification](SPEC.md), this repository contains the Go source code of a [library for integrating CNI into applications](libcni) and an [example command-line tool](cnitool) for executing CNI plugins.  A [separate repository contains reference plugins](https://github.com/containernetworking/plugins) and a template for making new plugins.
 
 The template code makes it straight-forward to create a CNI plugin for an existing container networking project.
 CNI also makes a good framework for creating a new container networking project from scratch.
@@ -54,7 +54,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Nuage CNI - Nuage Networks SDN plugin for network policy kubernetes support ](https://github.com/nuagenetworks/nuage-cni)
 - [Silk - a CNI plugin designed for Cloud Foundry](https://github.com/cloudfoundry-incubator/silk)
 
-The CNI team also maintains some [core plugins](plugins).
+The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
 
 ## Contributing to CNI
@@ -66,15 +66,12 @@ If you intend to contribute to code or documentation, please read [CONTRIBUTING.
 
 ### Requirements
 
-CNI requires Go 1.5+ to build.
-
-Go 1.5 users will need to set GO15VENDOREXPERIMENT=1 to get vendored
-dependencies. This flag is set by default in 1.6.
+The CNI spec is language agnostic.  To use the Go language libraries in this repository, you'll need a recent version of Go.  Our [automated tests](https://travis-ci.org/containernetworking/cni/builds) cover Go versions 1.7 and 1.8.
 
 ### Reference Plugins
 
 The CNI project maintains a set of [reference plugins](https://github.com/containernetworking/plugins) that implement the CNI specification.
-NOTE: the reference plugins used to live in [https://github.com/containernetworking/cni](https://github.com/containernetworking/cni) but have been split out to their [current location](https://github.com/containernetworking/plugins) as of May 2017.
+NOTE: the reference plugins used to live in this repository but have been split out into a [separate repository](https://github.com/containernetworking/plugins) as of May 2017.
 
 ### Running the plugins
 
