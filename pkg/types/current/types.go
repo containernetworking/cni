@@ -70,10 +70,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 
 	if oldResult.IP4 != nil {
 		newResult.IPs = append(newResult.IPs, &IPConfig{
-			Version:   "4",
-			Interface: -1,
-			Address:   oldResult.IP4.IP,
-			Gateway:   oldResult.IP4.Gateway,
+			Version: "4",
+			Address: oldResult.IP4.IP,
+			Gateway: oldResult.IP4.Gateway,
 		})
 		for _, route := range oldResult.IP4.Routes {
 			gw := route.GW
@@ -89,10 +88,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 
 	if oldResult.IP6 != nil {
 		newResult.IPs = append(newResult.IPs, &IPConfig{
-			Version:   "6",
-			Interface: -1,
-			Address:   oldResult.IP6.IP,
-			Gateway:   oldResult.IP6.Gateway,
+			Version: "6",
+			Address: oldResult.IP6.IP,
+			Gateway: oldResult.IP6.Gateway,
 		})
 		for _, route := range oldResult.IP6.Routes {
 			gw := route.GW
@@ -249,12 +247,18 @@ func (i *Interface) String() string {
 	return fmt.Sprintf("%+v", *i)
 }
 
+// Int returns a pointer to the int value passed in.  Used to
+// set the IPConfig.Interface field.
+func Int(v int) *int {
+	return &v
+}
+
 // IPConfig contains values necessary to configure an IP address on an interface
 type IPConfig struct {
 	// IP version, either "4" or "6"
 	Version string
 	// Index into Result structs Interfaces list
-	Interface int
+	Interface *int
 	Address   net.IPNet
 	Gateway   net.IP
 }
@@ -266,7 +270,7 @@ func (i *IPConfig) String() string {
 // JSON (un)marshallable types
 type ipConfig struct {
 	Version   string      `json:"version"`
-	Interface int         `json:"interface,omitempty"`
+	Interface *int        `json:"interface,omitempty"`
 	Address   types.IPNet `json:"address"`
 	Gateway   net.IP      `json:"gateway,omitempty"`
 }
