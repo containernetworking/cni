@@ -266,7 +266,7 @@ func (i *IPConfig) String() string {
 // JSON (un)marshallable types
 type ipConfig struct {
 	Version   string      `json:"version"`
-	Interface int         `json:"interface,omitempty"`
+	Interface int         `json:"interface"`
 	Address   types.IPNet `json:"address"`
 	Gateway   net.IP      `json:"gateway,omitempty"`
 }
