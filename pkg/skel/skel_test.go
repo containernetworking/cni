@@ -341,6 +341,24 @@ var _ = Describe("dispatching to the correct callback", func() {
 				}))
 			})
 		})
+
+		Context("when the error code is less than 100", func() {
+			BeforeEach(func() {
+				cmdAdd.Returns.Error = &types.Error{
+					Code: 50,
+					Msg:  "bad error status code",
+				}
+			})
+
+			It("convert the error status code to 100", func() {
+				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+
+				Expect(err).To(Equal(&types.Error{
+					Code: 100,
+					Msg:  "bad error status code",
+				}))
+			})
+		})
 	})
 })
 
