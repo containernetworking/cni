@@ -533,3 +533,4 @@ The `dns` field contains a dictionary consisting of common DNS information.
 ## Well-known Error Codes
 - `1` - Incompatible CNI version
 - `2` - Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
+- `100` - Error during invocation of cni plugin. Plugin didn't specify the error code.
