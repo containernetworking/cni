@@ -159,7 +159,16 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 			Details: verErr.Details(),
 		}
 	}
-	return toCall(cmdArgs)
+
+	err = toCall(cmdArgs)
+	if e, ok := err.(*types.Error); ok {
+		if e.Code < 100 {
+			e.Code = 100
+		}
+		return e
+	}
+
+	return err
 }
 
 func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
