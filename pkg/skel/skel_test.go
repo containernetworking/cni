@@ -17,9 +17,11 @@ package skel
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 
 	. "github.com/onsi/ginkgo"
@@ -224,10 +226,10 @@ var _ = Describe("dispatching to the correct callback", func() {
 			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(stdout).To(MatchJSON(`{
-				"cniVersion": "0.3.1",
+			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
+				"cniVersion": "%s",
 				"supportedVersions": ["9.8.7"]
-			}`))
+			}`, current.ImplementedSpecVersion)))
 		})
 
 		It("does not call cmdAdd or cmdDel", func() {
@@ -255,10 +257,10 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(r.ReadCount).To(Equal(0))
-			Expect(stdout).To(MatchJSON(`{
-				"cniVersion": "0.3.1",
+			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
+				"cniVersion": "%s",
 				"supportedVersions": ["9.8.7"]
-			}`))
+			}`, current.ImplementedSpecVersion)))
 		})
 	})
 

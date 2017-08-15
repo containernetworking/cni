@@ -1,7 +1,7 @@
 # Container Network Interface Specification
 
 ## Version
-This is CNI **spec** version **0.3.1-dev**. This spec contains **unreleased** changes.
+This is CNI **spec** version **0.4.0-dev**. This spec contains **unreleased** changes.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
@@ -91,8 +91,8 @@ The operations that CNI plugins must support are:
 
       ```
       {
-        "cniVersion": "0.3.1", // the version of the CNI spec in use for this output
-        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1" ] // the list of CNI spec versions that this plugin supports
+        "cniVersion": "0.4.0", // the version of the CNI spec in use for this output
+        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0" ] // the list of CNI spec versions that this plugin supports
       }
       ```
 
@@ -116,7 +116,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
 
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "interfaces": [                                            (this key omitted by IPAM plugins)
       {
           "name": "<name>",
@@ -171,7 +171,7 @@ Examples include generating an `/etc/resolv.conf` file to be injected into the c
 Errors must be indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
@@ -206,7 +206,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -225,7 +225,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -246,7 +246,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "wan",
   "type": "macvlan",
   // ipam specific
@@ -295,7 +295,7 @@ Plugins should generally complete a DEL action without error even if some resour
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "plugins": [
     {
@@ -337,7 +337,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -362,7 +362,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -391,7 +391,7 @@ Also note that plugins are executed in reverse order from the ADD action.
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -404,7 +404,7 @@ Also note that plugins are executed in reverse order from the ADD action.
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -439,7 +439,7 @@ Success must be indicated by a zero return code and the following JSON being pri
 
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "ips": [
       {
           "version": "<4-or-6>",
