@@ -72,14 +72,35 @@ var _ = Describe("GetVersion, integration tests", func() {
 			version.PluginSupports("0.2.0", "0.999.0"),
 		),
 
+		Entry("historical: before GET was introduced",
+			git_ref_v031, plugin_source_v020_custom_versions,
+			version.PluginSupports("0.2.0", "0.999.0"),
+		),
+
 		// this entry tracks the current behavior.  Before you change it, ensure
 		// that its previous behavior is captured in the most recent "historical" entry
 		Entry("current",
-			"HEAD", plugin_source_v020_custom_versions,
-			version.PluginSupports("0.2.0", "0.999.0"),
+			"HEAD", plugin_source_v040_get,
+			version.PluginSupports("0.2.0", "0.4.0", "0.999.0"),
 		),
 	)
 })
+
+// A 0.4.0 plugin that supports GET
+const plugin_source_v040_get = `package main
+
+import (
+	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/version"
+	"fmt"
+)
+
+func c(_ *skel.CmdArgs) error { fmt.Println("{}"); return nil }
+
+func main() { skel.PluginMain(c, c, c, version.PluginSupports("0.2.0", "0.4.0", "0.999.0")) }
+`
+
+const git_ref_v031 = "909fe7d"
 
 // a 0.2.0 plugin that can report its own versions
 const plugin_source_v020_custom_versions = `package main

@@ -173,6 +173,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return debugBehavior(args, "ADD")
 }
 
+func cmdGet(args *skel.CmdArgs) error {
+	return debugBehavior(args, "GET")
+}
+
 func cmdDel(args *skel.CmdArgs) error {
 	return debugBehavior(args, "DEL")
 }
@@ -208,5 +212,5 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
+	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.PluginSupports(supportedVersions...))
 }
