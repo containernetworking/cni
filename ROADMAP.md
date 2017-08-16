@@ -23,11 +23,18 @@ The list below is not complete, and we advise to get the current project state f
 * Improve IPAM allocator predictability
 * Allow in- and output of arbitrary K/V pairs for plugins
 
-### [v1.0.0](https://github.com/containernetworking/cni/milestones/v1.0.0)
+### [v0.6.0](https://github.com/containernetworking/cni/milestones/v0.6.0)
 
 - Plugin composition functionality
 - IPv6 support
-- Stable SPEC
 - Strategy and tooling for backwards compatibility
-- Complete test coverage
 - Integrate build artefact generation with CI
+
+### [v1.0.0](https://github.com/containernetworking/cni/milestones/v1.0.0)
+
+- More precise specification language
+- GET action
+- Conformance test suite for CNI plugins (both reference and 3rd party)
+- Stable SPEC
+- Complete test coverage
+
