@@ -46,6 +46,10 @@ func testResult() *current.Result {
 	Expect(routev6).NotTo(BeNil())
 	Expect(routegwv6).NotTo(BeNil())
 
+	blackholeIPv4, err := types.ParseCIDR("10.8.11.2/32")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(blackholeIPv4).NotTo(BeNil())
+
 	// Set every field of the struct to ensure source compatibility
 	return &current.Result{
 		CNIVersion: "0.3.1",
@@ -73,6 +77,7 @@ func testResult() *current.Result {
 		Routes: []*types.Route{
 			{Dst: *routev4, GW: routegwv4},
 			{Dst: *routev6, GW: routegwv6},
+			{Dst: *blackholeIPv4, Type: "blackhole"},
 		},
 		DNS: types.DNS{
 			Nameservers: []string{"1.2.3.4", "1::cafe"},
@@ -133,6 +138,10 @@ var _ = Describe("Current types operations", func() {
         {
             "dst": "1111:dddd::/80",
             "gw": "1111:dddd::aaaa"
+        },
+        {
+            "type": "blackhole",
+            "dst": "10.8.11.2/32"
         }
     ],
     "dns": {
@@ -157,7 +166,7 @@ var _ = Describe("Current types operations", func() {
 		res, err := testResult().GetAsVersion("0.1.0")
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(res.String()).To(Equal("IP4:{IP:{IP:1.2.3.30 Mask:ffffff00} Gateway:1.2.3.1 Routes:[{Dst:{IP:15.5.6.0 Mask:ffffff00} GW:15.5.6.8}]}, IP6:{IP:{IP:abcd:1234:ffff::cdde Mask:ffffffffffffffff0000000000000000} Gateway:abcd:1234:ffff::1 Routes:[{Dst:{IP:1111:dddd:: Mask:ffffffffffffffffffff000000000000} GW:1111:dddd::aaaa}]}, DNS:{Nameservers:[1.2.3.4 1::cafe] Domain:acompany.com Search:[somedomain.com otherdomain.net] Options:[foo bar]}"))
+		Expect(res.String()).To(Equal("IP4:{IP:{IP:1.2.3.30 Mask:ffffff00} Gateway:1.2.3.1 Routes:[{Type: Dst:{IP:15.5.6.0 Mask:ffffff00} GW:15.5.6.8} {Type:blackhole Dst:{IP:10.8.11.2 Mask:ffffffff} GW:<nil>}]}, IP6:{IP:{IP:abcd:1234:ffff::cdde Mask:ffffffffffffffff0000000000000000} Gateway:abcd:1234:ffff::1 Routes:[{Type: Dst:{IP:1111:dddd:: Mask:ffffffffffffffffffff000000000000} GW:1111:dddd::aaaa}]}, DNS:{Nameservers:[1.2.3.4 1::cafe] Domain:acompany.com Search:[somedomain.com otherdomain.net] Options:[foo bar]}"))
 
 		// Redirect stdout to capture JSON result
 		oldStdout := os.Stdout
@@ -183,6 +192,10 @@ var _ = Describe("Current types operations", func() {
             {
                 "dst": "15.5.6.0/24",
                 "gw": "15.5.6.8"
+            },
+            {
+                "type": "blackhole",
+                "dst": "10.8.11.2/32"
             }
         ]
     },

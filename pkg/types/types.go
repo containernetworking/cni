@@ -20,10 +20,25 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"syscall"
 )
 
-// like net.IPNet but adds JSON marshalling and unmarshalling
+// IPNet is like net.IPNet but adds JSON marshalling and unmarshalling
 type IPNet net.IPNet
+
+// rtTypeToSyscallEnum is a map of route-type strings to the
+// respective syscall enumerations
+var rtTypeToSyscallEnum = map[string]int{
+	// This is the default route type (if unspecified) as per
+	// ip-route(8)
+	"unicast": syscall.RTN_UNICAST,
+	// We support the following blocking route types
+	"unreachable": syscall.RTN_UNREACHABLE,
+	"blackhole":   syscall.RTN_BLACKHOLE,
+	"prohibit":    syscall.RTN_PROHIBIT,
+	// The following route types are not yet supported:
+	// "local", "broadcast", "throw", "nat", "anycast", "multicast"
+}
 
 // ParseCIDR takes a string like "10.2.3.1/24" and
 // return IPNet with "10.2.3.1" and /24 mask
@@ -112,13 +127,30 @@ type DNS struct {
 	Options     []string `json:"options,omitempty"`
 }
 
+// Route encapsulates a routing table entry
 type Route struct {
-	Dst net.IPNet
-	GW  net.IP
+	Type string
+	Dst  net.IPNet
+	GW   net.IP
 }
 
 func (r *Route) String() string {
 	return fmt.Sprintf("%+v", *r)
+}
+
+// GetType gets the syscall enum route type for the Route object. It returns an
+// error if the type string is unsupported or unrecognized
+func (r *Route) GetType() (int, error) {
+	// The route is assumed to be an unicast route if not set (this is to
+	// support the default behavior)
+	if r.Type == "" {
+		return syscall.RTN_UNICAST, nil
+	}
+
+	if t, ok := rtTypeToSyscallEnum[r.Type]; ok {
+		return t, nil
+	}
+	return 0, fmt.Errorf("unsupported route type: %s", r.Type)
 }
 
 // Well known error codes
@@ -152,8 +184,9 @@ func (e *Error) Print() error {
 
 // JSON (un)marshallable types
 type route struct {
-	Dst IPNet  `json:"dst"`
-	GW  net.IP `json:"gw,omitempty"`
+	Type string `json:"type,omitempty"`
+	Dst  IPNet  `json:"dst"`
+	GW   net.IP `json:"gw,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {
@@ -164,13 +197,15 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
+	r.Type = rt.Type
 	return nil
 }
 
 func (r *Route) MarshalJSON() ([]byte, error) {
 	rt := route{
-		Dst: IPNet(r.Dst),
-		GW:  r.GW,
+		Type: r.Type,
+		Dst:  IPNet(r.Dst),
+		GW:   r.GW,
 	}
 
 	return json.Marshal(rt)
