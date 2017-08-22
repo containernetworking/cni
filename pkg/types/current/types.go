@@ -172,13 +172,15 @@ func (r *Result) convertTo020() (*types020.Result, error) {
 		is4 := route.Dst.IP.To4() != nil
 		if is4 && oldResult.IP4 != nil {
 			oldResult.IP4.Routes = append(oldResult.IP4.Routes, types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
+				Dst:  route.Dst,
+				GW:   route.GW,
+				Type: route.Type,
 			})
 		} else if !is4 && oldResult.IP6 != nil {
 			oldResult.IP6.Routes = append(oldResult.IP6.Routes, types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
+				Dst:  route.Dst,
+				GW:   route.GW,
+				Type: route.Type,
 			})
 		}
 	}
