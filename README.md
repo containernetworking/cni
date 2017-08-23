@@ -69,6 +69,8 @@ If you intend to contribute to code or documentation, please read [CONTRIBUTING.
 
 The CNI spec is language agnostic.  To use the Go language libraries in this repository, you'll need a recent version of Go.  Our [automated tests](https://travis-ci.org/containernetworking/cni/builds) cover Go versions 1.7 and 1.8.
 
+Linux is the only platform supported for building CNI [reference plugin](https://github.com/containernetworking/plugins) binaries. If you do not have a Linux server to build the binaries, follow the [Vagrant instructions](CONTRIBUTING.md#how-to-run-the-test-suite) for building the binaries in a virtual machine.
+
 ### Reference Plugins
 
 The CNI project maintains a set of [reference plugins](https://github.com/containernetworking/plugins) that implement the CNI specification.
