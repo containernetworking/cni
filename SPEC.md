@@ -27,38 +27,37 @@ For the purposes of this proposal, we define two terms very specifically:
 - _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
 - _network_ refers to a group of entities that are uniquely addressable that can communicate amongst each other. This could be either an individual container (as specified above), a machine, or some other network device (e.g. a router). Containers can be conceptually _added to_ or _removed from_ one or more networks.
 
+This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extentions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
+
 [rkt-networking-proposal]: https://docs.google.com/a/coreos.com/document/d/1PUeV68q9muEmkHmRuW10HQ6cHgd4819_67pIxDRVNlM/edit#heading=h.ievko3xsjwxd
 [rkt-networking-design]: 
 https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP14UEbHNizd8g
 [rkt-github]: https://github.com/coreos/rkt
 [namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html 
 [appc-github]: https://github.com/appc/spec
-[docker]: https://docker.com 
-
-This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extentions are not part of this specification but are documented as [conventions](CONVENTIONS.md).
+[docker]: https://docker.com
+[rfc-2119]: https://www.ietf.org/rfc/rfc2119.txt
 
 ## General considerations
 
-The intention is for the container runtime to first create a new network namespace for the container.
-It then determines which networks this container should belong to and for each network, which plugin must be executed.
-The network configuration is in JSON format and can easily be stored in a file.
-The network configuration includes mandatory fields such as "name" and "type" as well as plugin (type) specific ones.
-The network configuration allows for fields to change values between invocations. For this purpose there is an optional field "args" which should contain the varying information.
-The container runtime sequentially sets up the networks by executing the corresponding plugin for each network.
-Upon completion of the container lifecycle, the runtime executes the plugins in reverse order (relative to the order in which they were added) to disconnect them from the networks.
+- The container runtime must create a new network namespace for the container before invoking any plugins.
+- The runtime must then determine which networks this container should belong to, and for each network, which plugins must be executed.
+- The network configuration is in JSON format and can easily be stored in a file. The network configuration includes mandatory fields such as "name" and "type" as well as plugin (type) specific ones. The network configuration allows for fields to change values between invocations. For this purpose there is an optional field "args" which must contain the varying information.
+- The container runtime must add the container to each network by executing the corresponding plugins for each network sequentially.
+- Upon completion of the container lifecycle, the runtime must execute the plugins in reverse order (relative to the order in which they were executed to add the container) to disconnect the container from the networks.
 
 ## CNI Plugin
 
 ### Overview
 
-Each CNI plugin is implemented as an executable that is invoked by the container management system (e.g. rkt or Docker).
+Each CNI plugin must be implemented as an executable that is invoked by the container management system (e.g. rkt or Docker).
 
-A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching other end of veth into a bridge).
-It should then assign the IP to the interface and setup the routes consistent with IP Address Management section by invoking appropriate IPAM plugin.
+A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching the other end of the veth into a bridge).
+It should then assign the IP to the interface and setup the routes consistent with the IP Address Management section by invoking appropriate IPAM plugin.
 
 ### Parameters
 
-The operations that the CNI plugin needs to support are:
+The operations that CNI plugins must support are:
 
 
 - Add container to network
@@ -94,23 +93,23 @@ The operations that the CNI plugin needs to support are:
       }
       ```
 
-The executable command-line API uses the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
-It will then look for this executable in a list of predefined directories. Once found, it will invoke the executable using the following environment variables for argument passing:
+Runtimes must use the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
+Runtimes should then look for this executable in a list of predefined directories (the list of directories is not prescribed by this specification). Once found, it must invoke the executable using the following environment variables for argument passing:
 - `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL` or `VERSION`.
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
-- `CNI_IFNAME`: Interface name to set up; plugin must honor this interface name or return an error
+- `CNI_IFNAME`: Interface name to set up; if the plugin is unable to use this interface name it must return an error
 - `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
 - `CNI_PATH`: List of paths to search for CNI plugin executables. Paths are separated by an OS-specific list separator; for example ':' on Linux and ';' on Windows
 
-Network configuration in JSON format is streamed to the plugin through stdin. This means it is not tied to a particular file on disk and can contain information which changes between invocations.
+Network configuration in JSON format must be streamed to the plugin through stdin. This means it is not tied to a particular file on disk and may contain information which changes between invocations.
 
 
 ### Result
 
-Note that IPAM plugins return an abbreviated `Result` structure as described in [IP Allocation](#ip-allocation).
+Note that IPAM plugins should return an abbreviated `Result` structure as described in [IP Allocation](#ip-allocation).
 
-Success is indicated by a return code of zero and the following JSON printed to stdout in the case of the ADD command. The `ips` and `dns` items should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details) except that the plugin should fill in the `interface` indexes appropriately, which are missing from IPAM plugin output since IPAM plugins should be unaware of interfaces.
+Plugins must indicate success with a return code of zero and the following JSON printed to stdout in the case of the ADD command. The `ips` and `dns` items should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details) except that the plugin should fill in the `interface` indexes appropriately, which are missing from IPAM plugin output since IPAM plugins should be unaware of interfaces.
 
 ```
 {
@@ -165,7 +164,7 @@ See the [DNS well-known structure](#dns) section for more information.
 The specification does not declare how this information must be processed by CNI consumers.
 Examples include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
 
-Errors are indicated by a non-zero return code and the following JSON being printed to stdout:
+Errors must be indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
   "cniVersion": "0.3.1",
@@ -183,7 +182,7 @@ In addition, stderr can be used for unstructured output such as logs.
 
 ### Network Configuration
 
-The network configuration is described in JSON form. The configuration can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
+The network configuration is described in JSON form. The configuration may be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration conforms.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `type` (string): Refers to the filename of the CNI plugin executable.
@@ -197,7 +196,7 @@ The network configuration is described in JSON form. The configuration can be st
   - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
   - `options` (list of strings): list of options that can be passed to the resolver
 
-Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the `args` field may be used to pass arbitrary data which may be ignored by plugins.
+Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the `args` field may be used to pass arbitrary data which should be ignored by plugins if not understood.
 
 ### Example configurations
 
@@ -426,13 +425,13 @@ Also note that plugins are executed in reverse order from the ADD action.
 
 As part of its operation, a CNI plugin is expected to assign (and maintain) an IP address to the interface and install any necessary routes relevant for that interface. This gives the CNI plugin great flexibility but also places a large burden on it. Many CNI plugins would need to have the same code to support several IP management schemes that users may desire (e.g. dhcp, host-local). 
 
-To lessen the burden and make IP management strategy be orthogonal to the type of CNI plugin, we define a second type of plugin -- IP Address Management Plugin (IPAM plugin). It is however the responsibility of the CNI plugin to invoke the IPAM plugin at the proper moment in its execution. The IPAM plugin is expected to determine the interface IP/subnet, Gateway and Routes and return this information to the "main" plugin to apply. The IPAM plugin may obtain the information via a protocol (e.g. dhcp), data stored on a local filesystem, the "ipam" section of the Network Configuration file or a combination of the above.
+To lessen the burden and make IP management strategy be orthogonal to the type of CNI plugin, we define a second type of plugin -- IP Address Management Plugin (IPAM plugin). It is however the responsibility of the CNI plugin to invoke the IPAM plugin at the proper moment in its execution. The IPAM plugin must determine the interface IP/subnet, Gateway and Routes and return this information to the "main" plugin to apply. The IPAM plugin may obtain the information via a protocol (e.g. dhcp), data stored on a local filesystem, the "ipam" section of the Network Configuration file or a combination of the above.
 
 #### IP Address Management (IPAM) Interface
 
-Like CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin receives all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM receives the network configuration via stdin.
+Like CNI plugins, the IPAM plugins are invoked by running an executable. The executable is searched for in a predefined list of paths, indicated to the CNI plugin via `CNI_PATH`. The IPAM Plugin must receive all the same environment variables that were passed in to the CNI plugin. Just like the CNI plugin, IPAM plugins receive the network configuration via stdin.
 
-Success is indicated by a zero return code and the following JSON being printed to stdout (in the case of the ADD command):
+Success must be indicated by a zero return code and the following JSON being printed to stdout (in the case of the ADD command):
 
 ```
 {
@@ -461,7 +460,7 @@ Success is indicated by a zero return code and the following JSON being printed 
 }
 ```
 
-Note that unlike regular CNI plugins, IPAM plugins return an abbreviated `Result` structure that does not include the `interfaces` key, since IPAM plugins should be unaware of interfaces configured by their parent plugin except those specifically required for IPAM (eg, like the `dhcp` IPAM plugin).
+Note that unlike regular CNI plugins, IPAM plugins should return an abbreviated `Result` structure that does not include the `interfaces` key, since IPAM plugins should be unaware of interfaces configured by their parent plugin except those specifically required for IPAM (eg, like the `dhcp` IPAM plugin).
 
 `cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
 
@@ -542,7 +541,10 @@ The `dns` field contains a dictionary consisting of common DNS information.
 - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
 - `options` (list of strings): list of options that can be passed to the resolver.
   See [CNI Plugin Result](#result) section for more information.
-
+  
 ## Well-known Error Codes
+
+Error codes 1-99 must not be used other than as specified here.
+
 - `1` - Incompatible CNI version
 - `2` - Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
