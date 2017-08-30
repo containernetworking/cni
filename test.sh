@@ -11,7 +11,11 @@ set -e
 
 source ./build.sh
 
-TESTABLE="libcni pkg/invoke pkg/skel pkg/types pkg/types/current pkg/types/020 pkg/version pkg/version/testhelpers plugins/test/noop"
+# test everything that's not in vendor
+pushd "$GOPATH/src/$REPO_PATH" >/dev/null
+  TESTABLE="$(go list ./... | grep -v vendor | xargs echo)"
+popd >/dev/null
+
 FORMATTABLE="$TESTABLE"
 
 # user has not provided PKG override
@@ -28,10 +32,6 @@ else
 	# only run gofmt on packages provided by user
 	FMT="$TEST"
 fi
-
-# split TEST into an array and prepend REPO_PATH to each local package
-split=(${TEST// / })
-TEST=${split[@]/#/${REPO_PATH}/}
 
 echo -n "Running tests "
 function testrun {
@@ -52,16 +52,16 @@ else
 fi
 
 echo "Checking gofmt..."
-fmtRes=$(gofmt -l $FMT)
+fmtRes=$(go fmt $FMT)
 if [ -n "${fmtRes}" ]; then
-	echo -e "gofmt checking failed:\n${fmtRes}"
+	echo -e "go fmt checking failed:\n${fmtRes}"
 	exit 255
 fi
 
 echo "Checking govet..."
 vetRes=$(go vet $TEST)
 if [ -n "${vetRes}" ]; then
-	echo -e "govet checking failed:\n${vetRes}"
+	echo -e "go vet checking failed:\n${vetRes}"
 	exit 255
 fi
 
