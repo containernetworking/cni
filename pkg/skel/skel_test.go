@@ -247,20 +247,18 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Entry("path", "CNI_PATH", false),
 		)
 
-		Context("when the stdin is empty", func() {
-			BeforeEach(func() {
-				dispatch.Stdin = strings.NewReader("")
-			})
+		It("does not read from Stdin", func() {
+			r := &BadReader{}
+			dispatch.Stdin = r
 
-			It("succeeds without error", func() {
-				err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
+			err := dispatch.pluginMain(cmdAdd.Func, cmdDel.Func, versionInfo)
 
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(MatchJSON(`{
-					"cniVersion": "0.3.1",
-					"supportedVersions": ["9.8.7"]
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r.ReadCount).To(Equal(0))
+			Expect(stdout).To(MatchJSON(`{
+				"cniVersion": "0.3.1",
+				"supportedVersions": ["9.8.7"]
 			}`))
-			})
 		})
 	})
 
@@ -346,10 +344,12 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 // BadReader is an io.Reader which always errors
 type BadReader struct {
-	Error error
+	Error     error
+	ReadCount int
 }
 
 func (r *BadReader) Read(buffer []byte) (int, error) {
+	r.ReadCount++
 	if r.Error != nil {
 		return 0, r.Error
 	}
