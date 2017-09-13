@@ -13,6 +13,9 @@ In other words, if two maintainers are employed by Company X, two by Company Y, 
 
 Any maintainer from an organization may cast the vote for that organization.
 
+For formal votes, a specific statement of what is being voted on should be added to the relevant github issue or PR, and a link to that issue or PR added to the maintainers meeting agenda document.
+Maintainers should indicate their yes/no vote on that issue or PR, and after a suitable period of time, the votes will be tallied and the outcome noted.
+
 ## Changes in Maintainership
 
 New maintainers are proposed by an existing maintainer and are elected by a 2/3 majority organization vote.
