@@ -23,7 +23,7 @@ Additional conventions can be created by creating PRs which modify this document
 [Plugin specific fields](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) formed part of the original CNI spec and have been present since the initial release.
 > Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the args field may be used to pass arbitrary data which may be ignored by plugins.
 
-A plugin can define any additional fields it needs to work properly. It is expected that it will return an error if it can't act on fields that were expected or where the field values were malformed.
+A plugin can define any additional fields it needs to work properly. It should return an error if it can't act on fields that were expected or where the field values were malformed.
 
 This method of passing information to a plugin is recommended when the following conditions hold
 * The configuration has specific meaning to the plugin (i.e. it's not just general meta data)
