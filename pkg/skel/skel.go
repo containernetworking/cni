@@ -17,6 +17,7 @@
 package skel
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -121,6 +122,10 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 
 	if argsMissing {
 		return "", nil, fmt.Errorf("required env variables missing")
+	}
+
+	if cmd == "VERSION" {
+		t.Stdin = bytes.NewReader(nil)
 	}
 
 	stdinData, err := ioutil.ReadAll(t.Stdin)
