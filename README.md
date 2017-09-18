@@ -54,6 +54,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Nuage CNI - Nuage Networks SDN plugin for network policy kubernetes support ](https://github.com/nuagenetworks/nuage-cni)
 - [Silk - a CNI plugin designed for Cloud Foundry](https://github.com/cloudfoundry-incubator/silk)
 - [Linen - a CNI plugin designed for overlay networks with Open vSwitch and fit in SDN/OpenFlow network environment](https://github.com/John-Lin/linen-cni)
+- [Vhostuser - a Dataplane network plugin - Supports OVS-DPDK & VPP](https://github.com/intel/vhost-user-net-plugin)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
