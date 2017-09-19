@@ -45,6 +45,8 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 - The network configuration is in JSON format and can easily be stored in a file. The network configuration includes mandatory fields such as "name" and "type" as well as plugin (type) specific ones. The network configuration allows for fields to change values between invocations. For this purpose there is an optional field "args" which must contain the varying information.
 - The container runtime must add the container to each network by executing the corresponding plugins for each network sequentially.
 - Upon completion of the container lifecycle, the runtime must execute the plugins in reverse order (relative to the order in which they were executed to add the container) to disconnect the container from the networks.
+- The container runtime must not invoke parallel operations for the same container, but is allowed to invoke parallel operations for different containers.
+- The container runtime must order ADD and DEL operations for a container, such that ADD is always followed by a corresponding DEL. DEL may be followed by additional DELs, however, and plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
 
 ## CNI Plugin
 
