@@ -71,8 +71,8 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 			"CNI_CONTAINERID",
 			&contID,
 			reqForCmdEntry{
-				"ADD": false,
-				"DEL": false,
+				"ADD": true,
+				"DEL": true,
 			},
 		},
 		{
