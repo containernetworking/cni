@@ -16,7 +16,9 @@ package libcni
 
 import (
 	"os"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
@@ -122,7 +124,11 @@ func injectRuntimeConfig(orig *NetworkConfig, rt *RuntimeConf) (*NetworkConfig, 
 // AddNetworkList executes a sequence of plugins with the ADD command
 func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (types.Result, error) {
 	var prevResult types.Result
-	for _, net := range list.Plugins {
+	index := strings.LastIndexFunc(rt.IfName, func(r rune) bool {
+		return !unicode.IsDigit(r)
+	})
+	prefix := rt.IfName[0 : index+1]
+	for i, net := range list.Plugins {
 		pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
 		if err != nil {
 			return nil, err
@@ -133,6 +139,7 @@ func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (ty
 			return nil, err
 		}
 
+		rt.IfName = prefix + strconv.Itoa(i)
 		prevResult, err = invoke.ExecPluginWithResult(pluginPath, newConf.Bytes, c.args("ADD", rt))
 		if err != nil {
 			return nil, err
@@ -144,6 +151,10 @@ func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (ty
 
 // DelNetworkList executes a sequence of plugins with the DEL command
 func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) error {
+	index := strings.LastIndexFunc(rt.IfName, func(r rune) bool {
+		return !unicode.IsDigit(r)
+	})
+	prefix := rt.IfName[0 : index+1]
 	for i := len(list.Plugins) - 1; i >= 0; i-- {
 		net := list.Plugins[i]
 
@@ -157,6 +168,7 @@ func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) err
 			return err
 		}
 
+		rt.IfName = prefix + strconv.Itoa(i)
 		if err := invoke.ExecPluginWithoutResult(pluginPath, newConf.Bytes, c.args("DEL", rt)); err != nil {
 			return err
 		}
