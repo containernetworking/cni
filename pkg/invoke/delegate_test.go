@@ -75,6 +75,10 @@ var _ = Describe("Delegate", func() {
 
 	AfterEach(func() {
 		os.RemoveAll(debugFileName)
+
+		for _, k := range []string{"CNI_COMMAND", "CNI_ARGS", "CNI_PATH", "CNI_NETNS", "CNI_IFNAME"} {
+			os.Unsetenv(k)
+		}
 	})
 
 	Describe("DelegateAdd", func() {
