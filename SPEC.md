@@ -1,12 +1,12 @@
 # Container Networking Interface Specification
 
 ## Version
-This is CNI **spec** version **0.3.1**.
+This is CNI **spec** version **0.3.1-dev**. This spec contains **unreleased** changes.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
-#### Older versions
-Older versions of the spec are available as Git tags.
+#### Released versions
+Released versions of the spec are available as Git tags.
 
 | tag                                                                                  | spec permalink                                                                        | major changes                     |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------- |
