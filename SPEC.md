@@ -1,12 +1,12 @@
 # Container Networking Interface Specification
 
 ## Version
-This is CNI **spec** version **0.3.1**.
+This is CNI **spec** version **0.3.1-dev**. This spec contains **unreleased** changes.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
-#### Older versions
-Older versions of the spec are available as Git tags.
+#### Released versions
+Released versions of the spec are available as Git tags.
 
 | tag                                                                                  | spec permalink                                                                        | major changes                     |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------- |
@@ -47,12 +47,14 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 - Upon completion of the container lifecycle, the runtime must execute the plugins in reverse order (relative to the order in which they were executed to add the container) to disconnect the container from the networks.
 - The container runtime must not invoke parallel operations for the same container, but is allowed to invoke parallel operations for different containers.
 - The container runtime must order ADD and DEL operations for a container, such that ADD is always followed by a corresponding DEL. DEL may be followed by additional DELs, however, and plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
+- A container must be uniquely identified by a ContainerID. Plugins that store state should do so using a primary key of `(network name, container id)`.
+- A runtime must not call ADD twice (without a corresponding DEL) for the same `(network name, container id)`. In other words, a given container ID must be added to a specific network exactly once.
 
 ## CNI Plugin
 
 ### Overview
 
-Each CNI plugin must be implemented as an executable that is invoked by the container management system (e.g. rkt or Docker).
+Each CNI plugin must be implemented as an executable that is invoked by the container management system (e.g. rkt or Kubernetes).
 
 A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching the other end of the veth into a bridge).
 It should then assign the IP to the interface and setup the routes consistent with the IP Address Management section by invoking appropriate IPAM plugin.
@@ -61,11 +63,10 @@ It should then assign the IP to the interface and setup the routes consistent wi
 
 The operations that CNI plugins must support are:
 
-
 - Add container to network
   - Parameters:
     - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
-    - **Container ID**. This is optional but recommended, and should be unique across an administrative domain while the container is live (it may be reused in the future). For example, an environment with an IPAM system may require that each container is allocated a unique ID and that each IP allocation can thus be correlated back to a particular container. As another example, in appc implementations this would be the _pod ID_.
+    - **Container ID**. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
     - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
     - **Extra arguments**. This provides an alternative mechanism to allow simple configuration of CNI plugins on a per-container basis.
@@ -83,6 +84,8 @@ The operations that CNI plugins must support are:
     - **Network configuration**, as defined above.
     - **Extra arguments**, as defined above.
     - **Name of the interface inside the container**, as defined above.
+ - All parameters should be the same as those passed to the corresponding add operation.
+ - A delete operation should release all resources held by the supplied containerid in the configured network.
 
 - Report version
   - Parameters: NONE.
