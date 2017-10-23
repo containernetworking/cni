@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
@@ -55,6 +56,9 @@ var _ = Describe("Backwards compatibility", func() {
 	})
 
 	It("correctly handles the request from a runtime with an older libcni", func() {
+		if runtime.GOOS == "windows" {
+			Skip("cannot build old runtime on windows")
+		}
 		example := legacy_examples.V010_Runtime
 
 		binPath, err := example.Build()
