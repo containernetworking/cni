@@ -72,7 +72,7 @@ func newPluginInfo(configValue, prevResult string, injectDebugFilePath bool, res
 		config += fmt.Sprintf(`, "prevResult": %s`, prevResult)
 	}
 	if injectDebugFilePath {
-		config += fmt.Sprintf(`, "debugFile": "%s"`, debugFilePath)
+		config += fmt.Sprintf(`, "debugFile": %q`, debugFilePath)
 	}
 	if len(capabilities) > 0 {
 		config += `, "capabilities": {`

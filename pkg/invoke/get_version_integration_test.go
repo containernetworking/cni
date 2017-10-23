@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/version"
@@ -38,6 +39,9 @@ var _ = Describe("GetVersion, integration tests", func() {
 		pluginDir, err := ioutil.TempDir("", "plugins")
 		Expect(err).NotTo(HaveOccurred())
 		pluginPath = filepath.Join(pluginDir, "test-plugin")
+		if runtime.GOOS == "windows" {
+			pluginPath += ".exe"
+		}
 	})
 
 	AfterEach(func() {

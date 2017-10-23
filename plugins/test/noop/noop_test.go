@@ -140,7 +140,7 @@ var _ = Describe("No-op plugin", func() {
 		// Remove the DEBUG option from CNI_ARGS and regular args
 		newArgs := "FOO=BAR"
 		cmd.Env[len(cmd.Env)-1] = "CNI_ARGS=" + newArgs
-		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.3.1", "debugFile": "%s"}`, debugFileName)
+		newStdin := fmt.Sprintf(`{"some":"stdin-json", "cniVersion": "0.3.1", "debugFile": %q}`, debugFileName)
 		cmd.Stdin = strings.NewReader(newStdin)
 		expectedCmdArgs.Args = newArgs
 		expectedCmdArgs.StdinData = []byte(newStdin)
