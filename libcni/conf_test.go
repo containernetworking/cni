@@ -288,7 +288,7 @@ var _ = Describe("Loading configuration from disk", func() {
 		Context("when there is no config for the desired plugin list", func() {
 			It("returns a useful error", func() {
 				_, err := libcni.LoadConfList(configDir, "some-other-plugin")
-				Expect(err).To(MatchError(libcni.NotFoundError{configDir, "some-other-plugin"}))
+				Expect(err).To(MatchError(libcni.NotFoundError{Dir: configDir, Name: "some-other-plugin"}))
 			})
 		})
 
