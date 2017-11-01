@@ -7,10 +7,6 @@ go:
   - 1.9.x
 
 env:
-  global:
-  - TOOLS_CMD=golang.org/x/tools/cmd
-  - PATH=$GOROOT/bin:$PATH
-  - GO15VENDOREXPERIMENT=1
   matrix:
   - TARGET=amd64
   - TARGET=arm
@@ -22,16 +18,17 @@ matrix:
   fast_finish: true
 
 install:
- - go get ${TOOLS_CMD}/cover
+ - go get golang.org/x/tools/cmd/cover
  - go get github.com/modocache/gover
  - go get github.com/mattn/goveralls
+ - go get -t ./...
 
 script:
  - >
     if [ "${TARGET}" == "amd64" ]; then
       GOARCH="${TARGET}" ./test.sh;
     else
-      GOARCH="${TARGET}" ./build.sh;
+      GOARCH="${TARGET}" go build -v -o /dev/null ./...
     fi
 
 notifications:
