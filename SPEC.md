@@ -84,8 +84,8 @@ The operations that CNI plugins must support are:
     - **Network configuration**, as defined above.
     - **Extra arguments**, as defined above.
     - **Name of the interface inside the container**, as defined above.
- - All parameters should be the same as those passed to the corresponding add operation.
- - A delete operation should release all resources held by the supplied containerid in the configured network.
+  - All parameters should be the same as those passed to the corresponding add operation.
+  - A delete operation should release all resources held by the supplied containerid in the configured network.
 
 - Report version
   - Parameters: NONE.
