@@ -214,7 +214,7 @@ var _ = Describe("Current types operations", func() {
 }`))
 	})
 
-	It("correctly marshals interface index 0", func() {
+	It("correctly marshals and unmarshals interface index 0", func() {
 		ipc := &current.IPConfig{
 			Version:   "4",
 			Interface: current.Int(0),
@@ -224,13 +224,25 @@ var _ = Describe("Current types operations", func() {
 			},
 		}
 
-		json, err := json.Marshal(ipc)
+		jsonBytes, err := json.Marshal(ipc)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(json).To(MatchJSON(`{
+		Expect(jsonBytes).To(MatchJSON(`{
     "version": "4",
     "interface": 0,
     "address": "10.1.2.3/24"
 }`))
+
+		recovered := &current.IPConfig{}
+		Expect(json.Unmarshal(jsonBytes, &recovered)).To(Succeed())
+		Expect(recovered).To(Equal(ipc))
+	})
+
+	Context("when unmarshaling json fails", func() {
+		It("returns an error", func() {
+			recovered := &current.IPConfig{}
+			err := json.Unmarshal([]byte(`{"address": 5}`), &recovered)
+			Expect(err).To(MatchError(HavePrefix("json: cannot unmarshal")))
+		})
 	})
 
 	It("correctly marshals a missing interface index", func() {
