@@ -167,7 +167,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (r *Route) MarshalJSON() ([]byte, error) {
+func (r Route) MarshalJSON() ([]byte, error) {
 	rt := route{
 		Dst: IPNet(r.Dst),
 		GW:  r.GW,
