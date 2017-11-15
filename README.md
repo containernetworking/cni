@@ -42,6 +42,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [OpenShift - Kubernetes with additional enterprise features](https://github.com/openshift/origin/blob/master/docs/openshift_networking_requirements.md)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/cf-networking-release)
 - [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
+- [Amazon ECS - a highly scalable, high performance container management service](https://aws.amazon.com/ecs/)
 
 ### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
@@ -57,6 +58,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Silk - a CNI plugin designed for Cloud Foundry](https://github.com/cloudfoundry-incubator/silk)
 - [Linen - a CNI plugin designed for overlay networks with Open vSwitch and fit in SDN/OpenFlow network environment](https://github.com/John-Lin/linen-cni)
 - [Vhostuser - a Dataplane network plugin - Supports OVS-DPDK & VPP](https://github.com/intel/vhost-user-net-plugin)
+- [Amazon ECS CNI Plugins - a collection of CNI Plugins to configure containers with Amazon EC2 elastic network interfaces (ENIs)](https://github.com/aws/amazon-ecs-cni-plugins)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
