@@ -238,6 +238,13 @@ var _ = Describe("Invoking plugins", func() {
 			_, ok := conf["runtimeConfig"]
 			Expect(ok).Should(BeFalse())
 		})
+
+		It("outputs correct capabilities for validate", func() {
+			caps, err := cniConfig.ValidateNetwork(netConfig)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(caps).To(ConsistOf("portMappings", "somethingElse"))
+		})
+
 	})
 
 	Describe("Invoking a single plugin", func() {
@@ -775,6 +782,25 @@ var _ = Describe("Invoking plugins", func() {
 				})
 			})
 		})
+
+		Describe("ValidateNetwork", func() {
+			It("validates a good configuration", func() {
+				_, err := cniConfig.ValidateNetwork(netConfig)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("catches non-existent plugins", func() {
+				netConfig.Network.Type = "nope"
+				_, err := cniConfig.ValidateNetwork(netConfig)
+				Expect(err).To(MatchError("failed to find plugin \"nope\" in path [" + cniConfig.Path[0] + "]"))
+			})
+
+			It("catches unsupported versions", func() {
+				netConfig.Network.CNIVersion = "broken"
+				_, err := cniConfig.ValidateNetwork(netConfig)
+				Expect(err).To(MatchError("plugin noop does not support config version \"broken\""))
+			})
+		})
 	})
 
 	Describe("Invoking a plugin list", func() {
@@ -1194,6 +1220,24 @@ var _ = Describe("Invoking plugins", func() {
 				})
 			})
 		})
+		Describe("ValidateNetworkList", func() {
+			It("Checks that all plugins exist", func() {
+				caps, err := cniConfig.ValidateNetworkList(netConfigList)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(caps).To(ConsistOf("portMappings", "otherCapability"))
 
+				netConfigList.Plugins[1].Network.Type = "nope"
+				_, err = cniConfig.ValidateNetworkList(netConfigList)
+				Expect(err).To(MatchError("[failed to find plugin \"nope\" in path [" + cniConfig.Path[0] + "]]"))
+			})
+
+			It("Checks that the plugins support the needed version", func() {
+				netConfigList.CNIVersion = "broken"
+				_, err := cniConfig.ValidateNetworkList(netConfigList)
+
+				// The config list is just noop 3 times, so we get 3 errors
+				Expect(err).To(MatchError("[plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\"]"))
+			})
+		})
 	})
 })
