@@ -261,6 +261,7 @@ type IPConfig struct {
 	Interface *int
 	Address   net.IPNet
 	Gateway   net.IP
+	VlanId    uint16
 }
 
 func (i *IPConfig) String() string {
