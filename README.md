@@ -41,7 +41,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Kubernetes - a system to simplify container operations](http://kubernetes.io/docs/admin/network-plugins/)
 - [OpenShift - Kubernetes with additional enterprise features](https://github.com/openshift/origin/blob/master/docs/openshift_networking_requirements.md)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/cf-networking-release)
-- [Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
+- [Apache Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 - [Amazon ECS - a highly scalable, high performance container management service](https://aws.amazon.com/ecs/)
 
 ### 3rd party plugins
