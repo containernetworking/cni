@@ -64,7 +64,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			"CNI_PATH":        "/some/cni/path",
 		}
 
-		stdinData = `{ "some": "config", "cniVersion": "9.8.7" }`
+		stdinData = `{ "name":"skel-test", "some": "config", "cniVersion": "9.8.7" }`
 		stdout = &bytes.Buffer{}
 		stderr = &bytes.Buffer{}
 		versionInfo = version.PluginSupports("9.8.7")
@@ -146,13 +146,13 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 		Context("when the stdin data is missing the required cniVersion config", func() {
 			BeforeEach(func() {
-				dispatch.Stdin = strings.NewReader(`{ "some": "config" }`)
+				dispatch.Stdin = strings.NewReader(`{ "name": "skel-test", "some": "config" }`)
 			})
 
 			Context("when the plugin supports version 0.1.0", func() {
 				BeforeEach(func() {
 					versionInfo = version.PluginSupports("0.1.0")
-					expectedCmdArgs.StdinData = []byte(`{ "some": "config" }`)
+					expectedCmdArgs.StdinData = []byte(`{ "name": "skel-test", "some": "config" }`)
 				})
 
 				It("infers the config is 0.1.0 and calls the cmdAdd callback", func() {

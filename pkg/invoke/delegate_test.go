@@ -40,13 +40,14 @@ var _ = Describe("Delegate", func() {
 
 	BeforeEach(func() {
 		netConf, _ = json.Marshal(map[string]string{
+			"name":       "delegate-test",
 			"cniVersion": "0.3.1",
 		})
 
 		expectedResult = &current.Result{
 			CNIVersion: "0.3.1",
 			IPs: []*current.IPConfig{
-				&current.IPConfig{
+				{
 					Version: "4",
 					Address: net.IPNet{
 						IP:   net.ParseIP("10.1.2.3"),

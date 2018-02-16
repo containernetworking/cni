@@ -18,6 +18,7 @@ package skel
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -167,10 +168,30 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 	return toCall(cmdArgs)
 }
 
+func validateConfig(jsonBytes []byte) error {
+	var conf struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(jsonBytes, &conf); err != nil {
+		return fmt.Errorf("error reading network config: %s", err)
+	}
+	if conf.Name == "" {
+		return fmt.Errorf("missing network name")
+	}
+	return nil
+}
+
 func (t *dispatcher) pluginMain(cmdAdd, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		return createTypedError(err.Error())
+	}
+
+	if cmd != "VERSION" {
+		err = validateConfig(cmdArgs.StdinData)
+		if err != nil {
+			return createTypedError(err.Error())
+		}
 	}
 
 	switch cmd {
