@@ -136,7 +136,16 @@ var _ = Describe("Invoking plugins", func() {
 			debug = &noop_debug.Debug{}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
-			pluginConfig = []byte(`{ "type": "noop", "cniVersion": "0.3.1", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
+			pluginConfig = []byte(`{
+				"type": "noop",
+				"name": "apitest",
+				"cniVersion": "0.3.1",
+				"capabilities": {
+					"portMappings": true,
+					"somethingElse": true,
+					"noCapability": false
+				}
+			}`)
 			netConfig, err = libcni.ConfFromBytes(pluginConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -243,17 +252,16 @@ var _ = Describe("Invoking plugins", func() {
 			}
 
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			pluginConfig = `{ "type": "noop", "some-key": "some-value", "cniVersion": "0.3.1", "capabilities": { "portMappings": true } }`
+			pluginConfig = `{
+				"type": "noop",
+				"name": "apitest",
+				"some-key": "some-value",
+				"cniVersion": "0.3.1",
+				"capabilities": { "portMappings": true }
+			}`
 			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
-			netConfig = &libcni.NetworkConfig{
-				Network: &types.NetConf{
-					Type: "noop",
-					Capabilities: map[string]bool{
-						"portMappings": true,
-					},
-				},
-				Bytes: []byte(pluginConfig),
-			}
+			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
+			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
