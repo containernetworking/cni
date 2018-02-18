@@ -1,5 +1,4 @@
 language: go
-sudo: required
 dist: trusty
 
 go:
