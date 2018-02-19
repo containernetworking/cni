@@ -63,12 +63,12 @@ type CNIConfig struct {
 // CNIConfig implements the CNI interface
 var _ CNI = &CNIConfig{}
 
-func buildOneConfig(list *NetworkConfigList, orig *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (*NetworkConfig, error) {
+func buildOneConfig(name, cniVersion string, orig *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (*NetworkConfig, error) {
 	var err error
 
 	inject := map[string]interface{}{
-		"name":       list.Name,
-		"cniVersion": list.CNIVersion,
+		"name":       name,
+		"cniVersion": cniVersion,
 	}
 	// Add previous plugin result
 	if prevResult != nil {
@@ -119,21 +119,26 @@ func injectRuntimeConfig(orig *NetworkConfig, rt *RuntimeConf) (*NetworkConfig, 
 	return orig, nil
 }
 
+func (c *CNIConfig) addNetwork(name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {
+	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	newConf, err := buildOneConfig(name, cniVersion, net, prevResult, rt)
+	if err != nil {
+		return nil, err
+	}
+
+	return invoke.ExecPluginWithResult(pluginPath, newConf.Bytes, c.args("ADD", rt))
+}
+
 // AddNetworkList executes a sequence of plugins with the ADD command
 func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (types.Result, error) {
 	var prevResult types.Result
+	var err error
 	for _, net := range list.Plugins {
-		pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
-		if err != nil {
-			return nil, err
-		}
-
-		newConf, err := buildOneConfig(list, net, prevResult, rt)
-		if err != nil {
-			return nil, err
-		}
-
-		prevResult, err = invoke.ExecPluginWithResult(pluginPath, newConf.Bytes, c.args("ADD", rt))
+		prevResult, err = c.addNetwork(list.Name, list.CNIVersion, net, prevResult, rt)
 		if err != nil {
 			return nil, err
 		}
@@ -142,22 +147,25 @@ func (c *CNIConfig) AddNetworkList(list *NetworkConfigList, rt *RuntimeConf) (ty
 	return prevResult, nil
 }
 
+func (c *CNIConfig) delNetwork(name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) error {
+	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return err
+	}
+
+	newConf, err := buildOneConfig(name, cniVersion, net, prevResult, rt)
+	if err != nil {
+		return err
+	}
+
+	return invoke.ExecPluginWithoutResult(pluginPath, newConf.Bytes, c.args("DEL", rt))
+}
+
 // DelNetworkList executes a sequence of plugins with the DEL command
 func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) error {
 	for i := len(list.Plugins) - 1; i >= 0; i-- {
 		net := list.Plugins[i]
-
-		pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
-		if err != nil {
-			return err
-		}
-
-		newConf, err := buildOneConfig(list, net, nil, rt)
-		if err != nil {
-			return err
-		}
-
-		if err := invoke.ExecPluginWithoutResult(pluginPath, newConf.Bytes, c.args("DEL", rt)); err != nil {
+		if err := c.delNetwork(list.Name, list.CNIVersion, net, nil, rt); err != nil {
 			return err
 		}
 	}
@@ -167,32 +175,12 @@ func (c *CNIConfig) DelNetworkList(list *NetworkConfigList, rt *RuntimeConf) err
 
 // AddNetwork executes the plugin with the ADD command
 func (c *CNIConfig) AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
-	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
-	if err != nil {
-		return nil, err
-	}
-
-	net, err = injectRuntimeConfig(net, rt)
-	if err != nil {
-		return nil, err
-	}
-
-	return invoke.ExecPluginWithResult(pluginPath, net.Bytes, c.args("ADD", rt))
+	return c.addNetwork(net.Network.Name, net.Network.CNIVersion, net, nil, rt)
 }
 
 // DelNetwork executes the plugin with the DEL command
 func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
-	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
-	if err != nil {
-		return err
-	}
-
-	net, err = injectRuntimeConfig(net, rt)
-	if err != nil {
-		return err
-	}
-
-	return invoke.ExecPluginWithoutResult(pluginPath, net.Bytes, c.args("DEL", rt))
+	return c.delNetwork(net.Network.Name, net.Network.CNIVersion, net, nil, rt)
 }
 
 // GetVersionInfo reports which versions of the CNI spec are supported by
