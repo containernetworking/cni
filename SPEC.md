@@ -65,7 +65,6 @@ The operations that CNI plugins must support are:
 
 - Add container to network
   - Parameters:
-    - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
     - **Container ID**. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
     - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
@@ -78,7 +77,6 @@ The operations that CNI plugins must support are:
 
 - Delete container from network
   - Parameters:
-    - **Version**. The version of CNI spec that the caller is using (container management system or the invoking plugin).
     - **Container ID**, as defined above.
     - **Network namespace path**, as defined above.
     - **Network configuration**, as defined above.
@@ -151,7 +149,8 @@ Plugins must indicate success with a return code of zero and the following JSON 
 }
 ```
 
-`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
+`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin. A plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
+
 `interfaces` describes specific network interfaces the plugin created.
 If the `CNI_IFNAME` variable exists the plugin must use that name for the sandbox/hypervisor interface or return an error if it cannot.
 - `mac` (string): the hardware address of the interface.
@@ -467,7 +466,7 @@ Success must be indicated by a zero return code and the following JSON being pri
 
 Note that unlike regular CNI plugins, IPAM plugins should return an abbreviated `Result` structure that does not include the `interfaces` key, since IPAM plugins should be unaware of interfaces configured by their parent plugin except those specifically required for IPAM (eg, like the `dhcp` IPAM plugin).
 
-`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
+`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the IPAM plugin. An IPAM plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the IPAM plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the IPAM plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
 
 The `ips` field is a list of IP configuration information.
 See the [IP well-known structure](#ips) section for more information.
