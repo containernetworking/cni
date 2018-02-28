@@ -2,8 +2,8 @@ language: go
 dist: trusty
 
 go:
-  - 1.8.x
   - 1.9.x
+  - 1.10.x
 
 env:
   matrix:
@@ -27,7 +27,7 @@ script:
     if [ "${TARGET}" == "amd64" ]; then
       GOARCH="${TARGET}" ./test.sh;
     else
-      GOARCH="${TARGET}" go build -v -o /dev/null ./...
+      GOARCH="${TARGET}" go list ./... | xargs -n1 go build -v -o /dev/null
     fi
 
 notifications:
