@@ -1,4 +1,4 @@
-# Container Networking Interface Specification
+# Container Network Interface Specification
 
 ## Version
 This is CNI **spec** version **0.3.1-dev**. This spec contains **unreleased** changes.
