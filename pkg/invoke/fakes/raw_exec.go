@@ -14,6 +14,8 @@
 
 package fakes
 
+import "time"
+
 type RawExec struct {
 	ExecPluginCall struct {
 		Received struct {
@@ -29,6 +31,13 @@ type RawExec struct {
 }
 
 func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
+	e.ExecPluginCall.Received.PluginPath = pluginPath
+	e.ExecPluginCall.Received.StdinData = stdinData
+	e.ExecPluginCall.Received.Environ = environ
+	return e.ExecPluginCall.Returns.ResultBytes, e.ExecPluginCall.Returns.Error
+}
+
+func (e *RawExec) ExecPluginWithTimeout(pluginPath string, stdinData []byte, environ []string, timeout time.Duration) ([]byte, error) {
 	e.ExecPluginCall.Received.PluginPath = pluginPath
 	e.ExecPluginCall.Received.StdinData = stdinData
 	e.ExecPluginCall.Received.Environ = environ
