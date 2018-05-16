@@ -17,6 +17,7 @@ package libcni
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
@@ -27,6 +28,7 @@ type RuntimeConf struct {
 	ContainerID string
 	NetNS       string
 	IfName      string
+	Timeout     time.Duration
 	Args        [][2]string
 	// A dictionary of capability-specific data passed by the runtime
 	// to plugins as top-level keys in the 'runtimeConfig' dictionary
@@ -209,11 +211,12 @@ func (c *CNIConfig) GetVersionInfo(pluginType string) (version.PluginInfo, error
 // =====
 func (c *CNIConfig) args(action string, rt *RuntimeConf) *invoke.Args {
 	return &invoke.Args{
-		Command:     action,
-		ContainerID: rt.ContainerID,
-		NetNS:       rt.NetNS,
-		PluginArgs:  rt.Args,
-		IfName:      rt.IfName,
-		Path:        strings.Join(c.Path, string(os.PathListSeparator)),
+		Command:         action,
+		ContainerID:     rt.ContainerID,
+		NetNS:           rt.NetNS,
+		PluginArgs:      rt.Args,
+		IfName:          rt.IfName,
+		TimeoutDuration: rt.Timeout,
+		Path:            strings.Join(c.Path, string(os.PathListSeparator)),
 	}
 }

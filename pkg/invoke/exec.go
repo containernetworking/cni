@@ -17,6 +17,7 @@ package invoke
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
@@ -42,6 +43,7 @@ var defaultPluginExec = &PluginExec{
 type PluginExec struct {
 	RawExec interface {
 		ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error)
+		ExecPluginWithTimeout(pluginPath string, stdinData []byte, environ []string, timeout time.Duration) ([]byte, error)
 	}
 	VersionDecoder interface {
 		Decode(jsonBytes []byte) (version.PluginInfo, error)
@@ -49,7 +51,13 @@ type PluginExec struct {
 }
 
 func (e *PluginExec) WithResult(pluginPath string, netconf []byte, args CNIArgs) (types.Result, error) {
-	stdoutBytes, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
+	var stdoutBytes []byte
+	var err error
+	if args.Timeout().Nanoseconds() > 0 {
+		stdoutBytes, err = e.RawExec.ExecPluginWithTimeout(pluginPath, netconf, args.AsEnv(), args.Timeout())
+	} else {
+		stdoutBytes, err = e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +73,12 @@ func (e *PluginExec) WithResult(pluginPath string, netconf []byte, args CNIArgs)
 }
 
 func (e *PluginExec) WithoutResult(pluginPath string, netconf []byte, args CNIArgs) error {
-	_, err := e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
+	var err error
+	if args.Timeout().Nanoseconds() > 0 {
+		_, err = e.RawExec.ExecPluginWithTimeout(pluginPath, netconf, args.AsEnv(), args.Timeout())
+	} else {
+		_, err = e.RawExec.ExecPlugin(pluginPath, netconf, args.AsEnv())
+	}
 	return err
 }
 
