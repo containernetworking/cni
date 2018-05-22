@@ -212,5 +212,5 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.PluginSupports(supportedVersions...))
+	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.PluginSupports(supportedVersions...), "CNI nnop plugin v0.7.0")
 }
