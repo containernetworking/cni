@@ -1,7 +1,7 @@
 # Container Network Interface Specification
 
 ## Version
-This is CNI **spec** version **0.3.1-dev**. This spec contains **unreleased** changes.
+This is CNI **spec** version **0.4.0-dev**. This spec contains **unreleased** changes.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
@@ -46,7 +46,7 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 - The container runtime must add the container to each network by executing the corresponding plugins for each network sequentially.
 - Upon completion of the container lifecycle, the runtime must execute the plugins in reverse order (relative to the order in which they were executed to add the container) to disconnect the container from the networks.
 - The container runtime must not invoke parallel operations for the same container, but is allowed to invoke parallel operations for different containers.
-- The container runtime must order ADD and DEL operations for a container, such that ADD is always followed by a corresponding DEL. DEL may be followed by additional DELs, however, and plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
+- The container runtime must order ADD and DEL operations for a container, such that ADD is always eventually followed by a corresponding DEL. DEL may be followed by additional DELs but plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
 - A container must be uniquely identified by a ContainerID. Plugins that store state should do so using a primary key of `(network name, container id)`.
 - A runtime must not call ADD twice (without a corresponding DEL) for the same `(network name, container id)`. In other words, a given container ID must be added to a specific network exactly once.
 
@@ -63,7 +63,7 @@ It should then assign the IP to the interface and setup the routes consistent wi
 
 The operations that CNI plugins must support are:
 
-- Add container to network
+- `ADD`: Add container to network
   - Parameters:
     - **Container ID**. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
@@ -75,7 +75,7 @@ The operations that CNI plugins must support are:
     - **IP configuration assigned to each interface**. The IPv4 and/or IPv6 addresses, gateways, and routes assigned to sandbox and/or host interfaces.
     - **DNS information**. Dictionary that includes DNS information for nameservers, domain, search domains and options.
 
-- Delete container from network
+- `DEL`: Delete container from network
   - Parameters:
     - **Container ID**, as defined above.
     - **Network namespace path**, as defined above.
@@ -84,21 +84,42 @@ The operations that CNI plugins must support are:
     - **Name of the interface inside the container**, as defined above.
   - All parameters should be the same as those passed to the corresponding add operation.
   - A delete operation should release all resources held by the supplied containerid in the configured network.
+  - If there was a known previous `ADD` or `GET` action for the container, the runtime MUST add a `prevResult` field to the configuration JSON of the plugin (or all plugins in a chain), which MUST be the `Result` of the immediately previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+  - When `CNI_NETNS` and/or `prevResult` are not provided, the plugin should clean up as many resources as possible (e.g. releasing IPAM allocations) and return a successful response.
+  - If the runtime cached the `Result` of a previous `ADD` or `GET` response for a given container, it must delete that cached response on a successful `DEL` for that container.
 
-- Report version
+- `GET`: Get container network configuration
+  - Parameters:
+    - **Container ID**, as defined for `ADD`.
+    - **Network namespace path**, as defined for `ADD`.
+    - **Network configuration**, as defined for `ADD`.
+    - **Extra arguments**, as defined for `ADD`.
+    - **Name of the interface inside the container**, as defined for `ADD`.
+  - Result:
+    - The plugin should return the same result as an `ADD` action for the same inputs.
+    - **Interfaces list**, as defined for `ADD`
+    - **IP configuration assigned to each interface**, as defined for `ADD`
+    - **DNS information**, as defined for `ADD`
+  - This action should return the same `Result` object as an `ADD` action for the same inputs. The result should not change over the lifetime of the container.
+  - The plugin should return an error if any general internal state is unexpected. For example, if the plugin's data storage is missing or corrupt, or its control plane is unavailable, it should return an error.
+  - The plugin should NOT return an error if its expected sandbox state (eg interfaces, IP addresses, routes, etc) is not found, as subsequent elements in the plugin's chain may alter sandbox state.
+  - A runtime may call `GET` at any time; but if `GET` is called for a container before an `ADD` or after a `DEL` for that container, the plugin should return error 3 to indicate the container is unknown (see [Well-known Error Codes](#well-known-error-codes) section).
+  - If the previous action for the container was `ADD` or `GET`, the runtime must add a `prevResult` field to the configuration JSON of the plugin (or all plugins in the chain), which must be the `Result` of that previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+
+- `VERSION`: Report version
   - Parameters: NONE.
   - Result: information about the CNI spec versions supported by the plugin
 
       ```
       {
-        "cniVersion": "0.3.1", // the version of the CNI spec in use for this output
-        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1" ] // the list of CNI spec versions that this plugin supports
+        "cniVersion": "0.4.0", // the version of the CNI spec in use for this output
+        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0" ] // the list of CNI spec versions that this plugin supports
       }
       ```
 
 Runtimes must use the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
 Runtimes should then look for this executable in a list of predefined directories (the list of directories is not prescribed by this specification). Once found, it must invoke the executable using the following environment variables for argument passing:
-- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL` or `VERSION`.
+- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `GET`, or `VERSION`.
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
 - `CNI_IFNAME`: Interface name to set up; if the plugin is unable to use this interface name it must return an error
@@ -116,7 +137,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
 
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "interfaces": [                                            (this key omitted by IPAM plugins)
       {
           "name": "<name>",
@@ -171,7 +192,7 @@ Examples include generating an `/etc/resolv.conf` file to be injected into the c
 Errors must be indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
@@ -206,7 +227,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -225,7 +246,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -246,7 +267,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "wan",
   "type": "macvlan",
   // ipam specific
@@ -273,8 +294,9 @@ The list is described in JSON form, and can be stored on disk or generated from 
 When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself. This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
 The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
 
-For the ADD action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the Result of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
-For the ADD action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
+For the `ADD` action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the `Result` of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
+For the `GET` and `DEL` actions, the runtime MUST (if available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+For the `ADD` and `GET` actions, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
 Plugins are allowed to modify or suppress all or part of a `prevResult`.
 However, plugins that support a version of the CNI specification that includes the `prevResult` field MUST handle `prevResult` by either passing it through, modifying it, or suppressing it explicitly.
 It is a violation of this specification to be unaware of the `prevResult` field.
@@ -295,7 +317,7 @@ Plugins should generally complete a DEL action without error even if some resour
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "plugins": [
     {
@@ -330,14 +352,14 @@ Plugins should generally complete a DEL action without error even if some resour
 
 #### Network configuration list runtime examples
 
-Given the network configuration list JSON [shown above](#example-network-configuration-lists) the container runtime would perform the following steps for the ADD action.
+Given the network configuration list JSON [shown above](#example-network-configuration-lists) the container runtime would perform the following steps for the `ADD` action.
 Note that the runtime adds the `cniVersion` and `name` fields from configuration list to the configuration JSON passed to each plugin, to ensure consistent versioning and names for all plugins in the list.
 
 1) first call the `bridge` plugin with the following JSON:
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -362,7 +384,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 ```json
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -373,7 +395,22 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
         {
           "version": "4",
           "address": "10.0.0.5/32",
-          "interface": 0
+          "interface": 2
+        }
+    ],
+    "interfaces": [
+        {
+            "name": "cni0",
+            "mac": "00:11:22:33:44:55",
+        },
+        {
+            "name": "veth3243",
+            "mac": "55:44:33:22:11:11",
+        },
+        {
+            "name": "eth0",
+            "mac": "99:88:77:66:55:44",
+            "sandbox": "/var/run/netns/blue",
         }
     ],
     "dns": {
@@ -383,28 +420,13 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 }
 ```
 
-Given the same network configuration JSON list, the container runtime would perform the following steps for the DEL action.
-Note that no `prevResult` field is required as the DEL action does not return any result.
-Also note that plugins are executed in reverse order from the ADD action.
+Given the same network configuration JSON list, the container runtime would perform the following steps for the `GET` action.
 
-1) first call the `tuning` plugin with the following JSON:
+1) first call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
 
 ```json
 {
-  "cniVersion": "0.3.1",
-  "name": "dbnet",
-  "type": "tuning",
-  "sysctl": {
-    "net.core.somaxconn": "500"
-  }
-}
-```
-
-2) next call the `bridge` plugin with the following JSON:
-
-```json
-{
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -421,6 +443,168 @@ Also note that plugins are executed in reverse order from the ADD action.
   },
   "dns": {
     "nameservers": [ "10.1.0.1" ]
+  }
+  "prevResult": {
+    "ips": [
+        {
+          "version": "4",
+          "address": "10.0.0.5/32",
+          "interface": 2
+        }
+    ],
+    "interfaces": [
+        {
+            "name": "cni0",
+            "mac": "00:11:22:33:44:55",
+        },
+        {
+            "name": "veth3243",
+            "mac": "55:44:33:22:11:11",
+        },
+        {
+            "name": "eth0",
+            "mac": "99:88:77:66:55:44",
+            "sandbox": "/var/run/netns/blue",
+        }
+    ],
+    "dns": {
+      "nameservers": [ "10.1.0.1" ]
+    }
+  }
+}
+```
+
+2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
+
+```json
+{
+  "cniVersion": "0.4.0",
+  "name": "dbnet",
+  "type": "tuning",
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  },
+  "prevResult": {
+    "ips": [
+        {
+          "version": "4",
+          "address": "10.0.0.5/32",
+          "interface": 2
+        }
+    ],
+    "interfaces": [
+        {
+            "name": "cni0",
+            "mac": "00:11:22:33:44:55",
+        },
+        {
+            "name": "veth3243",
+            "mac": "55:44:33:22:11:11",
+        },
+        {
+            "name": "eth0",
+            "mac": "99:88:77:66:55:44",
+            "sandbox": "/var/run/netns/blue",
+        }
+    ],
+    "dns": {
+      "nameservers": [ "10.1.0.1" ]
+    }
+  }
+}
+```
+
+Given the same network configuration JSON list, the container runtime would perform the following steps for the DEL action.
+Note that plugins are executed in reverse order from the `ADD` and `GET` actions.
+
+1) first call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `GET` action:
+
+```json
+{
+  "cniVersion": "0.4.0",
+  "name": "dbnet",
+  "type": "tuning",
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  },
+  "prevResult": {
+    "ips": [
+        {
+          "version": "4",
+          "address": "10.0.0.5/32",
+          "interface": 2
+        }
+    ],
+    "interfaces": [
+        {
+            "name": "cni0",
+            "mac": "00:11:22:33:44:55",
+        },
+        {
+            "name": "veth3243",
+            "mac": "55:44:33:22:11:11",
+        },
+        {
+            "name": "eth0",
+            "mac": "99:88:77:66:55:44",
+            "sandbox": "/var/run/netns/blue",
+        }
+    ],
+    "dns": {
+      "nameservers": [ "10.1.0.1" ]
+    }
+  }
+}
+```
+
+2) next call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `GET` action:
+
+```json
+{
+  "cniVersion": "0.4.0",
+  "name": "dbnet",
+  "type": "bridge",
+  "bridge": "cni0",
+  "args": {
+    "labels" : {
+        "appVersion" : "1.0"
+    }
+  },
+  "ipam": {
+    "type": "host-local",
+    // ipam specific
+    "subnet": "10.1.0.0/16",
+    "gateway": "10.1.0.1"
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
+  },
+  "prevResult": {
+    "ips": [
+        {
+          "version": "4",
+          "address": "10.0.0.5/32",
+          "interface": 2
+        }
+    ],
+    "interfaces": [
+        {
+            "name": "cni0",
+            "mac": "00:11:22:33:44:55",
+        },
+        {
+            "name": "veth3243",
+            "mac": "55:44:33:22:11:11",
+        },
+        {
+            "name": "eth0",
+            "mac": "99:88:77:66:55:44",
+            "sandbox": "/var/run/netns/blue",
+        }
+    ],
+    "dns": {
+      "nameservers": [ "10.1.0.1" ]
+    }
   }
 }
 ```
@@ -439,7 +623,7 @@ Success must be indicated by a zero return code and the following JSON being pri
 
 ```
 {
-  "cniVersion": "0.3.1",
+  "cniVersion": "0.4.0",
   "ips": [
       {
           "version": "<4-or-6>",
@@ -552,3 +736,4 @@ Error codes 1-99 must not be used other than as specified here.
 
 - `1` - Incompatible CNI version
 - `2` - Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
+- `3` - Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
