@@ -24,9 +24,9 @@ import (
 	"github.com/containernetworking/cni/pkg/types/020"
 )
 
-const ImplementedSpecVersion string = "0.3.1"
+const ImplementedSpecVersion string = "0.4.0"
 
-var SupportedVersions = []string{"0.3.0", ImplementedSpecVersion}
+var SupportedVersions = []string{"0.3.0", "0.3.1", ImplementedSpecVersion}
 
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}

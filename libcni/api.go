@@ -23,6 +23,10 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 )
 
+// A RuntimeConf holds the arguments to one invocation of a CNI plugin
+// excepting the network configuration, with the nested exception that
+// the `runtimeConfig` from the network configuration is included
+// here.
 type RuntimeConf struct {
 	ContainerID string
 	NetNS       string
