@@ -64,7 +64,7 @@ var _ = Describe("No-op plugin", func() {
 			// Keep this last
 			"CNI_ARGS=" + args,
 		}
-		stdinData := `{"name": "noop-test", "some":"stdin-json", "cniVersion": "0.4.0"}`
+		stdinData := `{"name": "noop-test", "some":"stdin-json", "cniVersion": "0.3.1"}`
 		cmd.Stdin = strings.NewReader(stdinData)
 		expectedCmdArgs = skel.CmdArgs{
 			ContainerID: "some-container-id",
@@ -104,7 +104,7 @@ var _ = Describe("No-op plugin", func() {
 		cmd.Stdin = strings.NewReader(`{
 	"name":"noop-test",
 	"some":"stdin-json",
-	"cniVersion": "0.4.0",
+	"cniVersion": "0.3.1",
 	"prevResult": {
 		"ips": [{"version": "4", "address": "10.1.2.15/24"}]
 	}
