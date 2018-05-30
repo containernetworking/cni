@@ -188,9 +188,13 @@ func validateConfig(jsonBytes []byte) error {
 	return nil
 }
 
-func (t *dispatcher) pluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
+func (t *dispatcher) pluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
+		// Print the about string to stderr when no command is set
+		if t.Getenv("CNI_COMMAND") == "" && about != "" {
+			fmt.Fprintln(t.Stderr, about)
+		}
 		return createTypedError(err.Error())
 	}
 
@@ -262,25 +266,28 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, v
 //
 // To let this package automatically handle errors and call os.Exit(1) for you,
 // use PluginMain() instead.
-func PluginMainWithError(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) *types.Error {
+func PluginMainWithError(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
 	return (&dispatcher{
 		Getenv: os.Getenv,
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-	}).pluginMain(cmdAdd, cmdGet, cmdDel, versionInfo)
+	}).pluginMain(cmdAdd, cmdGet, cmdDel, versionInfo, about)
 }
 
 // PluginMain is the core "main" for a plugin which includes automatic error handling.
 //
 // The caller must also specify what CNI spec versions the plugin supports.
 //
+// The caller can specify an "about" string, which is printed on stderr
+// when no CNI_COMMAND is specified. The reccomended output is "CNI plugin <foo> v<version>"
+//
 // When an error occurs in either cmdAdd, cmdGet, or cmdDel, PluginMain will print the error
 // as JSON to stdout and call os.Exit(1).
 //
 // To have more control over error handling, use PluginMainWithError() instead.
-func PluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo) {
-	if e := PluginMainWithError(cmdAdd, cmdGet, cmdDel, versionInfo); e != nil {
+func PluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) {
+	if e := PluginMainWithError(cmdAdd, cmdGet, cmdDel, versionInfo, about); e != nil {
 		if err := e.Print(); err != nil {
 			log.Print("Error writing error JSON to stdout: ", err)
 		}

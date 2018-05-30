@@ -97,7 +97,7 @@ import (
 
 func c(_ *skel.CmdArgs) error { fmt.Println("{}"); return nil }
 
-func main() { skel.PluginMain(c, c, c, version.PluginSupports("0.2.0", "0.4.0", "0.999.0")) }
+func main() { skel.PluginMain(c, c, c, version.PluginSupports("0.2.0", "0.4.0", "0.999.0"), "") }
 `
 
 const git_ref_v031 = "909fe7d"
