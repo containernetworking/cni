@@ -47,7 +47,7 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 - Upon completion of the container lifecycle, the runtime must execute the plugins in reverse order (relative to the order in which they were executed to add the container) to disconnect the container from the networks.
 - The container runtime must not invoke parallel operations for the same container, but is allowed to invoke parallel operations for different containers.
 - The container runtime must order ADD and DEL operations for a container, such that ADD is always eventually followed by a corresponding DEL. DEL may be followed by additional DELs but plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
-- A container must be uniquely identified by a ContainerID. Plugins that store state should do so using a primary key of `(network name, container id, name of the interface inside the container)`.
+- A container must be uniquely identified by a ContainerID. Plugins that store state should do so using a primary key of `(network name, CNI_CONTAINERID, CNI_IFNAME)`.
 - A runtime must not call ADD twice (without a corresponding DEL) for the same `(network name, container id, name of the interface inside the container)`. This implies that a given container ID may be added to a specific network more than once only if each addition is done with a different interface name.
 
 ## CNI Plugin
