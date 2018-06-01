@@ -89,7 +89,7 @@ var _ = Describe("Delegate", func() {
 		})
 
 		It("finds and execs the named plugin", func() {
-			result, err := invoke.DelegateAdd(pluginName, netConf)
+			result, err := invoke.DelegateAdd(pluginName, netConf, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(expectedResult))
 
@@ -105,7 +105,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("aborts and returns a useful error", func() {
-				_, err := invoke.DelegateAdd(pluginName, netConf)
+				_, err := invoke.DelegateAdd(pluginName, netConf, nil)
 				Expect(err).To(MatchError("CNI_COMMAND is not ADD"))
 			})
 		})
@@ -116,7 +116,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("returns a useful error", func() {
-				_, err := invoke.DelegateAdd(pluginName, netConf)
+				_, err := invoke.DelegateAdd(pluginName, netConf, nil)
 				Expect(err).To(MatchError(HavePrefix("failed to find plugin")))
 			})
 		})
@@ -128,7 +128,7 @@ var _ = Describe("Delegate", func() {
 		})
 
 		It("finds and execs the named plugin", func() {
-			result, err := invoke.DelegateGet(pluginName, netConf)
+			result, err := invoke.DelegateGet(pluginName, netConf, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(expectedResult))
 
@@ -144,7 +144,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("aborts and returns a useful error", func() {
-				_, err := invoke.DelegateGet(pluginName, netConf)
+				_, err := invoke.DelegateGet(pluginName, netConf, nil)
 				Expect(err).To(MatchError("CNI_COMMAND is not GET"))
 			})
 		})
@@ -155,7 +155,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("returns a useful error", func() {
-				_, err := invoke.DelegateGet(pluginName, netConf)
+				_, err := invoke.DelegateGet(pluginName, netConf, nil)
 				Expect(err).To(MatchError(HavePrefix("failed to find plugin")))
 			})
 		})
@@ -167,7 +167,7 @@ var _ = Describe("Delegate", func() {
 		})
 
 		It("finds and execs the named plugin", func() {
-			err := invoke.DelegateDel(pluginName, netConf)
+			err := invoke.DelegateDel(pluginName, netConf, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			pluginInvocation, err := debug.ReadDebug(debugFileName)
@@ -182,7 +182,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("aborts and returns a useful error", func() {
-				err := invoke.DelegateDel(pluginName, netConf)
+				err := invoke.DelegateDel(pluginName, netConf, nil)
 				Expect(err).To(MatchError("CNI_COMMAND is not DEL"))
 			})
 		})
@@ -193,7 +193,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("returns a useful error", func() {
-				err := invoke.DelegateDel(pluginName, netConf)
+				err := invoke.DelegateDel(pluginName, netConf, nil)
 				Expect(err).To(MatchError(HavePrefix("failed to find plugin")))
 			})
 		})

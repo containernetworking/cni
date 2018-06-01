@@ -95,9 +95,7 @@ func main() {
 	s := sha512.Sum512([]byte(netns))
 	containerID := fmt.Sprintf("cnitool-%x", s[:10])
 
-	cninet := &libcni.CNIConfig{
-		Path: filepath.SplitList(os.Getenv(EnvCNIPath)),
-	}
+	cninet := libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
 
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,

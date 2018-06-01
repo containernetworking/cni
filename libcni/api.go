@@ -75,10 +75,21 @@ type CNI interface {
 
 type CNIConfig struct {
 	Path []string
+	exec invoke.Exec
 }
 
 // CNIConfig implements the CNI interface
 var _ CNI = &CNIConfig{}
+
+// NewCNIConfig returns a new CNIConfig object that will search for plugins
+// in the given paths and use the given exec interface to run those plugins,
+// or if the exec interface is not given, will use a default exec handler.
+func NewCNIConfig(path []string, exec invoke.Exec) *CNIConfig {
+	return &CNIConfig{
+		Path: path,
+		exec: exec,
+	}
+}
 
 func buildOneConfig(name, cniVersion string, orig *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (*NetworkConfig, error) {
 	var err error
@@ -136,8 +147,20 @@ func injectRuntimeConfig(orig *NetworkConfig, rt *RuntimeConf) (*NetworkConfig, 
 	return orig, nil
 }
 
+// ensure we have a usable exec if the CNIConfig was not given one
+func (c *CNIConfig) ensureExec() invoke.Exec {
+	if c.exec == nil {
+		c.exec = &invoke.DefaultExec{
+			RawExec:       &invoke.RawExec{Stderr: os.Stderr},
+			PluginDecoder: version.PluginDecoder{},
+		}
+	}
+	return c.exec
+}
+
 func (c *CNIConfig) addOrGetNetwork(command, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {
-	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	c.ensureExec()
+	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +170,7 @@ func (c *CNIConfig) addOrGetNetwork(command, name, cniVersion string, net *Netwo
 		return nil, err
 	}
 
-	return invoke.ExecPluginWithResult(pluginPath, newConf.Bytes, c.args(command, rt))
+	return invoke.ExecPluginWithResult(pluginPath, newConf.Bytes, c.args(command, rt), c.exec)
 }
 
 // Note that only GET requests should pass an initial prevResult
@@ -251,7 +274,8 @@ func (c *CNIConfig) GetNetworkList(list *NetworkConfigList, rt *RuntimeConf) (ty
 }
 
 func (c *CNIConfig) delNetwork(name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) error {
-	pluginPath, err := invoke.FindInPath(net.Network.Type, c.Path)
+	c.ensureExec()
+	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
 		return err
 	}
@@ -261,7 +285,7 @@ func (c *CNIConfig) delNetwork(name, cniVersion string, net *NetworkConfig, prev
 		return err
 	}
 
-	return invoke.ExecPluginWithoutResult(pluginPath, newConf.Bytes, c.args("DEL", rt))
+	return invoke.ExecPluginWithoutResult(pluginPath, newConf.Bytes, c.args("DEL", rt), c.exec)
 }
 
 // DelNetworkList executes a sequence of plugins with the DEL command
@@ -343,12 +367,13 @@ func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 // GetVersionInfo reports which versions of the CNI spec are supported by
 // the given plugin.
 func (c *CNIConfig) GetVersionInfo(pluginType string) (version.PluginInfo, error) {
-	pluginPath, err := invoke.FindInPath(pluginType, c.Path)
+	c.ensureExec()
+	pluginPath, err := c.exec.FindInPath(pluginType, c.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	return invoke.GetVersionInfo(pluginPath)
+	return invoke.GetVersionInfo(pluginPath, c.exec)
 }
 
 // =====

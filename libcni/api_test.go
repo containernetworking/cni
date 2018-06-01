@@ -138,7 +138,7 @@ var _ = Describe("Invoking plugins", func() {
 			debugFilePath string
 			debug         *noop_debug.Debug
 			pluginConfig  []byte
-			cniConfig     libcni.CNIConfig
+			cniConfig     *libcni.CNIConfig
 			runtimeConfig *libcni.RuntimeConf
 			netConfig     *libcni.NetworkConfig
 		)
@@ -165,7 +165,7 @@ var _ = Describe("Invoking plugins", func() {
 			netConfig, err = libcni.ConfFromBytes(pluginConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			cniConfig = libcni.CNIConfig{Path: []string{filepath.Dir(pluginPaths["noop"])}}
+			cniConfig = libcni.NewCNIConfig([]string{filepath.Dir(pluginPaths["noop"])}, nil)
 
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
@@ -246,7 +246,7 @@ var _ = Describe("Invoking plugins", func() {
 			debug         *noop_debug.Debug
 			cniBinPath    string
 			pluginConfig  string
-			cniConfig     libcni.CNIConfig
+			cniConfig     *libcni.CNIConfig
 			netConfig     *libcni.NetworkConfig
 			runtimeConfig *libcni.RuntimeConf
 
@@ -280,7 +280,7 @@ var _ = Describe("Invoking plugins", func() {
 				"cniVersion": "%s",
 				"capabilities": { "portMappings": true }
 			}`, current.ImplementedSpecVersion)
-			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
+			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
@@ -781,7 +781,7 @@ var _ = Describe("Invoking plugins", func() {
 		var (
 			plugins       []pluginInfo
 			cniBinPath    string
-			cniConfig     libcni.CNIConfig
+			cniConfig     *libcni.CNIConfig
 			netConfigList *libcni.NetworkConfigList
 			runtimeConfig *libcni.RuntimeConf
 
@@ -799,7 +799,7 @@ var _ = Describe("Invoking plugins", func() {
 			}
 
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			cniConfig = libcni.CNIConfig{Path: []string{cniBinPath}}
+			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID:    "some-container-id",
 				NetNS:          "/some/netns/path",
