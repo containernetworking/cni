@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/invoke"
 
@@ -118,6 +119,14 @@ var _ = Describe("RawExec", func() {
 			_, err := execer.ExecPlugin("/tmp/some/invalid/plugin/path", stdin, environ)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(ContainSubstring("/tmp/some/invalid/plugin/path")))
+		})
+	})
+
+	Context("when the plugin timeout", func() {
+		It("returns the timeout error", func() {
+			_, err := execer.ExecPluginWithTimeout(pathToSleepPlugin, stdin, environ, time.Second)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("Waiting for plugin to return timed out"))
 		})
 	})
 })

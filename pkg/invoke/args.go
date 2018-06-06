@@ -17,12 +17,15 @@ package invoke
 import (
 	"os"
 	"strings"
+	"time"
 )
 
 type CNIArgs interface {
 	// For use with os/exec; i.e., return nil to inherit the
 	// environment from this process
 	AsEnv() []string
+	// This returns the timeout from the Args
+	Timeout() time.Duration
 }
 
 type inherited struct{}
@@ -33,18 +36,23 @@ func (_ *inherited) AsEnv() []string {
 	return nil
 }
 
+func (_ *inherited) Timeout() time.Duration {
+	return 0
+}
+
 func ArgsFromEnv() CNIArgs {
 	return &inheritArgsFromEnv
 }
 
 type Args struct {
-	Command       string
-	ContainerID   string
-	NetNS         string
-	PluginArgs    [][2]string
-	PluginArgsStr string
-	IfName        string
-	Path          string
+	Command         string
+	ContainerID     string
+	NetNS           string
+	PluginArgs      [][2]string
+	PluginArgsStr   string
+	IfName          string
+	Path            string
+	TimeoutDuration time.Duration
 }
 
 // Args implements the CNIArgs interface
@@ -68,6 +76,10 @@ func (args *Args) AsEnv() []string {
 		"CNI_PATH=" + args.Path,
 	}, env...)
 	return env
+}
+
+func (args *Args) Timeout() time.Duration {
+	return args.TimeoutDuration
 }
 
 // taken from rkt/networking/net_plugin.go

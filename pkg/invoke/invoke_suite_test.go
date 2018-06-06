@@ -27,13 +27,19 @@ func TestInvoke(t *testing.T) {
 	RunSpecs(t, "Invoke Suite")
 }
 
-const packagePath = "github.com/containernetworking/cni/plugins/test/noop"
+const (
+	noopPlugin  = "github.com/containernetworking/cni/plugins/test/noop"
+	sleepPlugin = "github.com/containernetworking/cni/plugins/test/sleep"
+)
 
 var pathToPlugin string
+var pathToSleepPlugin string
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	pathToPlugin, err = gexec.Build(packagePath)
+	pathToPlugin, err = gexec.Build(noopPlugin)
+	Expect(err).NotTo(HaveOccurred())
+	pathToSleepPlugin, err = gexec.Build(sleepPlugin)
 	Expect(err).NotTo(HaveOccurred())
 	return []byte(pathToPlugin)
 }, func(crossNodeData []byte) {

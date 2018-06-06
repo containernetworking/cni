@@ -1,4 +1,4 @@
-// Copyright 2016 CNI authors
+// Copyright 2018 CNI authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fakes
+/*
+main plugin is a CNI plugin designed for test the plugin running timeout.
+*/
 
-import "time"
+package main
 
-type CNIArgs struct {
-	AsEnvCall struct {
-		Returns struct {
-			Env []string
-		}
-	}
-}
+import (
+	"time"
+)
 
-func (a *CNIArgs) AsEnv() []string {
-	return a.AsEnvCall.Returns.Env
-}
-
-func (a *CNIArgs) Timeout() time.Duration {
-	return 0
+func main() {
+	time.Sleep(10 * time.Second)
 }

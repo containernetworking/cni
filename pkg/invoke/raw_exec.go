@@ -16,21 +16,66 @@ package invoke
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
+
+var ErrorPluginExecTimeout = fmt.Errorf("Waiting for plugin to return timed out")
 
 type RawExec struct {
 	Stderr io.Writer
 }
 
+func (e *RawExec) ExecPluginWithTimeout(pluginPath string, stdinData []byte, environ []string, timeout time.Duration) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+	defer cancel()
+	stdout := &bytes.Buffer{}
+	cmd, err := e.start(pluginPath, stdinData, stdout, environ)
+	if err != nil {
+		return nil, pluginErr(err, stdout.Bytes())
+	}
+	cmdDone := make(chan error)
+	go func() {
+		cmdDone <- cmd.Wait()
+	}()
+
+	select {
+	case <-ctx.Done():
+		// kill the plugin process
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+		return nil, pluginErr(ErrorPluginExecTimeout, stdout.Bytes())
+	case err := <-cmdDone:
+		if err != nil {
+			return nil, pluginErr(err, stdout.Bytes())
+		}
+		return stdout.Bytes(), nil
+	}
+}
+
 func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
 	stdout := &bytes.Buffer{}
+	cmd, err := e.start(pluginPath, stdinData, stdout, environ)
+	if err != nil {
+		return nil, pluginErr(err, stdout.Bytes())
+	}
 
+	err = cmd.Wait()
+	if err != nil {
+		return nil, pluginErr(err, stdout.Bytes())
+	}
+
+	return stdout.Bytes(), nil
+}
+
+func (e *RawExec) start(pluginPath string, stdinData []byte, stdout *bytes.Buffer, environ []string) (exec.Cmd, error) {
 	c := exec.Cmd{
 		Env:    environ,
 		Path:   pluginPath,
@@ -39,11 +84,9 @@ func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []stri
 		Stdout: stdout,
 		Stderr: e.Stderr,
 	}
-	if err := c.Run(); err != nil {
-		return nil, pluginErr(err, stdout.Bytes())
-	}
 
-	return stdout.Bytes(), nil
+	err := c.Start()
+	return c, err
 }
 
 func pluginErr(err error, output []byte) error {
