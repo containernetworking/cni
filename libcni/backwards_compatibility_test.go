@@ -59,7 +59,7 @@ var _ = Describe("Backwards compatibility", func() {
 			CacheDir:    cacheDirPath,
 		}
 
-		cniConfig := &libcni.CNIConfig{Path: []string{filepath.Dir(pluginPath)}}
+		cniConfig := libcni.NewCNIConfig([]string{filepath.Dir(pluginPath)}, nil)
 
 		result, err := cniConfig.AddNetwork(netConf, runtimeConf)
 		Expect(err).NotTo(HaveOccurred())

@@ -31,8 +31,8 @@ var _ = Describe("Args", func() {
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
 				PluginArgs: [][2]string{
-					[2]string{"KEY1", "VALUE1"},
-					[2]string{"KEY2", "VALUE2"},
+					{"KEY1", "VALUE1"},
+					{"KEY2", "VALUE2"},
 				},
 				IfName: "eth7",
 				Path:   "/some/cni/path",
