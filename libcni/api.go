@@ -71,6 +71,9 @@ type CNI interface {
 	AddNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
 	GetNetwork(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
 	DelNetwork(net *NetworkConfig, rt *RuntimeConf) error
+
+	ValidateNetworkList(net *NetworkConfigList) ([]string, error)
+	ValidateNetwork(net *NetworkConfig) ([]string, error)
 }
 
 type CNIConfig struct {
@@ -362,6 +365,78 @@ func (c *CNIConfig) DelNetwork(net *NetworkConfig, rt *RuntimeConf) error {
 	}
 	_ = delCachedResult(net.Network.Name, rt)
 	return nil
+}
+
+// ValidateNetworkList checks that a configuration is reasonably valid.
+// - all the specified plugins exist on disk
+// - every plugin supports the desired version.
+//
+// Returns a list of all capabilities supported by the configuration, or error
+func (c *CNIConfig) ValidateNetworkList(list *NetworkConfigList) ([]string, error) {
+	version := list.CNIVersion
+
+	// holding map for seen caps (in case of duplicates)
+	caps := map[string]interface{}{}
+
+	errs := []error{}
+	for _, net := range list.Plugins {
+		if err := c.validatePlugin(net.Network.Type, version); err != nil {
+			errs = append(errs, err)
+		}
+		for c, enabled := range net.Network.Capabilities {
+			if !enabled {
+				continue
+			}
+			caps[c] = struct{}{}
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, fmt.Errorf("%v", errs)
+	}
+
+	// make caps list
+	cc := make([]string, 0, len(caps))
+	for c := range caps {
+		cc = append(cc, c)
+	}
+
+	return cc, nil
+}
+
+// ValidateNetwork checks that a configuration is reasonably valid.
+// It uses the same logic as ValidateNetworkList)
+// Returns a list of capabilities
+func (c *CNIConfig) ValidateNetwork(net *NetworkConfig) ([]string, error) {
+	caps := []string{}
+	for c, ok := range net.Network.Capabilities {
+		if ok {
+			caps = append(caps, c)
+		}
+	}
+	if err := c.validatePlugin(net.Network.Type, net.Network.CNIVersion); err != nil {
+		return nil, err
+	}
+	return caps, nil
+}
+
+// validatePlugin checks that an individual plugin's configuration is sane
+func (c *CNIConfig) validatePlugin(pluginName, expectedVersion string) error {
+	pluginPath, err := invoke.FindInPath(pluginName, c.Path)
+	if err != nil {
+		return err
+	}
+
+	vi, err := invoke.GetVersionInfo(pluginPath)
+	if err != nil {
+		return err
+	}
+	for _, vers := range vi.SupportedVersions() {
+		if vers == expectedVersion {
+			return nil
+		}
+	}
+	return fmt.Errorf("plugin %s does not support config version %q", pluginName, expectedVersion)
 }
 
 // GetVersionInfo reports which versions of the CNI spec are supported by
