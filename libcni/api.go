@@ -427,7 +427,7 @@ func (c *CNIConfig) validatePlugin(pluginName, expectedVersion string) error {
 		return err
 	}
 
-	vi, err := invoke.GetVersionInfo(pluginPath)
+	vi, err := invoke.GetVersionInfo(pluginPath, c.exec)
 	if err != nil {
 		return err
 	}
