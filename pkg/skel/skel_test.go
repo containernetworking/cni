@@ -96,9 +96,8 @@ var _ = Describe("dispatching to the correct callback", func() {
 		if isRequired {
 			Expect(err).To(Equal(&types.Error{
 				Code: 100,
-				Msg:  "required env variables missing",
+				Msg:  "required env variables [" + envVar + "] missing",
 			}))
-			Expect(stderr.String()).To(ContainSubstring(envVar + " env variable missing\n"))
 		} else {
 			Expect(err).NotTo(HaveOccurred())
 		}
@@ -140,13 +139,13 @@ var _ = Describe("dispatching to the correct callback", func() {
 			})
 
 			It("reports that all of them are missing, not just the first", func() {
-				Expect(dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "")).NotTo(Succeed())
+				err := dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
 
-				log := stderr.String()
-				Expect(log).To(ContainSubstring("CNI_NETNS env variable missing\n"))
-				Expect(log).To(ContainSubstring("CNI_IFNAME env variable missing\n"))
-				Expect(log).To(ContainSubstring("CNI_PATH env variable missing\n"))
-
+				Expect(err).To(Equal(&types.Error{
+					Code: 100,
+					Msg:  "required env variables [CNI_NETNS,CNI_IFNAME,CNI_PATH] missing",
+				}))
 			})
 		})
 
@@ -233,12 +232,13 @@ var _ = Describe("dispatching to the correct callback", func() {
 			})
 
 			It("reports that all of them are missing, not just the first", func() {
-				Expect(dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "")).NotTo(Succeed())
-				log := stderr.String()
-				Expect(log).To(ContainSubstring("CNI_NETNS env variable missing\n"))
-				Expect(log).To(ContainSubstring("CNI_IFNAME env variable missing\n"))
-				Expect(log).To(ContainSubstring("CNI_PATH env variable missing\n"))
+				err := dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
 
+				Expect(err).To(Equal(&types.Error{
+					Code: 100,
+					Msg:  "required env variables [CNI_NETNS,CNI_IFNAME,CNI_PATH] missing",
+				}))
 			})
 		})
 
@@ -394,6 +394,32 @@ var _ = Describe("dispatching to the correct callback", func() {
 			environment["CNI_COMMAND"] = ""
 			dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "test framework v42")
 			Expect(stderr.String()).To(ContainSubstring("test framework v42"))
+		})
+	})
+
+	Context("when the CNI_COMMAND is missing", func() {
+		It("prints the about string to stderr", func() {
+			environment = map[string]string{}
+			err := dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "AWESOME PLUGIN")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmdAdd.CallCount).To(Equal(0))
+			Expect(cmdDel.CallCount).To(Equal(0))
+			log := stderr.String()
+			Expect(log).To(Equal("AWESOME PLUGIN\n"))
+		})
+
+		It("fails if there is no about string", func() {
+			environment = map[string]string{}
+			err := dispatch.pluginMain(cmdAdd.Func, cmdGet.Func, cmdDel.Func, versionInfo, "")
+			Expect(err).To(HaveOccurred())
+
+			Expect(cmdAdd.CallCount).To(Equal(0))
+			Expect(cmdDel.CallCount).To(Equal(0))
+			Expect(err).To(Equal(&types.Error{
+				Code: 100,
+				Msg:  "required env variables [CNI_COMMAND] missing",
+			}))
 		})
 	})
 
