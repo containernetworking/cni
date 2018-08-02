@@ -49,6 +49,7 @@ https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP
 - The container runtime must order ADD and DEL operations for a container, such that ADD is always eventually followed by a corresponding DEL. DEL may be followed by additional DELs but plugins should handle multiple DELs permissively (i.e. plugin DEL should be idempotent).
 - A container must be uniquely identified by a ContainerID. Plugins that store state should do so using a primary key of `(network name, CNI_CONTAINERID, CNI_IFNAME)`.
 - A runtime must not call ADD twice (without a corresponding DEL) for the same `(network name, container id, name of the interface inside the container)`. This implies that a given container ID may be added to a specific network more than once only if each addition is done with a different interface name.
+- Fields in CNI structures (like [Network Configuration](#network-configuration) and [CNI Plugin Result](#result)) are required unless specifically marked optional.
 
 ## CNI Plugin
 
@@ -161,7 +162,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
       },
       ...
   ]
-  "dns": {
+  "dns": {                                                   (optional)
     "nameservers": <list-of-nameservers>                     (optional)
     "domain": <name-of-local-domain>                         (optional)
     "search": <list-of-additional-search-domains>            (optional)
@@ -211,15 +212,15 @@ The network configuration is described in JSON form. The configuration may be st
 - `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration conforms.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `type` (string): Refers to the filename of the CNI plugin executable.
-- `args` (dictionary): Optional additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
-- `ipMasq` (boolean): Optional (if supported by the plugin). Set up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
-- `ipam`: Dictionary with IPAM specific values:
+- `args` (dictionary, optional): Additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
+- `ipMasq` (boolean, optional): If supported by the plugin, sets up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
+- `ipam` (dictionary, optional): Dictionary with IPAM specific values:
   - `type` (string): Refers to the filename of the IPAM plugin executable.
-- `dns`: Dictionary with DNS specific values:
-  - `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
-  - `domain` (string): the local domain used for short hostname lookups.
-  - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
-  - `options` (list of strings): list of options that can be passed to the resolver
+- `dns` (dictionary, optional): Dictionary with DNS specific values:
+  - `nameservers` (list of strings, optional): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
+  - `domain` (string, optional): the local domain used for short hostname lookups.
+  - `search` (list of strings, optional): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
+  - `options` (list of strings, optional): list of options that can be passed to the resolver
 
 Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the `args` field may be used to pass arbitrary data which should be ignored by plugins if not understood.
 
@@ -639,7 +640,7 @@ Success must be indicated by a zero return code and the following JSON being pri
       },
       ...
   ]
-  "dns": {
+  "dns": {                                          (optional)
     "nameservers": <list-of-nameservers>            (optional)
     "domain": <name-of-local-domain>                (optional)
     "search": <list-of-search-domains>              (optional)
