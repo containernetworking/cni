@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
@@ -51,6 +52,15 @@ type dispatcher struct {
 }
 
 type reqForCmdEntry map[string]bool
+
+// internal only error to indicate lack of required environment variables
+type missingEnvError struct {
+	msg string
+}
+
+func (e missingEnvError) Error() string {
+	return e.msg
+}
 
 func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 	var cmd, contID, netns, ifName, args, path string
@@ -116,19 +126,19 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, error) {
 		},
 	}
 
-	argsMissing := false
+	argsMissing := make([]string, 0)
 	for _, v := range vars {
 		*v.val = t.Getenv(v.name)
 		if *v.val == "" {
 			if v.reqForCmd[cmd] || v.name == "CNI_COMMAND" {
-				fmt.Fprintf(t.Stderr, "%v env variable missing\n", v.name)
-				argsMissing = true
+				argsMissing = append(argsMissing, v.name)
 			}
 		}
 	}
 
-	if argsMissing {
-		return "", nil, fmt.Errorf("required env variables missing")
+	if len(argsMissing) > 0 {
+		joined := strings.Join(argsMissing, ",")
+		return "", nil, missingEnvError{fmt.Sprintf("required env variables [%s] missing", joined)}
 	}
 
 	if cmd == "VERSION" {
@@ -192,8 +202,9 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdGet, cmdDel func(_ *CmdArgs) error, v
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
-		if t.Getenv("CNI_COMMAND") == "" && about != "" {
+		if _, ok := err.(missingEnvError); ok && t.Getenv("CNI_COMMAND") == "" && about != "" {
 			fmt.Fprintln(t.Stderr, about)
+			return nil
 		}
 		return createTypedError(err.Error())
 	}
