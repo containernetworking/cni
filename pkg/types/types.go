@@ -65,6 +65,9 @@ type NetConf struct {
 	Capabilities map[string]bool `json:"capabilities,omitempty"`
 	IPAM         IPAM            `json:"ipam,omitempty"`
 	DNS          DNS             `json:"dns"`
+
+	RawPrevResult map[string]interface{} `json:"prevResult,omitempty"`
+	PrevResult    Result                 `json:"-"`
 }
 
 type IPAM struct {
