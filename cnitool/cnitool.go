@@ -35,6 +35,7 @@ const (
 
 	CmdAdd = "add"
 	CmdDel = "del"
+	CmdGet = "get"
 )
 
 func parseArgs(args string) ([][2]string, error) {
@@ -114,6 +115,12 @@ func main() {
 		exit(err)
 	case CmdDel:
 		exit(cninet.DelNetworkList(netconf, rt))
+	case CmdGet:
+		result, err := cninet.GetNetworkList(netconf, rt)
+		if result != nil {
+			_ = result.Print()
+		}
+		exit(err)
 	}
 }
 
