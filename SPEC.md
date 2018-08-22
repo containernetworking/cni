@@ -97,7 +97,7 @@ The operations that CNI plugins must support are:
     - **Extra arguments**, as defined for `ADD`.
     - **Name of the interface inside the container**, as defined for `ADD`.
   - Result:
-    - The plugin must return either a `Result` structuring matching the provided `prevResult`, or an error.
+    - The plugin must return either nothing or an error.
   - The plugin must consult the `prevResult` to determine the expected interfaces and addresses.
   - The plugin must allow for a later chained plugin to have modified networking resources, e.g. routes.
   - The plugin should return an error if an interface, address or route:
@@ -115,7 +115,7 @@ The operations that CNI plugins must support are:
   - The plugin should call `CHECK` on any delegated (e.g. IPAM) plugins and pass any errors on to its caller.
   - A runtime must not call `CHECK` for a container that has not been `ADD`ed, or has been `DEL`eted after its last `ADD`.
   - A runtime must not call `CHECK` if `disableCheck` is set to `true` in the [configuration list](#network-configuration-lists).
-  - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceeding `ADD` for the container.    The runtime may wish to use libcni's support for caching `Result`s.
+  - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceeding `ADD` for the container. The runtime may wish to use libcni's support for caching `Result`s.
   - A runtime may choose to stop executing `CHECK` for a chain when a plugin returns an error.
   - A runtime may execute `CHECK` from immediately after a successful `ADD`, up until the container is `DEL`eted from the network.
   - A runtime may assume that a failed `CHECK` means the container is permanently in a misconfigured state.
@@ -311,7 +311,7 @@ The runtime may also pass capability-based keys as a map in the top-level `runti
 
 For the `ADD` action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the `Result` of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
 For the `CHECK` and `DEL` actions, the runtime MUST (except that it may be omitted for `DEL` if not available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
-For the `ADD` and `CHECK` actions, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
+For the `ADD` action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
 Plugins are allowed to modify or suppress all or part of a `prevResult`.
 However, plugins that support a version of the CNI specification that includes the `prevResult` field MUST handle `prevResult` by either passing it through, modifying it, or suppressing it explicitly.
 It is a violation of this specification to be unaware of the `prevResult` field.
@@ -489,7 +489,7 @@ Given the same network configuration JSON list, the container runtime would perf
 }
 ```
 
-2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
+2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
 
 ```json
 {
