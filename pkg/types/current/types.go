@@ -104,10 +104,6 @@ func convertFrom020(result types.Result) (*Result, error) {
 		}
 	}
 
-	if len(newResult.IPs) == 0 {
-		return nil, fmt.Errorf("cannot convert: no valid IP addresses")
-	}
-
 	return newResult, nil
 }
 
