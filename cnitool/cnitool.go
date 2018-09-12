@@ -35,8 +35,9 @@ const (
 
 	DefaultNetDir = "/etc/cni/net.d"
 
-	CmdAdd = "add"
-	CmdDel = "del"
+	CmdAdd   = "add"
+	CmdCheck = "check"
+	CmdDel   = "del"
 )
 
 func parseArgs(args string) ([][2]string, error) {
@@ -119,6 +120,9 @@ func main() {
 			_ = result.Print()
 		}
 		exit(err)
+	case CmdCheck:
+		err := cninet.CheckNetworkList(context.TODO(), netconf, rt)
+		exit(err)
 	case CmdDel:
 		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
 	}
@@ -127,9 +131,10 @@ func main() {
 func usage() {
 	exe := filepath.Base(os.Args[0])
 
-	fmt.Fprintf(os.Stderr, "%s: Add or remove network interfaces from a network namespace\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s %s <net> <netns>\n", exe, CmdAdd)
-	fmt.Fprintf(os.Stderr, "  %s %s <net> <netns>\n", exe, CmdDel)
+	fmt.Fprintf(os.Stderr, "%s: Add, check, or remove network interfaces from a network namespace\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s add   <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s check <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s del   <net> <netns>\n", exe)
 	os.Exit(1)
 }
 

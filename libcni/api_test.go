@@ -407,8 +407,8 @@ var _ = Describe("Invoking plugins", func() {
 			})
 		})
 
-		Describe("GetNetwork", func() {
-			It("executes the plugin with command GET", func() {
+		Describe("CheckNetwork", func() {
+			It("executes the plugin with command CHECK", func() {
 				cacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig.ContainerID)
 				err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
 				Expect(err).NotTo(HaveOccurred())
@@ -420,28 +420,12 @@ var _ = Describe("Invoking plugins", func() {
 				err = ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 				Expect(err).NotTo(HaveOccurred())
 
-				r, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+				err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
-
-				result, err := current.GetResult(r)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(result).To(Equal(&current.Result{
-					CNIVersion: current.ImplementedSpecVersion,
-					IPs: []*current.IPConfig{
-						{
-							Version: "4",
-							Address: net.IPNet{
-								IP:   net.ParseIP("10.1.2.3"),
-								Mask: net.IPv4Mask(255, 255, 255, 0),
-							},
-						},
-					},
-				}))
 
 				debug, err := noop_debug.ReadDebug(debugFilePath)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(debug.Command).To(Equal("GET"))
+				Expect(debug.Command).To(Equal("CHECK"))
 				Expect(string(debug.CmdArgs.StdinData)).To(ContainSubstring("\"portMappings\":"))
 
 				// Explicitly match stdin data as json after
@@ -467,7 +451,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+					err := cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -478,13 +462,12 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
-					Expect(result).To(BeNil())
+					err := cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
 			})
 
-			Context("when GET is called with a configuration version", func() {
+			Context("when CHECK is called with a configuration version", func() {
 				var cacheFile string
 
 				BeforeEach(func() {
@@ -494,7 +477,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				Context("less than 0.4.0", func() {
-					It("fails as GET is not supported before 0.4.0", func() {
+					It("fails as CHECK is not supported before 0.4.0", func() {
 						// Generate plugin config with older version
 						pluginConfig = `{
 							"type": "noop",
@@ -504,8 +487,8 @@ var _ = Describe("Invoking plugins", func() {
 						var err error
 						netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 						Expect(err).NotTo(HaveOccurred())
-						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
-						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the GET command"))
+						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
+						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the CHECK command"))
 
 						debug, err := noop_debug.ReadDebug(debugFilePath)
 						Expect(err).NotTo(HaveOccurred())
@@ -522,7 +505,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 						debug, err := noop_debug.ReadDebug(debugFilePath)
 						Expect(err).NotTo(HaveOccurred())
@@ -545,9 +528,8 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
-						Expect(result).To(BeNil())
-						Expect(err).To(MatchError("failed to get network 'apitest' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
+						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 					})
 				})
 
@@ -560,7 +542,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -572,9 +554,8 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
-						Expect(result).To(BeNil())
-						Expect(err).To(MatchError("failed to get network 'apitest' cached result: unsupported CNI result version \"0.4567.0\""))
+						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
+						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: unsupported CNI result version \"0.4567.0\""))
 					})
 				})
 			})
@@ -738,7 +719,7 @@ var _ = Describe("Invoking plugins", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
-						Expect(err).To(MatchError("failed to get network 'apitest' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 					})
 				})
 
@@ -764,7 +745,7 @@ var _ = Describe("Invoking plugins", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
-						Expect(err).To(MatchError("failed to get network 'apitest' cached result: unsupported CNI result version \"0.4567.0\""))
+						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: unsupported CNI result version \"0.4567.0\""))
 					})
 				})
 			})
@@ -817,6 +798,7 @@ var _ = Describe("Invoking plugins", func() {
 			netConfigList *libcni.NetworkConfigList
 			runtimeConfig *libcni.RuntimeConf
 			ctx           context.Context
+			ipResult      string
 
 			expectedCmdArgs skel.CmdArgs
 		)
@@ -861,7 +843,7 @@ var _ = Describe("Invoking plugins", func() {
 				"otherCapability": capabilityArgs["otherCapability"],
 			}
 
-			ipResult := fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, current.ImplementedSpecVersion)
+			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, current.ImplementedSpecVersion)
 			plugins = make([]pluginInfo, 3, 3)
 			plugins[0] = newPluginInfo("some-value", "", true, ipResult, rc, []string{"portMappings", "otherCapability"})
 			plugins[1] = newPluginInfo("some-other-value", ipResult, true, "PASSTHROUGH", rc, []string{"otherCapability"})
@@ -982,39 +964,31 @@ var _ = Describe("Invoking plugins", func() {
 			})
 		})
 
-		Describe("GetNetworkList", func() {
-			It("executes all plugins with command GET and returns an intermediate result", func() {
-				r, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
+		Describe("CheckNetworkList", func() {
+			It("executes all plugins with command CHECK", func() {
+				cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig.ContainerID)
+				err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+				Expect(err).NotTo(HaveOccurred())
+				err = ioutil.WriteFile(cacheFile, []byte(ipResult), 0600)
 				Expect(err).NotTo(HaveOccurred())
 
-				result, err := current.GetResult(r)
+				err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(result).To(Equal(&current.Result{
-					CNIVersion: current.ImplementedSpecVersion,
-					// IP4 added by first plugin
-					IPs: []*current.IPConfig{
-						{
-							Version: "4",
-							Address: net.IPNet{
-								IP:   net.ParseIP("10.1.2.3"),
-								Mask: net.IPv4Mask(255, 255, 255, 0),
-							},
-						},
-					},
-					// DNS injected by last plugin
-					DNS: types.DNS{
-						Nameservers: []string{"1.2.3.4"},
-					},
-				}))
 
 				for i := 0; i < len(plugins); i++ {
 					debug, err := noop_debug.ReadDebug(plugins[i].debugFilePath)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(debug.Command).To(Equal("GET"))
+					Expect(debug.Command).To(Equal("CHECK"))
 
-					// Must explicitly match JSON due to dict element ordering
-					Expect(debug.CmdArgs.StdinData).To(MatchJSON(plugins[i].stdinData))
+					// Ensure each plugin gets the prevResult from the cache
+					asMap := make(map[string]interface{})
+					err = json.Unmarshal(debug.CmdArgs.StdinData, &asMap)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(asMap["prevResult"]).NotTo(BeNil())
+					foo, err := json.Marshal(asMap["prevResult"])
+					Expect(err).NotTo(HaveOccurred())
+					Expect(foo).To(MatchJSON(ipResult))
+
 					debug.CmdArgs.StdinData = nil
 					Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 				}
@@ -1039,7 +1013,7 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
+						err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Match the first plugin's stdin config to the cached result JSON
@@ -1056,7 +1030,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				Context("is less than 0.4.0", func() {
-					It("fails as GET is not supported before 0.4.0", func() {
+					It("fails as CHECK is not supported before 0.4.0", func() {
 						// Set an older CNI version
 						confList := make(map[string]interface{})
 						err := json.Unmarshal(netConfigList.Bytes, &confList)
@@ -1067,8 +1041,8 @@ var _ = Describe("Invoking plugins", func() {
 
 						netConfigList, err = libcni.ConfListFromBytes(newBytes)
 						Expect(err).NotTo(HaveOccurred())
-						_, err = cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
-						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the GET command"))
+						err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
+						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the CHECK command"))
 					})
 				})
 			})
@@ -1079,7 +1053,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
+					err := cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -1090,8 +1064,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(plugins[1].debug.WriteDebug(plugins[1].debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(result).To(BeNil())
+					err := cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
 			})
@@ -1104,9 +1077,8 @@ var _ = Describe("Invoking plugins", func() {
 					err = ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(result).To(BeNil())
-					Expect(err).To(MatchError("failed to get network 'some-list' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+					err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(MatchError("failed to get network \"some-list\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 				})
 			})
 		})
@@ -1224,7 +1196,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(MatchError("failed to get network 'some-list' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+					Expect(err).To(MatchError("failed to get network \"some-list\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 				})
 			})
 		})
@@ -1344,13 +1316,12 @@ var _ = Describe("Invoking plugins", func() {
 			})
 		})
 
-		Describe("GetNetwork", func() {
+		Describe("CheckNetwork", func() {
 			Context("when the plugin timeout", func() {
 				It("returns the timeout error", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
-					result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+					err := cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 					cancel()
-					Expect(result).To(BeNil())
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
 				})
 
@@ -1407,13 +1378,12 @@ var _ = Describe("Invoking plugins", func() {
 			})
 		})
 
-		Describe("GetNetworkList", func() {
+		Describe("CheckNetworkList", func() {
 			Context("when the plugin timeout", func() {
 				It("returns the timeout error", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
-					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
+					err := cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 					cancel()
-					Expect(result).To(BeNil())
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
 				})
 

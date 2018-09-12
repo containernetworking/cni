@@ -173,8 +173,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return debugBehavior(args, "ADD")
 }
 
-func cmdGet(args *skel.CmdArgs) error {
-	return debugBehavior(args, "GET")
+func cmdCheck(args *skel.CmdArgs) error {
+	return debugBehavior(args, "CHECK")
 }
 
 func cmdDel(args *skel.CmdArgs) error {
@@ -212,5 +212,5 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdGet, cmdDel, version.PluginSupports(supportedVersions...), "CNI nnop plugin v0.7.0")
+	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
 }
