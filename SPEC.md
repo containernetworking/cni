@@ -85,27 +85,40 @@ The operations that CNI plugins must support are:
     - **Name of the interface inside the container**, as defined above.
   - All parameters should be the same as those passed to the corresponding add operation.
   - A delete operation should release all resources held by the supplied containerid in the configured network.
-  - If there was a known previous `ADD` or `GET` action for the container, the runtime MUST add a `prevResult` field to the configuration JSON of the plugin (or all plugins in a chain), which MUST be the `Result` of the immediately previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+  - If there was a known previous `ADD` action for the container, the runtime MUST add a `prevResult` field to the configuration JSON of the plugin (or all plugins in a chain), which MUST be the `Result` of the immediately previous `ADD` action in JSON format ([see below](#network-configuration-list-runtime-examples)).  The runtime may wish to use libcni's support for caching `Result`s.
   - When `CNI_NETNS` and/or `prevResult` are not provided, the plugin should clean up as many resources as possible (e.g. releasing IPAM allocations) and return a successful response.
-  - If the runtime cached the `Result` of a previous `ADD` or `GET` response for a given container, it must delete that cached response on a successful `DEL` for that container.
+  - If the runtime cached the `Result` of a previous `ADD` response for a given container, it must delete that cached response on a successful `DEL` for that container.
 
-- `GET`: Get container network configuration
+- `CHECK`: Check container's networking is as expected
   - Parameters:
     - **Container ID**, as defined for `ADD`.
     - **Network namespace path**, as defined for `ADD`.
-    - **Network configuration**, as defined for `ADD`.
+    - **Network configuration** as defined for `ADD`, which must include a `prevResult` field containing the `Result` of the immediately preceeding `ADD` for the container.
     - **Extra arguments**, as defined for `ADD`.
     - **Name of the interface inside the container**, as defined for `ADD`.
   - Result:
-    - The plugin should return the same result as an `ADD` action for the same inputs.
-    - **Interfaces list**, as defined for `ADD`
-    - **IP configuration assigned to each interface**, as defined for `ADD`
-    - **DNS information**, as defined for `ADD`
-  - This action should return the same `Result` object as an `ADD` action for the same inputs. The result should not change over the lifetime of the container.
-  - The plugin should return an error if any general internal state is unexpected. For example, if the plugin's data storage is missing or corrupt, or its control plane is unavailable, it should return an error.
-  - The plugin should NOT return an error if its expected sandbox state (eg interfaces, IP addresses, routes, etc) is not found, as subsequent elements in the plugin's chain may alter sandbox state.
-  - A runtime may call `GET` at any time; but if `GET` is called for a container before an `ADD` or after a `DEL` for that container, the plugin should return error 3 to indicate the container is unknown (see [Well-known Error Codes](#well-known-error-codes) section).
-  - If the previous action for the container was `ADD` or `GET`, the runtime must add a `prevResult` field to the configuration JSON of the plugin (or all plugins in the chain), which must be the `Result` of that previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+    - The plugin must return either nothing or an error.
+  - The plugin must consult the `prevResult` to determine the expected interfaces and addresses.
+  - The plugin must allow for a later chained plugin to have modified networking resources, e.g. routes.
+  - The plugin should return an error if a resource included in the CNI Result type (interface, address or route):
+    - was created by the plugin, and
+    - is listed in `prevResult`, and
+    - does not exist, or is in an invalid state.
+  - The plugin should return an error if other resources not tracked in the Result type such as the following are missing or are in an invalid state:
+    - Firewall rules
+    - Traffic shaping controls
+    - IP reservations
+    - External dependencies such as a daemon required for connectivity
+    - etc.
+  - The plugin should return an error if it is aware of a condition where the container is generally unreachable.
+  - The plugin must handle `CHECK` being called immediately after an `ADD`, and therefore should allow a reasonable convergence delay for any asynchronous resources.
+  - The plugin should call `CHECK` on any delegated (e.g. IPAM) plugins and pass any errors on to its caller.
+  - A runtime must not call `CHECK` for a container that has not been `ADD`ed, or has been `DEL`eted after its last `ADD`.
+  - A runtime must not call `CHECK` if `disableCheck` is set to `true` in the [configuration list](#network-configuration-lists).
+  - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceeding `ADD` for the container. The runtime may wish to use libcni's support for caching `Result`s.
+  - A runtime may choose to stop executing `CHECK` for a chain when a plugin returns an error.
+  - A runtime may execute `CHECK` from immediately after a successful `ADD`, up until the container is `DEL`eted from the network.
+  - A runtime may assume that a failed `CHECK` means the container is permanently in a misconfigured state.
 
 - `VERSION`: Report version
   - Parameters: NONE.
@@ -120,7 +133,7 @@ The operations that CNI plugins must support are:
 
 Runtimes must use the type of network (see [Network Configuration](#network-configuration) below) as the name of the executable to invoke.
 Runtimes should then look for this executable in a list of predefined directories (the list of directories is not prescribed by this specification). Once found, it must invoke the executable using the following environment variables for argument passing:
-- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `GET`, or `VERSION`.
+- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, or `VERSION`.
 - `CNI_CONTAINERID`: Container ID
 - `CNI_NETNS`: Path to network namespace file
 - `CNI_IFNAME`: Interface name to set up; if the plugin is unable to use this interface name it must return an error
@@ -290,29 +303,30 @@ The list is composed of well-known fields and list of one or more standard CNI n
 The list is described in JSON form, and can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration list and all the individual configurations conform.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
+- `disableCheck` (string): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
 
 When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself. This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
 The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
 
 For the `ADD` action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the `Result` of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
-For the `GET` and `DEL` actions, the runtime MUST (if available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` or `GET` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
-For the `ADD` and `GET` actions, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
+For the `CHECK` and `DEL` actions, the runtime MUST (except that it may be omitted for `DEL` if not available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+For the `ADD` action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
 Plugins are allowed to modify or suppress all or part of a `prevResult`.
 However, plugins that support a version of the CNI specification that includes the `prevResult` field MUST handle `prevResult` by either passing it through, modifying it, or suppressing it explicitly.
 It is a violation of this specification to be unaware of the `prevResult` field.
 
 The runtime MUST also execute each plugin in the list with the same environment.
 
-For the DEL action, the runtime MUST execute the plugins in reverse-order.
+For the `DEL` action, the runtime MUST execute the plugins in reverse-order.
 
 #### Network Configuration List Error Handling
 
-When an error occurs while executing an action on a plugin list (eg, either ADD or DEL) the runtime MUST stop execution of the list.
+When an error occurs while executing an action on a plugin list (eg, either `ADD` or `DEL`) the runtime MUST stop execution of the list.
 
-If an ADD action fails, when the runtime decides to handle the failure it should execute the DEL action (in reverse order from the ADD as specified above) for all plugins in the list, even if some were not called during the ADD action.
+If an `ADD` action fails, when the runtime decides to handle the failure it should execute the `DEL` action (in reverse order from the `ADD` as specified above) for all plugins in the list, even if some were not called during the `ADD` action.
 
-Plugins should generally complete a DEL action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources (if present) even if the container network namespace and/or container network interface no longer exist.
+Plugins should generally complete a `DEL` action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources (if present) even if the container network namespace and/or container network interface no longer exist.
 
 #### Example network configuration lists
 
@@ -421,7 +435,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 }
 ```
 
-Given the same network configuration JSON list, the container runtime would perform the following steps for the `GET` action.
+Given the same network configuration JSON list, the container runtime would perform the following steps for the `CHECK` action.
 
 1) first call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
 
@@ -475,7 +489,7 @@ Given the same network configuration JSON list, the container runtime would perf
 }
 ```
 
-2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
+2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
 
 ```json
 {
@@ -515,10 +529,10 @@ Given the same network configuration JSON list, the container runtime would perf
 }
 ```
 
-Given the same network configuration JSON list, the container runtime would perform the following steps for the DEL action.
-Note that plugins are executed in reverse order from the `ADD` and `GET` actions.
+Given the same network configuration JSON list, the container runtime would perform the following steps for the `DEL` action.
+Note that plugins are executed in reverse order from the `ADD` and `CHECK` actions.
 
-1) first call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `GET` action:
+1) first call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` action:
 
 ```json
 {
@@ -558,7 +572,7 @@ Note that plugins are executed in reverse order from the `ADD` and `GET` actions
 }
 ```
 
-2) next call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `GET` action:
+2) next call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` action:
 
 ```json
 {
