@@ -89,7 +89,7 @@ The operations that CNI plugins must support are:
   - When `CNI_NETNS` and/or `prevResult` are not provided, the plugin should clean up as many resources as possible (e.g. releasing IPAM allocations) and return a successful response.
   - If the runtime cached the `Result` of a previous `ADD` response for a given container, it must delete that cached response on a successful `DEL` for that container.
 
-- `CHECK`: Check container's networking is correct
+- `CHECK`: Check container's networking is as expected
   - Parameters:
     - **Container ID**, as defined for `ADD`.
     - **Network namespace path**, as defined for `ADD`.
@@ -100,11 +100,11 @@ The operations that CNI plugins must support are:
     - The plugin must return either nothing or an error.
   - The plugin must consult the `prevResult` to determine the expected interfaces and addresses.
   - The plugin must allow for a later chained plugin to have modified networking resources, e.g. routes.
-  - The plugin should return an error if an interface, address or route:
+  - The plugin should return an error if a resource included in the CNI Result type (interface, address or route):
     - was created by the plugin, and
     - is listed in `prevResult`, and
     - does not exist, or is in an invalid state.
-  - The plugin should return an error if other expected resources such as the following do not exist or are in an invalid state:
+  - The plugin should return an error if other resources not tracked in the Result type such as the following are missing or are in an invalid state:
     - Firewall rules
     - Traffic shaping controls
     - IP reservations
