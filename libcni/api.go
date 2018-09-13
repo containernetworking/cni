@@ -72,6 +72,7 @@ type CNI interface {
 	AddNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
 	CheckNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error
 	DelNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error
+	GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
 
 	ValidateNetworkList(ctx context.Context, net *NetworkConfigList) ([]string, error)
 	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
@@ -217,6 +218,18 @@ func getCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result,
 		return nil, fmt.Errorf("failed to convert cached result version %q to config version %q: %v", resultCniVersion, cniVersion, err)
 	}
 	return result, err
+}
+
+// GetNetworkListCachedResult returns the cached Result of the previous
+// previous AddNetworkList() operation for a network list, or an error.
+func (c *CNIConfig) GetNetworkListCachedResult(list *NetworkConfigList, rt *RuntimeConf) (types.Result, error) {
+	return getCachedResult(list.Name, list.CNIVersion, rt)
+}
+
+// GetNetworkCachedResult returns the cached Result of the previous
+// previous AddNetwork() operation for a network, or an error.
+func (c *CNIConfig) GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
+	return getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
 }
 
 func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {

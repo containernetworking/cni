@@ -359,14 +359,16 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(string(debug.CmdArgs.StdinData)).To(ContainSubstring("\"portMappings\":"))
 
 				// Ensure the cached result matches the returned one
-				cacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig.ContainerID)
-				_, err = os.Stat(cacheFile)
+				cachedResult, err := cniConfig.GetNetworkCachedResult(netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
-				cachedData, err := ioutil.ReadFile(cacheFile)
+				result2, err := current.GetResult(cachedResult)
 				Expect(err).NotTo(HaveOccurred())
-				returnedData, err := json.Marshal(result)
+				cachedJson, err := json.Marshal(result2)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cachedData).To(MatchJSON(returnedData))
+
+				returnedJson, err := json.Marshal(result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cachedJson).To(MatchJSON(returnedJson))
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -597,6 +599,11 @@ var _ = Describe("Invoking plugins", func() {
 				debug.CmdArgs.StdinData = nil
 				expectedCmdArgs.StdinData = nil
 				Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
+
+				// Ensure the cached result no longer exists
+				cachedResult, err := cniConfig.GetNetworkCachedResult(netConfig, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cachedResult).To(BeNil())
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -916,14 +923,16 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Ensure the cached result matches the returned one
-				cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig.ContainerID)
-				_, err = os.Stat(cacheFile)
+				cachedResult, err := cniConfig.GetNetworkListCachedResult(netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
-				cachedData, err := ioutil.ReadFile(cacheFile)
+				result2, err := current.GetResult(cachedResult)
 				Expect(err).NotTo(HaveOccurred())
-				returnedData, err := json.Marshal(result)
+				cachedJson, err := json.Marshal(result2)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(cachedData).To(MatchJSON(returnedData))
+
+				returnedJson, err := json.Marshal(result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cachedJson).To(MatchJSON(returnedJson))
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -1098,6 +1107,11 @@ var _ = Describe("Invoking plugins", func() {
 					debug.CmdArgs.StdinData = nil
 					Expect(debug.CmdArgs).To(Equal(expectedCmdArgs))
 				}
+
+				// Ensure the cached result no longer exists
+				cachedResult, err := cniConfig.GetNetworkListCachedResult(netConfigList, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cachedResult).To(BeNil())
 			})
 
 			Context("when the configuration version", func() {
