@@ -58,10 +58,11 @@ type NetworkConfig struct {
 }
 
 type NetworkConfigList struct {
-	Name       string
-	CNIVersion string
-	Plugins    []*NetworkConfig
-	Bytes      []byte
+	Name         string
+	CNIVersion   string
+	DisableCheck bool
+	Plugins      []*NetworkConfig
+	Bytes        []byte
 }
 
 type CNI interface {
@@ -287,6 +288,10 @@ func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigLis
 		return err
 	} else if !gtet {
 		return fmt.Errorf("configuration version %q does not support the CHECK command", list.CNIVersion)
+	}
+
+	if list.DisableCheck {
+		return nil
 	}
 
 	cachedResult, err := getCachedResult(list.Name, list.CNIVersion, rt)

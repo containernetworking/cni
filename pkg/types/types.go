@@ -78,8 +78,9 @@ type IPAM struct {
 type NetConfList struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
 
-	Name    string     `json:"name,omitempty"`
-	Plugins []*NetConf `json:"plugins,omitempty"`
+	Name         string     `json:"name,omitempty"`
+	DisableCheck bool       `json:"disableCheck,omitempty"`
+	Plugins      []*NetConf `json:"plugins,omitempty"`
 }
 
 type ResultFactoryFunc func([]byte) (Result, error)

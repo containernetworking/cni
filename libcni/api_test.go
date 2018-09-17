@@ -1003,6 +1003,18 @@ var _ = Describe("Invoking plugins", func() {
 				}
 			})
 
+			It("does not executes plugins with command CHECK when disableCheck is true", func() {
+				netConfigList.DisableCheck = true
+				err := cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+
+				for i := 0; i < len(plugins); i++ {
+					debug, err := noop_debug.ReadDebug(plugins[i].debugFilePath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(debug.Command).To(Equal(""))
+				}
+			})
+
 			Context("when the configuration version", func() {
 				var cacheFile string
 
