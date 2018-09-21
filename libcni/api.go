@@ -169,7 +169,7 @@ func getResultCacheFilePath(netName string, rt *RuntimeConf) string {
 	if cacheDir == "" {
 		cacheDir = CacheDir
 	}
-	return filepath.Join(cacheDir, "results", fmt.Sprintf("%s-%s", netName, rt.ContainerID))
+	return filepath.Join(cacheDir, "results", fmt.Sprintf("%s-%s-%s", netName, rt.ContainerID, rt.IfName))
 }
 
 func setCachedResult(result types.Result, netName string, rt *RuntimeConf) error {
