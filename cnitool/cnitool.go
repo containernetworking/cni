@@ -30,6 +30,7 @@ const (
 	EnvNetDir         = "NETCONFPATH"
 	EnvCapabilityArgs = "CAP_ARGS"
 	EnvCNIArgs        = "CNI_ARGS"
+	EnvCNIIfname	  = "CNI_IFNAME"
 
 	DefaultNetDir = "/etc/cni/net.d"
 
@@ -85,6 +86,11 @@ func main() {
 		}
 	}
 
+	ifName, ok := os.LookupEnv(EnvCNIIfname)
+	if !ok {
+		ifName = "eth0"
+	}
+
 	netns := os.Args[3]
 	netns, err = filepath.Abs(netns)
 	if err != nil {
@@ -100,7 +106,7 @@ func main() {
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,
 		NetNS:          netns,
-		IfName:         "eth0",
+		IfName:         ifName,
 		Args:           cniArgs,
 		CapabilityArgs: capabilityArgs,
 	}
