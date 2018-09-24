@@ -30,7 +30,7 @@ const (
 	EnvNetDir         = "NETCONFPATH"
 	EnvCapabilityArgs = "CAP_ARGS"
 	EnvCNIArgs        = "CNI_ARGS"
-	EnvCNIIfname	  = "CNI_IFNAME"
+	EnvCNIIfname      = "CNI_IFNAME"
 
 	DefaultNetDir = "/etc/cni/net.d"
 
