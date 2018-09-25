@@ -249,7 +249,7 @@ work with the fields exposed by that struct:
 ```go
 // runtime invokes the plugin to get the opaque types.Result
 // this may conform to any CNI spec version
-resultInterface, err := libcni.AddNetwork(netConf, runtimeConf)
+resultInterface, err := libcni.AddNetwork(ctx, netConf, runtimeConf)
 
 // upconvert result to the current 0.3.0 spec
 result, err := current.NewResultFromResult(resultInterface)

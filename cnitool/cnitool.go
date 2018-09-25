@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha512"
 	"encoding/json"
 	"fmt"
@@ -107,13 +108,13 @@ func main() {
 
 	switch os.Args[1] {
 	case CmdAdd:
-		result, err := cninet.AddNetworkList(netconf, rt)
+		result, err := cninet.AddNetworkList(context.TODO(), netconf, rt)
 		if result != nil {
 			_ = result.Print()
 		}
 		exit(err)
 	case CmdDel:
-		exit(cninet.DelNetworkList(netconf, rt))
+		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
 	}
 }
 

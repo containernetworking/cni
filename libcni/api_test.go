@@ -15,12 +15,14 @@
 package libcni_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/skel"
@@ -141,6 +143,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniConfig     *libcni.CNIConfig
 			runtimeConfig *libcni.RuntimeConf
 			netConfig     *libcni.NetworkConfig
+			ctx           context.Context
 		)
 
 		BeforeEach(func() {
@@ -182,6 +185,7 @@ var _ = Describe("Invoking plugins", func() {
 				},
 				CacheDir: cacheDirPath,
 			}
+			ctx = context.TODO()
 		})
 
 		AfterEach(func() {
@@ -189,7 +193,7 @@ var _ = Describe("Invoking plugins", func() {
 		})
 
 		It("adds correct runtime config for capabilities to stdin", func() {
-			_, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+			_, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			debug, err = noop_debug.ReadDebug(debugFilePath)
@@ -222,7 +226,7 @@ var _ = Describe("Invoking plugins", func() {
 				"somethingElse22": []string{"foobar", "baz"},
 			}
 
-			_, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+			_, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			debug, err = noop_debug.ReadDebug(debugFilePath)
@@ -240,7 +244,7 @@ var _ = Describe("Invoking plugins", func() {
 		})
 
 		It("outputs correct capabilities for validate", func() {
-			caps, err := cniConfig.ValidateNetwork(netConfig)
+			caps, err := cniConfig.ValidateNetwork(ctx, netConfig)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(caps).To(ConsistOf("portMappings", "somethingElse"))
 		})
@@ -256,6 +260,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniConfig     *libcni.CNIConfig
 			netConfig     *libcni.NetworkConfig
 			runtimeConfig *libcni.RuntimeConf
+			ctx           context.Context
 
 			expectedCmdArgs skel.CmdArgs
 		)
@@ -319,6 +324,7 @@ var _ = Describe("Invoking plugins", func() {
 				Path:        cniBinPath,
 				StdinData:   newBytes,
 			}
+			ctx = context.TODO()
 		})
 
 		AfterEach(func() {
@@ -327,7 +333,7 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("AddNetwork", func() {
 			It("executes the plugin with command ADD", func() {
-				r, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+				r, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				result, err := current.GetResult(r)
@@ -369,7 +375,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+					_, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -380,7 +386,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+					result, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
@@ -394,7 +400,7 @@ var _ = Describe("Invoking plugins", func() {
 					err := ioutil.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					result, err := cniConfig.AddNetwork(netConfig, runtimeConfig)
+					result, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(HaveOccurred())
 				})
@@ -414,7 +420,7 @@ var _ = Describe("Invoking plugins", func() {
 				err = ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 				Expect(err).NotTo(HaveOccurred())
 
-				r, err := cniConfig.GetNetwork(netConfig, runtimeConfig)
+				r, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				result, err := current.GetResult(r)
@@ -461,7 +467,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.GetNetwork(netConfig, runtimeConfig)
+					_, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -472,7 +478,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.GetNetwork(netConfig, runtimeConfig)
+					result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
@@ -498,7 +504,7 @@ var _ = Describe("Invoking plugins", func() {
 						var err error
 						netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 						Expect(err).NotTo(HaveOccurred())
-						_, err = cniConfig.GetNetwork(netConfig, runtimeConfig)
+						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the GET command"))
 
 						debug, err := noop_debug.ReadDebug(debugFilePath)
@@ -516,7 +522,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetwork(netConfig, runtimeConfig)
+						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 						debug, err := noop_debug.ReadDebug(debugFilePath)
 						Expect(err).NotTo(HaveOccurred())
@@ -539,7 +545,7 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						result, err := cniConfig.GetNetwork(netConfig, runtimeConfig)
+						result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 						Expect(result).To(BeNil())
 						Expect(err).To(MatchError("failed to get network 'apitest' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 					})
@@ -554,7 +560,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetwork(netConfig, runtimeConfig)
+						_, err = cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -566,7 +572,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						result, err := cniConfig.GetNetwork(netConfig, runtimeConfig)
+						result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
 						Expect(result).To(BeNil())
 						Expect(err).To(MatchError("failed to get network 'apitest' cached result: unsupported CNI result version \"0.4567.0\""))
 					})
@@ -587,7 +593,7 @@ var _ = Describe("Invoking plugins", func() {
 				err = ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+				err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				debug, err := noop_debug.ReadDebug(debugFilePath)
@@ -618,7 +624,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					err := cniConfig.DelNetwork(netConfig, runtimeConfig)
+					err := cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -629,7 +635,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					err := cniConfig.DelNetwork(netConfig, runtimeConfig)
+					err := cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
 			})
@@ -651,12 +657,12 @@ var _ = Describe("Invoking plugins", func() {
 					}`), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+					err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).NotTo(HaveOccurred())
 					_, err = ioutil.ReadFile(cacheFile)
 					Expect(err).To(HaveOccurred())
 
-					err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+					err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -687,7 +693,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`
 						netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 						Expect(err).NotTo(HaveOccurred())
-						err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						debug, err := noop_debug.ReadDebug(debugFilePath)
@@ -706,7 +712,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						debug, err := noop_debug.ReadDebug(debugFilePath)
@@ -731,7 +737,7 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).To(MatchError("failed to get network 'apitest' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 					})
 				})
@@ -745,7 +751,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 					})
 
@@ -757,7 +763,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = cniConfig.DelNetwork(netConfig, runtimeConfig)
+						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 						Expect(err).To(MatchError("failed to get network 'apitest' cached result: unsupported CNI result version \"0.4567.0\""))
 					})
 				})
@@ -766,7 +772,7 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("GetVersionInfo", func() {
 			It("executes the plugin with the command VERSION", func() {
-				versionInfo, err := cniConfig.GetVersionInfo("noop")
+				versionInfo, err := cniConfig.GetVersionInfo(ctx, "noop")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(versionInfo).NotTo(BeNil())
@@ -777,7 +783,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			Context("when finding the plugin fails", func() {
 				It("returns the error", func() {
-					_, err := cniConfig.GetVersionInfo("does-not-exist")
+					_, err := cniConfig.GetVersionInfo(ctx, "does-not-exist")
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -785,19 +791,19 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("ValidateNetwork", func() {
 			It("validates a good configuration", func() {
-				_, err := cniConfig.ValidateNetwork(netConfig)
+				_, err := cniConfig.ValidateNetwork(ctx, netConfig)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("catches non-existent plugins", func() {
 				netConfig.Network.Type = "nope"
-				_, err := cniConfig.ValidateNetwork(netConfig)
+				_, err := cniConfig.ValidateNetwork(ctx, netConfig)
 				Expect(err).To(MatchError("failed to find plugin \"nope\" in path [" + cniConfig.Path[0] + "]"))
 			})
 
 			It("catches unsupported versions", func() {
 				netConfig.Network.CNIVersion = "broken"
-				_, err := cniConfig.ValidateNetwork(netConfig)
+				_, err := cniConfig.ValidateNetwork(ctx, netConfig)
 				Expect(err).To(MatchError("plugin noop does not support config version \"broken\""))
 			})
 		})
@@ -810,6 +816,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniConfig     *libcni.CNIConfig
 			netConfigList *libcni.NetworkConfigList
 			runtimeConfig *libcni.RuntimeConf
+			ctx           context.Context
 
 			expectedCmdArgs skel.CmdArgs
 		)
@@ -872,6 +879,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			netConfigList, err = libcni.ConfListFromBytes(configList)
 			Expect(err).NotTo(HaveOccurred())
+			ctx = context.TODO()
 		})
 
 		AfterEach(func() {
@@ -882,7 +890,7 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("AddNetworkList", func() {
 			It("executes all plugins with command ADD and returns an intermediate result", func() {
-				r, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+				r, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				result, err := current.GetResult(r)
@@ -919,7 +927,7 @@ var _ = Describe("Invoking plugins", func() {
 			})
 
 			It("writes the correct cached result", func() {
-				r, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+				r, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				result, err := current.GetResult(r)
@@ -942,7 +950,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -953,7 +961,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(plugins[1].debug.WriteDebug(plugins[1].debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
@@ -967,7 +975,7 @@ var _ = Describe("Invoking plugins", func() {
 					err := ioutil.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					result, err := cniConfig.AddNetworkList(netConfigList, runtimeConfig)
+					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(HaveOccurred())
 				})
@@ -976,7 +984,7 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("GetNetworkList", func() {
 			It("executes all plugins with command GET and returns an intermediate result", func() {
-				r, err := cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+				r, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				result, err := current.GetResult(r)
@@ -1031,7 +1039,7 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						_, err = cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+						_, err = cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Match the first plugin's stdin config to the cached result JSON
@@ -1059,7 +1067,7 @@ var _ = Describe("Invoking plugins", func() {
 
 						netConfigList, err = libcni.ConfListFromBytes(newBytes)
 						Expect(err).NotTo(HaveOccurred())
-						_, err = cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+						_, err = cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the GET command"))
 					})
 				})
@@ -1071,7 +1079,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					_, err := cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+					_, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -1082,7 +1090,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(plugins[1].debug.WriteDebug(plugins[1].debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					result, err := cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
@@ -1096,7 +1104,7 @@ var _ = Describe("Invoking plugins", func() {
 					err = ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					result, err := cniConfig.GetNetworkList(netConfigList, runtimeConfig)
+					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError("failed to get network 'some-list' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 				})
@@ -1105,7 +1113,7 @@ var _ = Describe("Invoking plugins", func() {
 
 		Describe("DelNetworkList", func() {
 			It("executes all the plugins in reverse order with command DEL", func() {
-				err := cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+				err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
 				for i := 0; i < len(plugins); i++ {
@@ -1139,7 +1147,7 @@ var _ = Describe("Invoking plugins", func() {
 						err := ioutil.WriteFile(cacheFile, []byte(cachedJson), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						err = cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+						err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Match the first plugin's stdin config to the cached result JSON
@@ -1174,7 +1182,7 @@ var _ = Describe("Invoking plugins", func() {
 
 						netConfigList, err = libcni.ConfListFromBytes(newBytes)
 						Expect(err).NotTo(HaveOccurred())
-						err = cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+						err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Make sure first plugin does not receive a prevResult
@@ -1191,7 +1199,7 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				It("returns the error", func() {
-					err := cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+					err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError(ContainSubstring(`failed to find plugin "does-not-exist"`)))
 				})
 			})
@@ -1202,7 +1210,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(plugins[1].debug.WriteDebug(plugins[1].debugFilePath)).To(Succeed())
 				})
 				It("unmarshals and returns the error", func() {
-					err := cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+					err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError("plugin error: banana"))
 				})
 			})
@@ -1215,29 +1223,214 @@ var _ = Describe("Invoking plugins", func() {
 					err = ioutil.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = cniConfig.DelNetworkList(netConfigList, runtimeConfig)
+					err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(MatchError("failed to get network 'some-list' cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
 				})
 			})
 		})
 		Describe("ValidateNetworkList", func() {
 			It("Checks that all plugins exist", func() {
-				caps, err := cniConfig.ValidateNetworkList(netConfigList)
+				caps, err := cniConfig.ValidateNetworkList(ctx, netConfigList)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(caps).To(ConsistOf("portMappings", "otherCapability"))
 
 				netConfigList.Plugins[1].Network.Type = "nope"
-				_, err = cniConfig.ValidateNetworkList(netConfigList)
+				_, err = cniConfig.ValidateNetworkList(ctx, netConfigList)
 				Expect(err).To(MatchError("[failed to find plugin \"nope\" in path [" + cniConfig.Path[0] + "]]"))
 			})
 
 			It("Checks that the plugins support the needed version", func() {
 				netConfigList.CNIVersion = "broken"
-				_, err := cniConfig.ValidateNetworkList(netConfigList)
+				_, err := cniConfig.ValidateNetworkList(ctx, netConfigList)
 
 				// The config list is just noop 3 times, so we get 3 errors
 				Expect(err).To(MatchError("[plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\"]"))
 			})
 		})
+	})
+
+	Describe("Invoking a sleep plugin", func() {
+		var (
+			debugFilePath string
+			debug         *noop_debug.Debug
+			cniBinPath    string
+			pluginConfig  string
+			cniConfig     *libcni.CNIConfig
+			netConfig     *libcni.NetworkConfig
+			runtimeConfig *libcni.RuntimeConf
+			netConfigList *libcni.NetworkConfigList
+		)
+
+		BeforeEach(func() {
+			debugFile, err := ioutil.TempFile("", "cni_debug")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debugFile.Close()).To(Succeed())
+			debugFilePath = debugFile.Name()
+
+			debug = &noop_debug.Debug{
+				ReportResult: `{ "ips": [{ "version": "4", "address": "10.1.2.3/24" }], "dns": {} }`,
+			}
+			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
+
+			portMappings := []portMapping{
+				{HostPort: 8080, ContainerPort: 80, Protocol: "tcp"},
+			}
+
+			pluginConfig = fmt.Sprintf(`{
+				"type": "sleep",
+				"name": "apitest",
+				"some-key": "some-value",
+				"cniVersion": "%s",
+				"capabilities": { "portMappings": true }
+			}`, current.ImplementedSpecVersion)
+
+			cniBinPath = filepath.Dir(pluginPaths["sleep"])
+			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
+			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
+			runtimeConfig = &libcni.RuntimeConf{
+				ContainerID: "some-container-id",
+				NetNS:       "/some/netns/path",
+				IfName:      "some-eth0",
+				Args:        [][2]string{{"DEBUG", debugFilePath}},
+			}
+
+			// inject runtime args into the expected plugin config
+			conf := make(map[string]interface{})
+			err = json.Unmarshal([]byte(pluginConfig), &conf)
+			Expect(err).NotTo(HaveOccurred())
+			conf["runtimeConfig"] = map[string]interface{}{
+				"portMappings": portMappings,
+			}
+
+			configList := []byte(fmt.Sprintf(`{
+  "name": "some-list",
+  "cniVersion": "%s",
+  "plugins": [
+    %s
+  ]
+}`, current.ImplementedSpecVersion, pluginConfig))
+
+			netConfigList, err = libcni.ConfListFromBytes(configList)
+			Expect(err).NotTo(HaveOccurred())
+
+		})
+
+		AfterEach(func() {
+			Expect(os.RemoveAll(debugFilePath)).To(Succeed())
+		})
+
+		Describe("AddNetwork", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					result, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
+					cancel()
+					Expect(result).To(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("DelNetwork", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					err := cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
+					cancel()
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("GetNetwork", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					result, err := cniConfig.GetNetwork(ctx, netConfig, runtimeConfig)
+					cancel()
+					Expect(result).To(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("GetVersionInfo", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					result, err := cniConfig.GetVersionInfo(ctx, "sleep")
+					cancel()
+					Expect(result).To(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("ValidateNetwork", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					_, err := cniConfig.ValidateNetwork(ctx, netConfig)
+					cancel()
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("AddNetworkList", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					cancel()
+					Expect(result).To(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("DelNetworkList", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
+					cancel()
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("GetNetworkList", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					result, err := cniConfig.GetNetworkList(ctx, netConfigList, runtimeConfig)
+					cancel()
+					Expect(result).To(BeNil())
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
+		Describe("ValidateNetworkList", func() {
+			Context("when the plugin timeout", func() {
+				It("returns the timeout error", func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+					_, err := cniConfig.ValidateNetworkList(ctx, netConfigList)
+					cancel()
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+				})
+
+			})
+		})
+
 	})
 })

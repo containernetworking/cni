@@ -14,6 +14,8 @@
 
 package fakes
 
+import "context"
+
 type RawExec struct {
 	ExecPluginCall struct {
 		Received struct {
@@ -38,7 +40,7 @@ type RawExec struct {
 	}
 }
 
-func (e *RawExec) ExecPlugin(pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
+func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
 	e.ExecPluginCall.Received.PluginPath = pluginPath
 	e.ExecPluginCall.Received.StdinData = stdinData
 	e.ExecPluginCall.Received.Environ = environ
