@@ -15,6 +15,7 @@
 package invoke_test
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ var _ = Describe("GetVersion, integration tests", func() {
 	DescribeTable("correctly reporting plugin versions",
 		func(gitRef string, pluginSource string, expectedVersions version.PluginInfo) {
 			Expect(testhelpers.BuildAt([]byte(pluginSource), gitRef, pluginPath)).To(Succeed())
-			versionInfo, err := invoke.GetVersionInfo(pluginPath, nil)
+			versionInfo, err := invoke.GetVersionInfo(context.TODO(), pluginPath, nil)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(versionInfo.SupportedVersions()).To(ConsistOf(expectedVersions.SupportedVersions()))

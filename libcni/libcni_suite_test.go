@@ -31,7 +31,8 @@ func TestLibcni(t *testing.T) {
 }
 
 var pluginPackages = map[string]string{
-	"noop": "github.com/containernetworking/cni/plugins/test/noop",
+	"noop":  "github.com/containernetworking/cni/plugins/test/noop",
+	"sleep": "github.com/containernetworking/cni/plugins/test/sleep",
 }
 
 var pluginPaths map[string]string

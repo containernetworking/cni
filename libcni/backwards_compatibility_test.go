@@ -15,6 +15,7 @@
 package libcni_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -61,7 +62,7 @@ var _ = Describe("Backwards compatibility", func() {
 
 		cniConfig := libcni.NewCNIConfig([]string{filepath.Dir(pluginPath)}, nil)
 
-		result, err := cniConfig.AddNetwork(netConf, runtimeConf)
+		result, err := cniConfig.AddNetwork(context.TODO(), netConf, runtimeConf)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result).To(Equal(legacy_examples.ExpectedResult))
