@@ -202,6 +202,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			configList = []byte(`{
   "name": "some-list",
   "cniVersion": "0.2.0",
+  "disableCheck": true,
   "plugins": [
     {
       "type": "host-local",
@@ -228,8 +229,9 @@ var _ = Describe("Loading configuration from disk", func() {
 			netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(netConfigList).To(Equal(&libcni.NetworkConfigList{
-				Name:       "some-list",
-				CNIVersion: "0.2.0",
+				Name:         "some-list",
+				CNIVersion:   "0.2.0",
+				DisableCheck: true,
 				Plugins: []*libcni.NetworkConfig{
 					{
 						Network: &types.NetConf{Type: "host-local"},

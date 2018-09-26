@@ -73,7 +73,7 @@ var _ = Describe("GetVersion, integration tests", func() {
 			version.PluginSupports("0.2.0", "0.999.0"),
 		),
 
-		Entry("historical: before GET was introduced",
+		Entry("historical: before CHECK was introduced",
 			git_ref_v031, plugin_source_v020_custom_versions,
 			version.PluginSupports("0.2.0", "0.999.0"),
 		),
@@ -81,14 +81,14 @@ var _ = Describe("GetVersion, integration tests", func() {
 		// this entry tracks the current behavior.  Before you change it, ensure
 		// that its previous behavior is captured in the most recent "historical" entry
 		Entry("current",
-			"HEAD", plugin_source_v040_get,
+			"HEAD", plugin_source_v040_check,
 			version.PluginSupports("0.2.0", "0.4.0", "0.999.0"),
 		),
 	)
 })
 
-// A 0.4.0 plugin that supports GET
-const plugin_source_v040_get = `package main
+// A 0.4.0 plugin that supports CHECK
+const plugin_source_v040_check = `package main
 
 import (
 	"github.com/containernetworking/cni/pkg/skel"

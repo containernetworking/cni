@@ -124,30 +124,29 @@ var _ = Describe("Delegate", func() {
 		})
 	})
 
-	Describe("DelegateGet", func() {
+	Describe("DelegateCheck", func() {
 		BeforeEach(func() {
-			os.Setenv("CNI_COMMAND", "GET")
+			os.Setenv("CNI_COMMAND", "CHECK")
 		})
 
 		It("finds and execs the named plugin", func() {
-			result, err := invoke.DelegateGet(ctx, pluginName, netConf, nil)
+			err := invoke.DelegateCheck(ctx, pluginName, netConf, nil)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(expectedResult))
 
 			pluginInvocation, err := debug.ReadDebug(debugFileName)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(pluginInvocation.Command).To(Equal("GET"))
+			Expect(pluginInvocation.Command).To(Equal("CHECK"))
 			Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
 		})
 
-		Context("if the delegation isn't part of an existing GET command", func() {
+		Context("if the delegation isn't part of an existing CHECK command", func() {
 			BeforeEach(func() {
 				os.Setenv("CNI_COMMAND", "NOPE")
 			})
 
 			It("aborts and returns a useful error", func() {
-				_, err := invoke.DelegateGet(ctx, pluginName, netConf, nil)
-				Expect(err).To(MatchError("CNI_COMMAND is not GET"))
+				err := invoke.DelegateCheck(ctx, pluginName, netConf, nil)
+				Expect(err).To(MatchError("CNI_COMMAND is not CHECK"))
 			})
 		})
 
@@ -157,7 +156,7 @@ var _ = Describe("Delegate", func() {
 			})
 
 			It("returns a useful error", func() {
-				_, err := invoke.DelegateGet(ctx, pluginName, netConf, nil)
+				err := invoke.DelegateCheck(ctx, pluginName, netConf, nil)
 				Expect(err).To(MatchError(HavePrefix("failed to find plugin")))
 			})
 		})
