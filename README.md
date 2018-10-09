@@ -43,6 +43,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/cf-networking-release)
 - [Apache Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 - [Amazon ECS - a highly scalable, high performance container management service](https://aws.amazon.com/ecs/)
+- [Singularity - container platform optimized for HPC, EPC, and AI](https://github.com/sylabs/singularity)
 
 ### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
