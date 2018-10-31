@@ -89,6 +89,8 @@ The operations that CNI plugins must support are:
   - When `CNI_NETNS` and/or `prevResult` are not provided, the plugin should clean up as many resources as possible (e.g. releasing IPAM allocations) and return a successful response.
   - If the runtime cached the `Result` of a previous `ADD` response for a given container, it must delete that cached response on a successful `DEL` for that container.
 
+Plugins should generally complete a `DEL` action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources (if present) even if the container network namespace and/or container network interface no longer exist.
+
 - `CHECK`: Check container's networking is as expected
   - Parameters:
     - **Container ID**, as defined for `ADD`.
@@ -325,8 +327,6 @@ For the `DEL` action, the runtime MUST execute the plugins in reverse-order.
 When an error occurs while executing an action on a plugin list (eg, either `ADD` or `DEL`) the runtime MUST stop execution of the list.
 
 If an `ADD` action fails, when the runtime decides to handle the failure it should execute the `DEL` action (in reverse order from the `ADD` as specified above) for all plugins in the list, even if some were not called during the `ADD` action.
-
-Plugins should generally complete a `DEL` action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources (if present) even if the container network namespace and/or container network interface no longer exist.
 
 #### Example network configuration lists
 
