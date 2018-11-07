@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
     apt-get update -y || (sleep 40 && apt-get update -y)
     apt-get install -y git
 
-    wget -qO- https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz | tar -C /usr/local -xz
+    wget -qO- https://storage.googleapis.com/golang/go1.11.1.linux-amd64.tar.gz | tar -C /usr/local -xz
 
     echo 'export GOPATH=/go; export PATH=/usr/local/go/bin:$GOPATH/bin:$PATH' >> /root/.bashrc
     eval `tail -n1 /root/.bashrc`
