@@ -15,7 +15,7 @@ The list below is not complete, and we advise to get the current project state f
 ### [v1.0.0](https://github.com/containernetworking/cni/milestones/v1.0.0)
 
 - More precise specification language
-- GET action
+- CHECK action
 - Conformance test suite for CNI plugins (both reference and 3rd party)
 - Stable SPEC
 - Complete test coverage
