@@ -57,7 +57,7 @@ func parseArgs(args string) ([][2]string, error) {
 }
 
 func main() {
-	if len(os.Args) < 3 {
+	if len(os.Args) < 4 {
 		usage()
 		return
 	}
