@@ -126,7 +126,7 @@ func buildOneConfig(name, cniVersion string, orig *NetworkConfig, prevResult typ
 // These capabilities arguments are filtered through the plugin's advertised
 // capabilities from its config JSON, and any keys in the CapabilityArgs
 // matching plugin capabilities are added to the "runtimeConfig" dictionary
-// sent to the plugin via JSON on stdin.  For exmaple, if the plugin's
+// sent to the plugin via JSON on stdin.  For example, if the plugin's
 // capabilities include "portMappings", and the CapabilityArgs map includes a
 // "portMappings" key, that key and its value are added to the "runtimeConfig"
 // dictionary to be passed to the plugin's stdin.
