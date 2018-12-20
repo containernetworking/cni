@@ -127,7 +127,7 @@ Next, build the plugins:
 
 ```bash
 $ cd $GOPATH/src/github.com/containernetworking/plugins
-$ ./build.sh
+$ ./build_linux.sh # or build_windows.sh
 ```
 
 Finally, execute a command (`ifconfig` in this example) in a private network namespace that has joined the `mynet` network:
