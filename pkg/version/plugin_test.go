@@ -92,7 +92,7 @@ var _ = Describe("Decoding versions reported by a plugin", func() {
 		})
 
 		It("returns an error for malformed versions", func() {
-			badVersions := []string{"asdfasdf", "asdf.", ".asdfas", "asdf.adsf.", "0.", "..", "1.2.3.4.5"}
+			badVersions := []string{"asdfasdf", "asdf.", ".asdfas", "asdf.adsf.", "0.", "..", "1.2.3.4.5", ""}
 			for _, v := range badVersions {
 				_, _, _, err := version.ParseVersion(v)
 				Expect(err).To(HaveOccurred())
