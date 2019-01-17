@@ -87,7 +87,7 @@ type ResultFactoryFunc func([]byte) (Result, error)
 
 // Result is an interface that provides the result of plugin execution
 type Result interface {
-	// The highest CNI specification result verison the result supports
+	// The highest CNI specification result version the result supports
 	// without having to convert
 	Version() string
 
