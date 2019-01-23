@@ -237,7 +237,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(recovered).To(Equal(ipc))
 	})
 
-	Context("when unmarshaling json fails", func() {
+	Context("when unmarshalling json fails", func() {
 		It("returns an error", func() {
 			recovered := &current.IPConfig{}
 			err := json.Unmarshal([]byte(`{"address": 5}`), &recovered)
