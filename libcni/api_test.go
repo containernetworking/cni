@@ -961,7 +961,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			Context("when the result cache directory cannot be accessed", func() {
 				It("returns an error", func() {
-					// Make the results directory inaccessble by making it a
+					// Make the results directory inaccessible by making it a
 					// file instead of a directory
 					tmpPath := filepath.Join(cacheDirPath, "results")
 					err := ioutil.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0600)

@@ -118,7 +118,7 @@ func ParseVersion(version string) (int, int, int, error) {
 }
 
 // GreaterThanOrEqualTo takes two string versions, parses them into major/minor/micro
-// nubmers, and compares them to determine whether the first version is greater
+// numbers, and compares them to determine whether the first version is greater
 // than or equal to the second
 func GreaterThanOrEqualTo(version, otherVersion string) (bool, error) {
 	firstMajor, firstMinor, firstMicro, err := ParseVersion(version)
