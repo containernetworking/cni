@@ -291,7 +291,7 @@ func PluginMainWithError(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versio
 // The caller must also specify what CNI spec versions the plugin supports.
 //
 // The caller can specify an "about" string, which is printed on stderr
-// when no CNI_COMMAND is specified. The reccomended output is "CNI plugin <foo> v<version>"
+// when no CNI_COMMAND is specified. The recommended output is "CNI plugin <foo> v<version>"
 //
 // When an error occurs in either cmdAdd, cmdCheck, or cmdDel, PluginMain will print the error
 // as JSON to stdout and call os.Exit(1).
