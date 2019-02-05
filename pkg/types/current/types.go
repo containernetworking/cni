@@ -76,13 +76,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 			Gateway: oldResult.IP4.Gateway,
 		})
 		for _, route := range oldResult.IP4.Routes {
-			gw := route.GW
-			if gw == nil {
-				gw = oldResult.IP4.Gateway
-			}
 			newResult.Routes = append(newResult.Routes, &types.Route{
 				Dst: route.Dst,
-				GW:  gw,
+				GW:  route.GW,
 			})
 		}
 	}
@@ -94,13 +90,9 @@ func convertFrom020(result types.Result) (*Result, error) {
 			Gateway: oldResult.IP6.Gateway,
 		})
 		for _, route := range oldResult.IP6.Routes {
-			gw := route.GW
-			if gw == nil {
-				gw = oldResult.IP6.Gateway
-			}
 			newResult.Routes = append(newResult.Routes, &types.Route{
 				Dst: route.Dst,
-				GW:  gw,
+				GW:  route.GW,
 			})
 		}
 	}
