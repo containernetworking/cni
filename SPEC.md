@@ -27,7 +27,7 @@ For the purposes of this proposal, we define two terms very specifically:
 - _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
 - _network_ refers to a group of entities that are uniquely addressable that can communicate amongst each other. This could be either an individual container (as specified above), a machine, or some other network device (e.g. a router). Containers can be conceptually _added to_ or _removed from_ one or more networks.
 
-This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extentions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
+This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extensions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
 [rkt-networking-proposal]: https://docs.google.com/a/coreos.com/document/d/1PUeV68q9muEmkHmRuW10HQ6cHgd4819_67pIxDRVNlM/edit#heading=h.ievko3xsjwxd
 [rkt-networking-design]: 
@@ -95,7 +95,7 @@ Plugins should generally complete a `DEL` action without error even if some reso
   - Parameters:
     - **Container ID**, as defined for `ADD`.
     - **Network namespace path**, as defined for `ADD`.
-    - **Network configuration** as defined for `ADD`, which must include a `prevResult` field containing the `Result` of the immediately preceeding `ADD` for the container.
+    - **Network configuration** as defined for `ADD`, which must include a `prevResult` field containing the `Result` of the immediately preceding `ADD` for the container.
     - **Extra arguments**, as defined for `ADD`.
     - **Name of the interface inside the container**, as defined for `ADD`.
   - Result:
@@ -117,7 +117,7 @@ Plugins should generally complete a `DEL` action without error even if some reso
   - The plugin should call `CHECK` on any delegated (e.g. IPAM) plugins and pass any errors on to its caller.
   - A runtime must not call `CHECK` for a container that has not been `ADD`ed, or has been `DEL`eted after its last `ADD`.
   - A runtime must not call `CHECK` if `disableCheck` is set to `true` in the [configuration list](#network-configuration-lists).
-  - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceeding `ADD` for the container. The runtime may wish to use libcni's support for caching `Result`s.
+  - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceding `ADD` for the container. The runtime may wish to use libcni's support for caching `Result`s.
   - A runtime may choose to stop executing `CHECK` for a chain when a plugin returns an error.
   - A runtime may execute `CHECK` from immediately after a successful `ADD`, up until the container is `DEL`eted from the network.
   - A runtime may assume that a failed `CHECK` means the container is permanently in a misconfigured state.
