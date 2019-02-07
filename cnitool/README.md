@@ -14,7 +14,9 @@ Then, check out and build the plugins. All commands should be run from this dire
 ```
 git clone https://github.com/containernetworking/plugins.git
 cd plugins
-./build.sh
+./build_linux.sh
+# or
+./build_windows.sh
 ```
 
 Create a network configuration
