@@ -72,7 +72,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 
 This method of passing information to a plugin is recommended when the information is optional and the plugin can choose to ignore it. It's often that case that such information is passed to all plugins by the runtime without regard for whether the plugin can understand it.
 
-The conventions documented here are all namepaced under `cni` so they don't conflict with any existing `args`.
+The conventions documented here are all namespaced under `cni` so they don't conflict with any existing `args`.
 
 For example:
 ```json
