@@ -16,7 +16,7 @@ contribution. See the [DCO](DCO) file for details.
 
 # Email and Chat
 
-The project uses the the cni-dev email list and IRC chat:
+The project uses the cni-dev email list and IRC chat:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.org:6667/#containernetworking) channel on freenode.org
 
