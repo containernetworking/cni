@@ -186,7 +186,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
 }
 ```
 
-`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin. A plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
+`cniVersion` specifies a [Semantic Version 2.0](https://semver.org) of CNI specification used by the plugin. A plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
 
 `interfaces` describes specific network interfaces the plugin created.
 If the `CNI_IFNAME` variable exists the plugin must use that name for the sandbox/hypervisor interface or return an error if it cannot.
@@ -215,7 +215,7 @@ Errors must be indicated by a non-zero return code and the following JSON being 
 }
 ```
 
-`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the plugin.
+`cniVersion` specifies a [Semantic Version 2.0](https://semver.org) of CNI specification used by the plugin.
 Error codes 0-99 are reserved for well-known errors (see [Well-known Error Codes](#well-known-error-codes) section).
 Values of 100+ can be freely used for plugin specific errors. 
 
@@ -224,7 +224,7 @@ In addition, stderr can be used for unstructured output such as logs.
 ### Network Configuration
 
 The network configuration is described in JSON form. The configuration may be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
-- `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration conforms.
+- `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration conforms.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `type` (string): Refers to the filename of the CNI plugin executable.
 - `args` (dictionary, optional): Additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
@@ -303,7 +303,7 @@ Network configuration lists provide a mechanism to run multiple CNI plugins for 
 The list is composed of well-known fields and list of one or more standard CNI network configurations (see above).
 
 The list is described in JSON form, and can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
-- `cniVersion` (string): [Semantic Version 2.0](http://semver.org) of CNI specification to which this configuration list and all the individual configurations conform.
+- `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform.
 - `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
 - `disableCheck` (string): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
@@ -665,7 +665,7 @@ Success must be indicated by a zero return code and the following JSON being pri
 
 Note that unlike regular CNI plugins, IPAM plugins should return an abbreviated `Result` structure that does not include the `interfaces` key, since IPAM plugins should be unaware of interfaces configured by their parent plugin except those specifically required for IPAM (eg, like the `dhcp` IPAM plugin).
 
-`cniVersion` specifies a [Semantic Version 2.0](http://semver.org) of CNI specification used by the IPAM plugin. An IPAM plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the IPAM plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the IPAM plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
+`cniVersion` specifies a [Semantic Version 2.0](https://semver.org) of CNI specification used by the IPAM plugin. An IPAM plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the IPAM plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the IPAM plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
 
 The `ips` field is a list of IP configuration information.
 See the [IP well-known structure](#ips) section for more information.
