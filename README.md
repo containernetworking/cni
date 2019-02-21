@@ -44,6 +44,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Apache Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
 - [Amazon ECS - a highly scalable, high performance container management service](https://aws.amazon.com/ecs/)
 - [Singularity - container platform optimized for HPC, EPC, and AI](https://github.com/sylabs/singularity)
+- [OpenSVC - orchestrator for legacy and containerized application stacks](https://docs.opensvc.com/latest/fr/agent.configure.cni.html)
 
 ### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
