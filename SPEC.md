@@ -29,9 +29,6 @@ For the purposes of this proposal, we define two terms very specifically:
 
 This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extensions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
-[rkt-networking-proposal]: https://docs.google.com/a/coreos.com/document/d/1PUeV68q9muEmkHmRuW10HQ6cHgd4819_67pIxDRVNlM/edit#heading=h.ievko3xsjwxd
-[rkt-networking-design]: 
-https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP14UEbHNizd8g
 [rkt-github]: https://github.com/coreos/rkt
 [namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html 
 [appc-github]: https://github.com/appc/spec
