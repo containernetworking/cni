@@ -192,4 +192,4 @@ func prettyPrint(obj interface{}) error {
 }
 
 // NotImplementedError is used to indicate that a method is not implemented for the given platform
-var NotImplementedError = errors.New("Not Implemented")
+var NotImplementedError = errors.New("not implemented")
