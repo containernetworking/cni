@@ -21,7 +21,7 @@ Released versions of the spec are available as Git tags.
 ## Overview
 
 This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_.
-It is derived from the [rkt Networking Proposal][rkt-networking-proposal], which aimed to satisfy many of the [design considerations][rkt-networking-design] for networking in [rkt][rkt-github].
+It is derived from the rkt Networking Proposal, which aimed to satisfy many of the design considerations for networking in [rkt][rkt-github].
 
 For the purposes of this proposal, we define two terms very specifically:
 - _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
@@ -29,9 +29,6 @@ For the purposes of this proposal, we define two terms very specifically:
 
 This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extensions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
-[rkt-networking-proposal]: https://docs.google.com/a/coreos.com/document/d/1PUeV68q9muEmkHmRuW10HQ6cHgd4819_67pIxDRVNlM/edit#heading=h.ievko3xsjwxd
-[rkt-networking-design]: 
-https://docs.google.com/a/coreos.com/document/d/1CTAL4gwqRofjxyp4tTkbgHtAwb2YCcP14UEbHNizd8g
 [rkt-github]: https://github.com/coreos/rkt
 [namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html 
 [appc-github]: https://github.com/appc/spec
