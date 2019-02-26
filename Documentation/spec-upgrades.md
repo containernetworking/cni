@@ -148,9 +148,6 @@ ipamResult, err := ipam.ExecAdd(netConf.IPAM.Type, args.StdinData)
 result, err := current.NewResultFromResult(ipamResult)
 ```
 
-Other examples of spec v0.3.0-compatible plugins are the
-[main plugins in this repo](https://github.com/containernetworking/cni/tree/master/plugins/main)
-
 
 ## For Runtime Authors
 
