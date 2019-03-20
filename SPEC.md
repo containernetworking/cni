@@ -21,7 +21,7 @@ Released versions of the spec are available as Git tags.
 ## Overview
 
 This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_.
-It is derived from the [rkt Networking Proposal][rkt-networking-proposal], which aimed to satisfy many of the [design considerations][rkt-networking-design] for networking in [rkt][rkt-github].
+It is derived from the rkt Networking Proposal, which aimed to satisfy many of the design considerations for networking in [rkt][rkt-github].
 
 For the purposes of this proposal, we define two terms very specifically:
 - _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
