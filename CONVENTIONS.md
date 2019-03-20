@@ -95,17 +95,17 @@ For example:
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ----- | ------ | ------------     | ----------------------- | ---------------------- |
 | labels | Pass`key=value` labels to plugins | <pre>"labels" : [<br />  { "key" : "app", "value" : "myapp" },<br />  { "key" : "env", "value" : "prod" }<br />] </pre> | none | none |
-| ips   | Request static IPs | <pre>"ips": ["10.2.2.42", "2001:db8::5"]</pre> | none | host-local |
+| ips   | Request static IPs | Spec:<pre>"ips": ["\<ip\>[/\<prefix\>]", ...]</pre>Examples:<pre>"ips": ["10.2.2.42/24", "2001:db8::5"]</pre>The plugin may require the IP address to include a prefix length. | none | host-local |
 
 ## CNI_ARGS
 CNI_ARGS formed part of the original CNI spec and have been present since the initial release.
 > `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
 
-The use of `CNI_ARGS` is deprecated and "args" should be used instead.
+The use of `CNI_ARGS` is deprecated and "args" should be used instead. If a runtime passes an equivalent key via `args` (eg the `ips` `args` Area and the `CNI_ARGS` `IP` Field) and the plugin understands `args`, the plugin must ignore the CNI_ARGS Field.
 
 | Field  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ---------------- | ----------------------- | ---------------------- |
-| IP     | Request a specific IP from IPAM plugins | IP=192.168.10.4 | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/cni/blob/master/Documentation/host-local.md#supported-arguments).|
+| IP     | Request a specific IP from IPAM plugins | Spec:<pre>IP=\<ip\>[/\<prefix\>]</pre>Example: <pre>IP=192.168.10.4/24</pre>The plugin may require the IP addresses to include a prefix length. | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/cni/blob/master/Documentation/host-local.md#supported-arguments).|
 
 ## Chained Plugins
 If plugins are agnostic about the type of interface created, they SHOULD work in a chained mode and configure existing interfaces. Plugins MAY also create the desired interface when not run in a chain.
