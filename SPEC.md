@@ -196,6 +196,9 @@ If the `CNI_IFNAME` variable exists the plugin must use that name for the sandbo
 The `ips` field is a list of IP configuration information.
 See the [IP well-known structure](#ips) section for more information.
 
+The `routes` field is a list of route configuration information.
+See the [Routes well-known structure](#routes) section for more information.
+
 The `dns` field contains a dictionary consisting of common DNS information.
 See the [DNS well-known structure](#dns) section for more information.
 
@@ -667,6 +670,9 @@ Note that unlike regular CNI plugins, IPAM plugins should return an abbreviated 
 The `ips` field is a list of IP configuration information.
 See the [IP well-known structure](#ips) section for more information.
 
+The `routes` field is a list of route configuration information.
+See the [Routes well-known structure](#routes) section for more information.
+
 The `dns` field contains a dictionary consisting of common DNS information.
 See the [DNS well-known structure](#dns) section for more information.
 
@@ -720,9 +726,11 @@ All properties known to the plugin should be provided, even if not strictly requ
   ]
 ```
 
-- Each `routes` entry is a dictionary with the following fields.  All IP addresses in the `routes` entry must be the same IP version, either 4 or 6.
+Each `routes` entry is a dictionary with the following fields.  All IP addresses in the `routes` entry must be the same IP version, either 4 or 6.
   - `dst` (string): destination subnet specified in CIDR notation.
   - `gw` (string): IP of the gateway. If omitted, a default gateway is assumed (as determined by the CNI plugin).
+
+Each `routes` entry must be relevant for the sandbox interface specified by CNI_IFNAME.
 
 #### DNS
 
