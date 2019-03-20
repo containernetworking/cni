@@ -149,7 +149,7 @@ result, err := current.NewResultFromResult(ipamResult)
 ```
 
 Other examples of spec v0.3.0-compatible plugins are the
-[main plugins in this repo](https://github.com/containernetworking/plugins/)
+[main plugins in this repo](https://github.com/containernetworking/plugins/tree/master/plugins)
 
 
 ## For Runtime Authors
