@@ -63,6 +63,8 @@ type NetConf struct {
 
 	Name         string          `json:"name,omitempty"`
 	Type         string          `json:"type,omitempty"`
+	Mode         string	     `json:"mode"`
+	MacPrefix    string          `json:"mac_prefix"`
 	Capabilities map[string]bool `json:"capabilities,omitempty"`
 	IPAM         IPAM            `json:"ipam,omitempty"`
 	DNS          DNS             `json:"dns"`
