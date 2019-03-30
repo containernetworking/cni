@@ -105,7 +105,7 @@ The use of `CNI_ARGS` is deprecated and "args" should be used instead. If a runt
 
 | Field  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ---------------- | ----------------------- | ---------------------- |
-| IP     | Request a specific IP from IPAM plugins | Spec:<pre>IP=\<ip\>[/\<prefix\>]</pre>Example: <pre>IP=192.168.10.4/24</pre>The plugin may require the IP addresses to include a prefix length. | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/cni/blob/master/Documentation/host-local.md#supported-arguments).|
+| IP     | Request a specific IP from IPAM plugins | Spec:<pre>IP=\<ip\>[/\<prefix\>]</pre>Example: <pre>IP=192.168.10.4/24</pre>The plugin may require the IP addresses to include a prefix length. | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/plugins/tree/master/plugins/ipam/host-local#supported-arguments).|
 
 ## Chained Plugins
 If plugins are agnostic about the type of interface created, they SHOULD work in a chained mode and configure existing interfaces. Plugins MAY also create the desired interface when not run in a chain.
