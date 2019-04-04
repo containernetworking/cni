@@ -139,7 +139,7 @@ func (c *ExampleNetConf) Cleanup() {
 }
 
 // V010_Runtime creates a simple noop network configuration, then
-// executes libcni against the the noop test plugin.
+// executes libcni against the noop test plugin.
 var V010_Runtime = ExampleRuntime{
 	NetConfs: []string{"unversioned", "0.1.0"},
 	Example: Example{
