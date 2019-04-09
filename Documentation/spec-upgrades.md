@@ -82,7 +82,7 @@ the plugin must return result JSON conforming to CNI spec version 0.2.0.
 ### Specific guidance for plugins written in Go
 Plugins written in Go may leverage the Go language packages in this repository
 to ease the process of upgrading and supporting multiple versions.  CNI 
-[Library and Plugins Release v0.5.0](https://github.com/containernetworking/cni/releases)
+[Library and Plugins Release v0.5.0](https://github.com/containernetworking/cni/releases/tag/v0.5.0)
 includes important changes to the Golang APIs.  Plugins using these APIs will
 require some changes now, but should more-easily handle spec changes and
 new features going forward.
