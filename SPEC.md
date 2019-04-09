@@ -271,7 +271,7 @@ Plugins may define additional fields that they accept and may generate an error 
   "ipam": {
     "type": "dhcp",
     "routes": [ { "dst": "10.3.0.0/16" }, { "dst": "10.4.0.0/16" } ]
-  }
+  },
   // args may be ignored by plugins
   "args": {
     "labels" : {
