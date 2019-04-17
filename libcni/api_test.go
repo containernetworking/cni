@@ -1325,7 +1325,7 @@ var _ = Describe("Invoking plugins", func() {
 					result, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
 					cancel()
 					Expect(result).To(BeNil())
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1337,7 +1337,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					err := cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1349,7 +1349,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					err := cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1362,7 +1362,7 @@ var _ = Describe("Invoking plugins", func() {
 					result, err := cniConfig.GetVersionInfo(ctx, "sleep")
 					cancel()
 					Expect(result).To(BeNil())
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1374,7 +1374,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					_, err := cniConfig.ValidateNetwork(ctx, netConfig)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1387,7 +1387,7 @@ var _ = Describe("Invoking plugins", func() {
 					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					cancel()
 					Expect(result).To(BeNil())
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1399,7 +1399,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1411,7 +1411,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					err := cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
@@ -1423,7 +1423,7 @@ var _ = Describe("Invoking plugins", func() {
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 					_, err := cniConfig.ValidateNetworkList(ctx, netConfigList)
 					cancel()
-					Expect(err).To(MatchError(ContainSubstring("netplugin failed but error parsing its diagnostic message")))
+					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
 
 			})
