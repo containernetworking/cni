@@ -21,7 +21,7 @@ cd plugins
 
 Create a network configuration
 ```
-echo '{"cniVersion":"0.3.1","name":"myptp","type":"ptp","ipMasq":true,"ipam":{"type":"host-local","subnet":"172.16.29.0/24","routes":[{"dst":"0.0.0.0/0"}]}}' | sudo tee /etc/cni/net.d/10-myptp.conf
+echo '{"cniVersion":"0.4.0","name":"myptp","type":"ptp","ipMasq":true,"ipam":{"type":"host-local","subnet":"172.16.29.0/24","routes":[{"dst":"0.0.0.0/0"}]}}' | sudo tee /etc/cni/net.d/10-myptp.conf
 ```
 
 Create a network namespace. This will be called `testing`:
@@ -33,6 +33,11 @@ sudo ip netns add testing
 Add the container to the network:
 ```
 sudo CNI_PATH=./bin cnitool add myptp /var/run/netns/testing
+```
+
+Check whether the container's networking is as expected (ONLY for spec v0.4.0+):
+```
+sudo CNI_PATH=./bin cnitool check myptp /var/run/netns/testing
 ```
 
 Test that it works:
