@@ -101,14 +101,23 @@ var _ = Describe("Delegate", func() {
 			Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
 		})
 
-		Context("if the delegation isn't part of an existing ADD command", func() {
+		Context("if the ADD delegation runs on an existing non-ADD command, ", func() {
 			BeforeEach(func() {
 				os.Setenv("CNI_COMMAND", "NOPE")
 			})
 
 			It("aborts and returns a useful error", func() {
-				_, err := invoke.DelegateAdd(ctx, pluginName, netConf, nil)
-				Expect(err).To(MatchError("CNI_COMMAND is not ADD"))
+				result, err := invoke.DelegateAdd(ctx, pluginName, netConf, nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(expectedResult))
+
+				pluginInvocation, err := debug.ReadDebug(debugFileName)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pluginInvocation.Command).To(Equal("ADD"))
+				Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
+
+				// check the original env
+				Expect(os.Getenv("CNI_COMMAND")).To(Equal("NOPE"))
 			})
 		})
 
@@ -139,14 +148,22 @@ var _ = Describe("Delegate", func() {
 			Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
 		})
 
-		Context("if the delegation isn't part of an existing CHECK command", func() {
+		Context("if the CHECK delegation runs on an existing non-CHECK command", func() {
 			BeforeEach(func() {
 				os.Setenv("CNI_COMMAND", "NOPE")
 			})
 
 			It("aborts and returns a useful error", func() {
 				err := invoke.DelegateCheck(ctx, pluginName, netConf, nil)
-				Expect(err).To(MatchError("CNI_COMMAND is not CHECK"))
+				Expect(err).NotTo(HaveOccurred())
+
+				pluginInvocation, err := debug.ReadDebug(debugFileName)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pluginInvocation.Command).To(Equal("CHECK"))
+				Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
+
+				// check the original env
+				Expect(os.Getenv("CNI_COMMAND")).To(Equal("NOPE"))
 			})
 		})
 
@@ -177,14 +194,22 @@ var _ = Describe("Delegate", func() {
 			Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
 		})
 
-		Context("if the delegation isn't part of an existing DEL command", func() {
+		Context("if the DEL delegation runs on an existing non-DEL command", func() {
 			BeforeEach(func() {
 				os.Setenv("CNI_COMMAND", "NOPE")
 			})
 
 			It("aborts and returns a useful error", func() {
 				err := invoke.DelegateDel(ctx, pluginName, netConf, nil)
-				Expect(err).To(MatchError("CNI_COMMAND is not DEL"))
+				Expect(err).NotTo(HaveOccurred())
+
+				pluginInvocation, err := debug.ReadDebug(debugFileName)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pluginInvocation.Command).To(Equal("DEL"))
+				Expect(pluginInvocation.CmdArgs.IfName).To(Equal("eth7"))
+
+				// check the original env
+				Expect(os.Getenv("CNI_COMMAND")).To(Equal("NOPE"))
 			})
 		})
 
