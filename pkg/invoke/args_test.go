@@ -25,7 +25,7 @@ import (
 
 var _ = Describe("Args", func() {
 	Describe("AsEnv", func() {
-		It("places the CNI_ environment variables ahead of any ambient variables", func() {
+		It("places the CNI_ environment variables in the end to avoid being overrided", func() {
 			args := invoke.Args{
 				Command:     "ADD",
 				ContainerID: "some-container-id",
@@ -40,10 +40,11 @@ var _ = Describe("Args", func() {
 			const numCNIEnvVars = 6
 
 			latentVars := os.Environ()
+			latentVarsLen := len(latentVars)
 
 			cniEnv := args.AsEnv()
 			Expect(cniEnv).To(HaveLen(len(latentVars) + numCNIEnvVars))
-			Expect(cniEnv[0:numCNIEnvVars]).To(Equal([]string{
+			Expect(cniEnv[latentVarsLen:]).To(Equal([]string{
 				"CNI_COMMAND=ADD",
 				"CNI_CONTAINERID=some-container-id",
 				"CNI_NETNS=/some/netns/path",
@@ -53,7 +54,7 @@ var _ = Describe("Args", func() {
 			}))
 
 			for i := range latentVars {
-				Expect(cniEnv[numCNIEnvVars+i]).To(Equal(latentVars[i]))
+				Expect(cniEnv[i]).To(Equal(latentVars[i]))
 			}
 		})
 	})
