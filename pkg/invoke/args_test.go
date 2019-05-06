@@ -25,7 +25,16 @@ import (
 
 var _ = Describe("Args", func() {
 	Describe("AsEnv", func() {
-		It("places the CNI_ environment variables in the end to avoid being overrided", func() {
+		BeforeEach(func() {
+			os.Setenv("CNI_COMMAND", "DEL")
+			os.Setenv("CNI_IFNAME", "eth0")
+			os.Setenv("CNI_CONTAINERID", "id")
+			os.Setenv("CNI_ARGS", "args")
+			os.Setenv("CNI_NETNS", "testns")
+			os.Setenv("CNI_PATH", "testpath")
+		})
+
+		It("places the CNI environment variables in the end to be prepended", func() {
 			args := invoke.Args{
 				Command:     "ADD",
 				ContainerID: "some-container-id",
@@ -37,25 +46,44 @@ var _ = Describe("Args", func() {
 				IfName: "eth7",
 				Path:   "/some/cni/path",
 			}
-			const numCNIEnvVars = 6
 
-			latentVars := os.Environ()
-			latentVarsLen := len(latentVars)
+			latentEnvs := os.Environ()
+			numLatentEnvs := len(latentEnvs)
 
-			cniEnv := args.AsEnv()
-			Expect(cniEnv).To(HaveLen(len(latentVars) + numCNIEnvVars))
-			Expect(cniEnv[latentVarsLen:]).To(Equal([]string{
-				"CNI_COMMAND=ADD",
-				"CNI_CONTAINERID=some-container-id",
-				"CNI_NETNS=/some/netns/path",
-				"CNI_ARGS=KEY1=VALUE1;KEY2=VALUE2",
-				"CNI_IFNAME=eth7",
-				"CNI_PATH=/some/cni/path",
-			}))
+			cniEnvs := args.AsEnv()
+			Expect(len(cniEnvs)).To(Equal(numLatentEnvs))
 
-			for i := range latentVars {
-				Expect(cniEnv[i]).To(Equal(latentVars[i]))
-			}
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_IFNAME=eth7", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_CONTAINERID=some-container-id", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_NETNS=/some/netns/path", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_ARGS=KEY1=VALUE1;KEY2=VALUE2", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_PATH=/some/cni/path", cniEnvs)).To(Equal(true))
+
+			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_IFNAME=eth0", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_CONTAINERID=id", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_NETNS=testns", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_ARGS=args", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_PATH=testpath", cniEnvs)).To(Equal(false))
+		})
+
+		AfterEach(func() {
+			os.Unsetenv("CNI_COMMAND")
+			os.Unsetenv("CNI_IFNAME")
+			os.Unsetenv("CNI_CONTAINERID")
+			os.Unsetenv("CNI_ARGS")
+			os.Unsetenv("CNI_NETNS")
+			os.Unsetenv("CNI_PATH")
 		})
 	})
 })
+
+func inStringSlice(in string, slice []string) bool {
+	for _, s := range slice {
+		if in == s {
+			return true
+		}
+	}
+	return false
+}

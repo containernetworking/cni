@@ -15,6 +15,7 @@
 package invoke
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -67,7 +68,7 @@ func (args *Args) AsEnv() []string {
 		"CNI_IFNAME="+args.IfName,
 		"CNI_PATH="+args.Path,
 	)
-	return env
+	return dedupEnv(env)
 }
 
 // taken from rkt/networking/net_plugin.go
@@ -79,4 +80,27 @@ func stringify(pluginArgs [][2]string) string {
 	}
 
 	return strings.Join(entries, ";")
+}
+
+// dedupEnv returns a copy of env with any duplicates removed, in favor of later values.
+// Items not of the normal environment "key=value" form are preserved unchanged.
+func dedupEnv(env []string) []string {
+	out := make([]string, 0, len(env))
+	envMap := map[string]string{}
+
+	for _, kv := range env {
+		// find the first "=" in environment, if not, just keep it
+		eq := strings.Index(kv, "=")
+		if eq < 0 {
+			out = append(out, kv)
+			continue
+		}
+		envMap[kv[:eq]] = kv[eq+1:]
+	}
+
+	for k, v := range envMap {
+		out = append(out, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return out
 }
