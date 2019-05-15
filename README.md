@@ -9,7 +9,7 @@
 
 # Community Sync Meeting
 
-There is a community sync meeting for users and developers every 1-2 months. The next meeting will help on a Google Hangout and the link is in the [agenda](https://docs.google.com/document/d/10ECyT2mBGewsJUcmYmS8QNo1AcNgy2ZIe2xS7lShYhE/edit?usp=sharing) (Notes from previous meeting are also in this doc).
+There is a community sync meeting for users and developers every 1-2 months. The next meeting will be held on a Google Hangout and the link is in the [agenda](https://docs.google.com/document/d/10ECyT2mBGewsJUcmYmS8QNo1AcNgy2ZIe2xS7lShYhE/edit?usp=sharing) (Notes from previous meeting are also in this doc).
 
 The next meeting will be held on *Wednesday, January 30th, 2019* at *4:00pm UTC / 11:00am EDT / 8:00am PDT* [Add to Calendar](https://www.worldtimebuddy.com/?qm=1&lid=100,5,2643743,5391959&h=100&date=2019-01-30&sln=16-17).
 
@@ -189,13 +189,13 @@ lo        Link encap:Local Loopback
 
 ## What might CNI do in the future?
 
-CNI currently covers a wide range of needs for network configuration due to it simple model and API.
+CNI currently covers a wide range of needs for network configuration due to its simple model and API.
 However, in the future CNI might want to branch out into other directions:
 
 - Dynamic updates to existing network configuration
 - Dynamic policies for network bandwidth and firewall rules
 
-If these topics of are interest, please contact the team via the mailing list or IRC and find some like-minded people in the community to put a proposal together.
+If these topics are of interest, please contact the team via the mailing list or IRC and find some like-minded people in the community to put a proposal together.
 
 ## Contact
 
