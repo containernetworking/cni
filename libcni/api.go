@@ -284,13 +284,14 @@ func (c *CNIConfig) checkNetwork(ctx context.Context, name, cniVersion string, n
 
 // CheckNetworkList executes a sequence of plugins with the CHECK command
 func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigList, rt *RuntimeConf) error {
-	// CHECK was added in CNI spec version 0.4.0 and higher
-	if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
-		return err
-	} else if !gtet {
-		return fmt.Errorf("configuration version %q does not support the CHECK command", list.CNIVersion)
+	if len(list.CNIVersion) > 0 {
+		// CHECK was added in CNI spec version 0.4.0 and higher
+		if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
+			return err
+		} else if !gtet {
+			return fmt.Errorf("configuration version %q does not support the CHECK command", list.CNIVersion)
+		}
 	}
-
 	if list.DisableCheck {
 		return nil
 	}
@@ -328,13 +329,15 @@ func (c *CNIConfig) delNetwork(ctx context.Context, name, cniVersion string, net
 func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList, rt *RuntimeConf) error {
 	var cachedResult types.Result
 
-	// Cached result on DEL was added in CNI spec version 0.4.0 and higher
-	if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
-		return err
-	} else if gtet {
-		cachedResult, err = getCachedResult(list.Name, list.CNIVersion, rt)
-		if err != nil {
-			return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
+	if len(list.CNIVersion) > 0 {
+		// Cached result on DEL was added in CNI spec version 0.4.0 and higher
+		if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
+			return err
+		} else if gtet {
+			cachedResult, err = getCachedResult(list.Name, list.CNIVersion, rt)
+			if err != nil {
+				return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
+			}
 		}
 	}
 
@@ -365,13 +368,14 @@ func (c *CNIConfig) AddNetwork(ctx context.Context, net *NetworkConfig, rt *Runt
 
 // CheckNetwork executes the plugin with the CHECK command
 func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error {
-	// CHECK was added in CNI spec version 0.4.0 and higher
-	if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
-		return err
-	} else if !gtet {
-		return fmt.Errorf("configuration version %q does not support the CHECK command", net.Network.CNIVersion)
+	if len(net.Network.CNIVersion) > 0 {
+		// CHECK was added in CNI spec version 0.4.0 and higher
+		if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
+			return err
+		} else if !gtet {
+			return fmt.Errorf("configuration version %q does not support the CHECK command", net.Network.CNIVersion)
+		}
 	}
-
 	cachedResult, err := getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
 	if err != nil {
 		return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
@@ -383,16 +387,17 @@ func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *Ru
 func (c *CNIConfig) DelNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error {
 	var cachedResult types.Result
 
-	// Cached result on DEL was added in CNI spec version 0.4.0 and higher
-	if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
-		return err
-	} else if gtet {
-		cachedResult, err = getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
-		if err != nil {
-			return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
+	if len(net.Network.CNIVersion) > 0 {
+		// Cached result on DEL was added in CNI spec version 0.4.0 and higher
+		if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
+			return err
+		} else if gtet {
+			cachedResult, err = getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
+			if err != nil {
+				return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
+			}
 		}
 	}
-
 	if err := c.delNetwork(ctx, net.Network.Name, net.Network.CNIVersion, net, cachedResult, rt); err != nil {
 		return err
 	}
