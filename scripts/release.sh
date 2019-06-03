@@ -14,7 +14,7 @@ rm -Rf ${SRC_DIR}/${RELEASE_DIR}
 mkdir -p ${SRC_DIR}/${RELEASE_DIR}
 mkdir -p ${OUTPUT_DIR}
 
-docker run -i -v ${SRC_DIR}:/opt/src --rm golang:1.8-alpine \
+docker run -i -v ${SRC_DIR}:/opt/src --rm golang:1.12-alpine \
 /bin/sh -xe -c "\
     apk --no-cache add bash tar;
     cd /opt/src; umask 0022;
