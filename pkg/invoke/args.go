@@ -23,6 +23,8 @@ import (
 type CNIArgs interface {
 	// For use with os/exec; i.e., return nil to inherit the
 	// environment from this process
+	// For use in delegation; inherit the environment from this
+	// process and allow overrides
 	AsEnv() []string
 }
 
@@ -80,6 +82,26 @@ func stringify(pluginArgs [][2]string) string {
 	}
 
 	return strings.Join(entries, ";")
+}
+
+// DelegateArgs implements the CNIArgs interface
+// used for delegation to inherit from environments
+// and allow some overrides like CNI_COMMAND
+var _ CNIArgs = &DelegateArgs{}
+
+type DelegateArgs struct {
+	Command string
+}
+
+func (d *DelegateArgs) AsEnv() []string {
+	env := os.Environ()
+
+	// The custom values should come in the end to override the existing
+	// process environment of the same key.
+	env = append(env,
+		"CNI_COMMAND="+d.Command,
+	)
+	return dedupEnv(env)
 }
 
 // dedupEnv returns a copy of env with any duplicates removed, in favor of later values.

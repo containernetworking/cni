@@ -23,8 +23,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Args", func() {
-	Describe("AsEnv", func() {
+var _ = Describe("CNIArgs AsEnv", func() {
+	Describe("Args AsEnv", func() {
 		BeforeEach(func() {
 			os.Setenv("CNI_COMMAND", "DEL")
 			os.Setenv("CNI_IFNAME", "eth0")
@@ -75,6 +75,56 @@ var _ = Describe("Args", func() {
 			os.Unsetenv("CNI_ARGS")
 			os.Unsetenv("CNI_NETNS")
 			os.Unsetenv("CNI_PATH")
+		})
+	})
+
+	Describe("DelegateArgs AsEnv", func() {
+		BeforeEach(func() {
+			os.Unsetenv("CNI_COMMAND")
+		})
+
+		It("override CNI_COMMAND if it already exists in environment variables", func() {
+			os.Setenv("CNI_COMMAND", "DEL")
+
+			delegateArgs := invoke.DelegateArgs{
+				Command: "ADD",
+			}
+
+			latentEnvs := os.Environ()
+			numLatentEnvs := len(latentEnvs)
+
+			cniEnvs := delegateArgs.AsEnv()
+			Expect(len(cniEnvs)).To(Equal(numLatentEnvs))
+
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(Equal(false))
+		})
+
+		It("append CNI_COMMAND if it does not exist in environment variables", func() {
+			delegateArgs := invoke.DelegateArgs{
+				Command: "ADD",
+			}
+
+			latentEnvs := os.Environ()
+			numLatentEnvs := len(latentEnvs)
+
+			cniEnvs := delegateArgs.AsEnv()
+			Expect(len(cniEnvs)).To(Equal(numLatentEnvs + 1))
+
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
+		})
+
+		AfterEach(func() {
+			os.Unsetenv("CNI_COMMAND")
+		})
+	})
+
+	Describe("inherited AsEnv", func() {
+		It("return nil string slice if we call AsEnv of inherited", func() {
+			inheritedArgs := invoke.ArgsFromEnv()
+
+			var nilSlice []string = nil
+			Expect(inheritedArgs.AsEnv()).To(Equal(nilSlice))
 		})
 	})
 })
