@@ -61,7 +61,7 @@ func parseExtraArgs(args string) (map[string]string, error) {
 	for _, item := range items {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			return nil, fmt.Errorf("CNI_ARGS invalid key/value pair: %s\n", kv)
+			return nil, fmt.Errorf("CNI_ARGS invalid key/value pair: %s", kv)
 		}
 		m[kv[0]] = kv[1]
 	}
