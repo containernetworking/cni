@@ -32,7 +32,7 @@ type inherited struct{}
 
 var inheritArgsFromEnv inherited
 
-func (i *inherited) AsEnv() []string {
+func (*inherited) AsEnv() []string {
 	return nil
 }
 

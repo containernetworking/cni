@@ -16,7 +16,6 @@ package types
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -194,6 +193,3 @@ func prettyPrint(obj interface{}) error {
 	_, err = os.Stdout.Write(data)
 	return err
 }
-
-// ErrNotImplemented is used to indicate that a method is not implemented for the given platform
-var ErrNotImplemented = errors.New("not implemented")
