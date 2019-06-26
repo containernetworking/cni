@@ -169,7 +169,7 @@ var _ = Describe("Invoking plugins", func() {
 			netConfig, err = libcni.ConfFromBytes(pluginConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			cniConfig = libcni.NewCNIConfig([]string{filepath.Dir(pluginPaths["noop"])}, nil)
+			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{filepath.Dir(pluginPaths["noop"])}, cacheDirPath, nil)
 
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
@@ -184,7 +184,6 @@ var _ = Describe("Invoking plugins", func() {
 					"noCapability":  true,
 					"notAdded":      []bool{true, false},
 				},
-				CacheDir: cacheDirPath,
 			}
 			ctx = context.TODO()
 		})
@@ -293,14 +292,13 @@ var _ = Describe("Invoking plugins", func() {
 				"cniVersion": "%s",
 				"capabilities": { "portMappings": true }
 			}`, current.ImplementedSpecVersion)
-			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
+			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
 				IfName:      "some-eth0",
-				CacheDir:    cacheDirPath,
 				Args:        [][2]string{{"DEBUG", debugFilePath}},
 				CapabilityArgs: map[string]interface{}{
 					"portMappings": portMappings,
@@ -822,14 +820,13 @@ var _ = Describe("Invoking plugins", func() {
 			}
 
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
-			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
+			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID:    "some-container-id",
 				NetNS:          "/some/netns/path",
 				IfName:         "some-eth0",
 				Args:           [][2]string{{"FOO", "BAR"}},
 				CapabilityArgs: capabilityArgs,
-				CacheDir:       cacheDirPath,
 			}
 
 			expectedCmdArgs = skel.CmdArgs{
@@ -1468,14 +1465,13 @@ var _ = Describe("Invoking plugins", func() {
 				"name": "cachetest",
 				"cniVersion": "%s"
 			}`, current.ImplementedSpecVersion)
-			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
+			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
 				IfName:      firstIfname,
-				CacheDir:    cacheDirPath,
 				Args:        [][2]string{{"DEBUG", debugFilePath}},
 			}
 			ctx = context.TODO()

@@ -57,10 +57,9 @@ var _ = Describe("Backwards compatibility", func() {
 			ContainerID: "some-container-id",
 			NetNS:       "/some/netns/path",
 			IfName:      "eth0",
-			CacheDir:    cacheDirPath,
 		}
 
-		cniConfig := libcni.NewCNIConfig([]string{filepath.Dir(pluginPath)}, nil)
+		cniConfig := libcni.NewCNIConfigWithCacheDir([]string{filepath.Dir(pluginPath)}, cacheDirPath, nil)
 
 		result, err := cniConfig.AddNetwork(context.TODO(), netConf, runtimeConf)
 		Expect(err).NotTo(HaveOccurred())
