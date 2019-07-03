@@ -849,7 +849,7 @@ var _ = Describe("Invoking plugins", func() {
 			}
 
 			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"version": "4", "address": "10.1.2.3/24"}]}`, current.ImplementedSpecVersion)
-			plugins = make([]pluginInfo, 3, 3)
+			plugins = make([]pluginInfo, 3)
 			plugins[0] = newPluginInfo("some-value", "", true, ipResult, rc, []string{"portMappings", "otherCapability"})
 			plugins[1] = newPluginInfo("some-other-value", ipResult, true, "PASSTHROUGH", rc, []string{"otherCapability"})
 			plugins[2] = newPluginInfo("yet-another-value", ipResult, true, "INJECT-DNS", rc, []string{})
@@ -1283,6 +1283,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniBinPath = filepath.Dir(pluginPaths["sleep"])
 			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
+			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
 				ContainerID: "some-container-id",
 				NetNS:       "/some/netns/path",
