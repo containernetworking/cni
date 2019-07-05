@@ -174,7 +174,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
           "gw": "<ip-of-next-hop>"                           (optional)
       },
       ...
-  ]
+  ],
   "dns": {                                                   (optional)
     "nameservers": <list-of-nameservers>                     (optional)
     "domain": <name-of-local-domain>                         (optional)
@@ -459,7 +459,7 @@ Given the same network configuration JSON list, the container runtime would perf
   },
   "dns": {
     "nameservers": [ "10.1.0.1" ]
-  }
+  },
   "prevResult": {
     "ips": [
         {
