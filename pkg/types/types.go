@@ -136,6 +136,15 @@ const (
 	ErrUnknown                uint = iota // 0
 	ErrIncompatibleCNIVersion             // 1
 	ErrUnsupportedField                   // 2
+	ErrUnknownContainer                   // 3
+	ErrMissingEnvironment                 // 4
+	ErrFailedIO                           // 5
+	ErrFailedDecode                       // 6
+	ErrFailedEncode                       // 7
+	ErrInvalidNetworkConfig               // 8
+	ErrFailedPluginCall                   // 9
+	ErrUnknownCommand                     // 10
+	ErrTryAgainLater                      // 11
 )
 
 type Error struct {
