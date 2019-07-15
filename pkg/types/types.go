@@ -144,6 +144,14 @@ type Error struct {
 	Details string `json:"details,omitempty"`
 }
 
+func NewError(code uint, msg, details string) *Error {
+	return &Error{
+		Code:    code,
+		Msg:     msg,
+		Details: details,
+	}
+}
+
 func (e *Error) Error() string {
 	details := ""
 	if e.Details != "" {
