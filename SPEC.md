@@ -758,4 +758,11 @@ Error codes 1-99 must not be used other than as specified here.
 - `1` - Incompatible CNI version
 - `2` - Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
 - `3` - Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
+- `4` - Missing necessary environment variables, like CNI_COMMAND, CNI_CONTAINERID, etc. The error message must contain the names of missing variables.
+- `5` - I/O failed. For example, failed to read network config bytes from stdin.
+- `6` - Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
+- `7` - Failed to encode objects. For example, failed to marshal object to bytes.
+- `8` - Invalid network config. If some validations on network configs do not pass, this error will be raised.
+- `9` - Failed to call plugin's functions. If plugin's functions (cmdAdd, cmdCheck, cmdDel) return some non-typed error, this code should be used.
+- `10` - Unknown command. If CNI_COMMAND environment variable is not ADD, DEL, CHECK or VERSION, it is an unknown command.
 - `11` - Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
