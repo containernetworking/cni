@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo"
@@ -219,7 +220,7 @@ var _ = Describe("No-op plugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "banana" }`))
+			Expect(session.Out.Contents()).To(MatchJSON(fmt.Sprintf(`{ "code": %d, "msg": "banana" }`, types.ErrFailedPluginCall)))
 		})
 	})
 

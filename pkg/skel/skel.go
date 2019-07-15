@@ -138,7 +138,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 
 	if len(argsMissing) > 0 {
 		joined := strings.Join(argsMissing, ",")
-		return "", nil, types.NewError(types.ErrMissingEnvironment, fmt.Sprintf("required env variables [%s] missing", joined), "")
+		return "", nil, types.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("required env variables [%s] missing", joined), "")
 	}
 
 	if cmd == "VERSION" {
@@ -206,7 +206,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
-		if err.Code == types.ErrMissingEnvironment && t.Getenv("CNI_COMMAND") == "" && about != "" {
+		if err.Code == types.ErrMissingEnvironmentVariables && t.Getenv("CNI_COMMAND") == "" && about != "" {
 			_, _ = fmt.Fprintln(t.Stderr, about)
 			return nil
 		}
