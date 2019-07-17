@@ -1,5 +1,5 @@
 language: go
-dist: trusty
+dist: bionic
 
 go:
   - 1.11.x
