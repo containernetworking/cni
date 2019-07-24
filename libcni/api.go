@@ -594,7 +594,8 @@ func (c *CNIConfig) ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]
 
 // validatePlugin checks that an individual plugin's configuration is sane
 func (c *CNIConfig) validatePlugin(ctx context.Context, pluginName, expectedVersion string) error {
-	pluginPath, err := invoke.FindInPath(pluginName, c.Path)
+	c.ensureExec()
+	pluginPath, err := c.exec.FindInPath(pluginName, c.Path)
 	if err != nil {
 		return err
 	}
