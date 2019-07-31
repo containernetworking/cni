@@ -137,14 +137,12 @@ const (
 	ErrIncompatibleCNIVersion                  // 1
 	ErrUnsupportedField                        // 2
 	ErrUnknownContainer                        // 3
-	ErrMissingEnvironmentVariables             // 4
-	ErrFailedIO                                // 5
-	ErrFailedDecode                            // 6
-	ErrFailedEncode                            // 7
-	ErrInvalidNetworkConfig                    // 8
-	ErrFailedPluginCall                        // 9
-	ErrUnknownCommand                          // 10
-	ErrTryAgainLater                           // 11
+	ErrInvalidEnvironmentVariables             // 4
+	ErrIOFailure                               // 5
+	ErrDecodingFailure                         // 6
+	ErrInvalidNetworkConfig                    // 7
+	ErrTryAgainLater               uint = 11
+	ErrInternal                    uint = 999
 )
 
 type Error struct {

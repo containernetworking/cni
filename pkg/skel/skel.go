@@ -138,7 +138,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 
 	if len(argsMissing) > 0 {
 		joined := strings.Join(argsMissing, ",")
-		return "", nil, types.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("required env variables [%s] missing", joined), "")
+		return "", nil, types.NewError(types.ErrInvalidEnvironmentVariables, fmt.Sprintf("required env variables [%s] missing", joined), "")
 	}
 
 	if cmd == "VERSION" {
@@ -147,7 +147,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 
 	stdinData, err := ioutil.ReadAll(t.Stdin)
 	if err != nil {
-		return "", nil, types.NewError(types.ErrFailedIO, fmt.Sprintf("error reading from stdin: %v", err), "")
+		return "", nil, types.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}
 
 	cmdArgs := &CmdArgs{
@@ -171,7 +171,7 @@ func createTypedError(f string, args ...interface{}) *types.Error {
 func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo version.PluginInfo, toCall func(*CmdArgs) error) *types.Error {
 	configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
 	if err != nil {
-		return types.NewError(types.ErrFailedDecode, err.Error(), "")
+		return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 	}
 	verErr := t.VersionReconciler.Check(configVersion, pluginVersionInfo)
 	if verErr != nil {
@@ -183,7 +183,7 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 			// don't wrap Error in Error
 			return e
 		}
-		return types.NewError(types.ErrFailedPluginCall, err.Error(), "")
+		return types.NewError(types.ErrInternal, err.Error(), "")
 	}
 
 	return nil
@@ -194,7 +194,7 @@ func validateConfig(jsonBytes []byte) *types.Error {
 		Name string `json:"name"`
 	}
 	if err := json.Unmarshal(jsonBytes, &conf); err != nil {
-		return types.NewError(types.ErrFailedDecode, fmt.Sprintf("error unmarshall network config: %v", err), "")
+		return types.NewError(types.ErrDecodingFailure, fmt.Sprintf("error unmarshall network config: %v", err), "")
 	}
 	if conf.Name == "" {
 		return types.NewError(types.ErrInvalidNetworkConfig, "missing network name", "")
@@ -206,7 +206,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
-		if err.Code == types.ErrMissingEnvironmentVariables && t.Getenv("CNI_COMMAND") == "" && about != "" {
+		if err.Code == types.ErrInvalidEnvironmentVariables && t.Getenv("CNI_COMMAND") == "" && about != "" {
 			_, _ = fmt.Fprintln(t.Stderr, about)
 			return nil
 		}
@@ -226,17 +226,17 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	case "CHECK":
 		configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
 		if err != nil {
-			return types.NewError(types.ErrFailedDecode, err.Error(), "")
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 		}
 		if gtet, err := version.GreaterThanOrEqualTo(configVersion, "0.4.0"); err != nil {
-			return types.NewError(types.ErrFailedDecode, err.Error(), "")
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 		} else if !gtet {
 			return types.NewError(types.ErrIncompatibleCNIVersion, "config version does not allow CHECK", "")
 		}
 		for _, pluginVersion := range versionInfo.SupportedVersions() {
 			gtet, err := version.GreaterThanOrEqualTo(pluginVersion, configVersion)
 			if err != nil {
-				return types.NewError(types.ErrFailedDecode, err.Error(), "")
+				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 			} else if gtet {
 				if err := t.checkVersionAndCall(cmdArgs, versionInfo, cmdCheck); err != nil {
 					return err
@@ -249,10 +249,10 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdDel)
 	case "VERSION":
 		if err := versionInfo.Encode(t.Stdout); err != nil {
-			return types.NewError(types.ErrFailedEncode, err.Error(), "")
+			return types.NewError(types.ErrIOFailure, err.Error(), "")
 		}
 	default:
-		return types.NewError(types.ErrUnknownCommand, fmt.Sprintf("unknown CNI_COMMAND: %v", cmd), "")
+		return types.NewError(types.ErrInvalidEnvironmentVariables, fmt.Sprintf("unknown CNI_COMMAND: %v", cmd), "")
 	}
 
 	if err != nil {

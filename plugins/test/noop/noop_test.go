@@ -220,7 +220,7 @@ var _ = Describe("No-op plugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(session.Out.Contents()).To(MatchJSON(fmt.Sprintf(`{ "code": %d, "msg": "banana" }`, types.ErrFailedPluginCall)))
+			Expect(session.Out.Contents()).To(MatchJSON(fmt.Sprintf(`{ "code": %d, "msg": "banana" }`, types.ErrInternal)))
 		})
 	})
 
