@@ -41,7 +41,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Kubernetes - a system to simplify container operations](https://kubernetes.io/docs/admin/network-plugins/)
 - [OpenShift - Kubernetes with additional enterprise features](https://github.com/openshift/origin/blob/master/docs/openshift_networking_requirements.md)
 - [Cloud Foundry - a platform for cloud applications](https://github.com/cloudfoundry-incubator/cf-networking-release)
-- [Apache Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md)
+- [Apache Mesos - a distributed systems kernel](https://github.com/apache/mesos/blob/master/docs/cni.md) ** beware all versions [do not](https://issues.apache.org/jira/browse/MESOS-7178) support cni spec [0.3.0](https://github.com/containernetworking/cni/blob/spec-v0.3.0/SPEC.md) **
 - [Amazon ECS - a highly scalable, high performance container management service](https://aws.amazon.com/ecs/)
 - [Singularity - container platform optimized for HPC, EPC, and AI](https://github.com/sylabs/singularity)
 - [OpenSVC - orchestrator for legacy and containerized application stacks](https://docs.opensvc.com/latest/fr/agent.configure.cni.html)
