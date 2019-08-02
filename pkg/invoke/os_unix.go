@@ -16,5 +16,16 @@
 
 package invoke
 
+import (
+	"os"
+	"syscall"
+)
+
 // Valid file extensions for plugin executables.
 var ExecutableFileExtensions = []string{""}
+
+// SysProcAttribute holds optional, operating system-specific attributes.
+var SysProcAttribute = &syscall.SysProcAttr{
+	Setpgid: true,
+	Pgid:    os.Getpid(),
+}

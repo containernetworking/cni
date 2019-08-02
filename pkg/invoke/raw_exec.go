@@ -36,6 +36,10 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 	c.Stdin = bytes.NewBuffer(stdinData)
 	c.Stdout = stdout
 	c.Stderr = e.Stderr
+	// This attributes make sub process has group process id which is same as its parent process id,
+	// if we use this function in tree (libcni -> plugin -> plugin ... ), all sub processes generated
+	// from root process can be killed in tree recursively.
+	c.SysProcAttr = SysProcAttribute
 	if err := c.Run(); err != nil {
 		return nil, pluginErr(err, stdout.Bytes())
 	}
