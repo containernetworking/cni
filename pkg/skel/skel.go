@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -199,6 +200,9 @@ func validateConfig(jsonBytes []byte) *types.Error {
 	if conf.Name == "" {
 		return types.NewError(types.ErrInvalidNetworkConfig, "missing network name", "")
 	}
+	if err := utils.ValidateNetworkName(conf.Name); err != nil {
+		return types.NewError(types.ErrInvalidNetworkConfig, "invalid characters found in network name", "")
+	}
 	return nil
 }
 
@@ -215,6 +219,10 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 
 	if cmd != "VERSION" {
 		err = validateConfig(cmdArgs.StdinData)
+		if err != nil {
+			return err
+		}
+		err = utils.ValidateContainerID(cmdArgs.ContainerID)
 		if err != nil {
 			return err
 		}

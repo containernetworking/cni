@@ -25,6 +25,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -378,6 +379,12 @@ func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
 		return nil, err
+	}
+	if err := utils.ValidateContainerID(rt.ContainerID); err != nil {
+		return nil, fmt.Errorf("error: invalid characters in containerID: %v", rt.ContainerID)
+	}
+	if err := utils.ValidateNetworkName(net.Network.Name); err != nil {
+		return nil, fmt.Errorf("error: invalid characters found in network name: %v", net.Network.Name)
 	}
 
 	newConf, err := buildOneConfig(name, cniVersion, net, prevResult, rt)
