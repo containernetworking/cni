@@ -114,6 +114,17 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(cmdAdd.Received.CmdArgs).To(Equal(expectedCmdArgs))
 		})
 
+		It("returns an error when containerID has invalid characters", func() {
+			environment["CNI_CONTAINERID"] = "some-%%container-id"
+			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(&types.Error{
+				Code:    4,
+				Msg:     "invalid characters in containerID",
+				Details: "some-%%container-id",
+			}))
+		})
+
 		It("does not call cmdCheck or cmdDel", func() {
 			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
 
@@ -273,6 +284,18 @@ var _ = Describe("dispatching to the correct callback", func() {
 				versionInfo = version.PluginSupports("0.1.0", "0.2.0", "0.3.0")
 				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
 				Expect(err.Code).To(Equal(uint(types.ErrDecodingFailure)))
+				Expect(cmdAdd.CallCount).To(Equal(0))
+				Expect(cmdCheck.CallCount).To(Equal(0))
+				Expect(cmdDel.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when the config has a bad name", func() {
+			It("immediately returns invalid network config", func() {
+				dispatch.Stdin = strings.NewReader(`{ "cniVersion": "0.4.0", "some": "config", "name": "te%%st" }`)
+				versionInfo = version.PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.4.0")
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err.Code).To(Equal(uint(types.ErrInvalidNetworkConfig)))
 				Expect(cmdAdd.CallCount).To(Equal(0))
 				Expect(cmdCheck.CallCount).To(Equal(0))
 				Expect(cmdDel.CallCount).To(Equal(0))

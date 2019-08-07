@@ -64,7 +64,7 @@ The operations that CNI plugins must support are:
 
 - `ADD`: Add container to network
   - Parameters:
-    - **Container ID**. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.
+    - **Container ID**. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (_), dot (.) or hyphen (-).
     - **Network namespace path**. This represents the path to the network namespace to be added, i.e. /proc/[pid]/ns/net or a bind-mount/link to it.
     - **Network configuration**. This is a JSON document describing a network to which a container can be joined. The schema is described below.
     - **Extra arguments**. This provides an alternative mechanism to allow simple configuration of CNI plugins on a per-container basis.
@@ -226,7 +226,7 @@ In addition, stderr can be used for unstructured output such as logs.
 
 The network configuration is described in JSON form. The configuration may be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration conforms.
-- `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
+- `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (_), dot (.) or hyphen (-).
 - `type` (string): Refers to the filename of the CNI plugin executable.
 - `args` (dictionary, optional): Additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
 - `ipMasq` (boolean, optional): If supported by the plugin, sets up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
@@ -305,7 +305,7 @@ The list is composed of well-known fields and list of one or more standard CNI n
 
 The list is described in JSON form, and can be stored on disk or generated from other sources by the container runtime. The following fields are well-known and have the following meaning:
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform.
-- `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).
+- `name` (string): Network name. This should be unique across all containers on the host (or other administrative domain).  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (_), dot (.) or hyphen (-).
 - `disableCheck` (string): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
 
