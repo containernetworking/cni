@@ -133,15 +133,30 @@ func (r *Route) String() string {
 // Well known error codes
 // see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
 const (
-	ErrUnknown                uint = iota // 0
-	ErrIncompatibleCNIVersion             // 1
-	ErrUnsupportedField                   // 2
+	ErrUnknown                     uint = iota // 0
+	ErrIncompatibleCNIVersion                  // 1
+	ErrUnsupportedField                        // 2
+	ErrUnknownContainer                        // 3
+	ErrInvalidEnvironmentVariables             // 4
+	ErrIOFailure                               // 5
+	ErrDecodingFailure                         // 6
+	ErrInvalidNetworkConfig                    // 7
+	ErrTryAgainLater               uint = 11
+	ErrInternal                    uint = 999
 )
 
 type Error struct {
 	Code    uint   `json:"code"`
 	Msg     string `json:"msg"`
 	Details string `json:"details,omitempty"`
+}
+
+func NewError(code uint, msg, details string) *Error {
+	return &Error{
+		Code:    code,
+		Msg:     msg,
+		Details: details,
+	}
 }
 
 func (e *Error) Error() string {

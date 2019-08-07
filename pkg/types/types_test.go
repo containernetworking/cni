@@ -137,5 +137,10 @@ var _ = Describe("Types", func() {
 				})
 			})
 		})
+
+		It("NewError method", func() {
+			err := types.NewError(1234, "some message", "some details")
+			Expect(err).To(Equal(example))
+		})
 	})
 })
