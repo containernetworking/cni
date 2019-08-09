@@ -1,4 +1,5 @@
 language: go
+sudo: required
 dist: bionic
 
 go:
