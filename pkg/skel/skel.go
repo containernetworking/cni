@@ -53,15 +53,6 @@ type dispatcher struct {
 
 type reqForCmdEntry map[string]bool
 
-// internal only error to indicate lack of required environment variables
-type missingEnvError struct {
-	msg string
-}
-
-func (e missingEnvError) Error() string {
-	return e.msg
-}
-
 func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 	var cmd, contID, netns, ifName, args, path string
 
@@ -159,13 +150,6 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		StdinData:   stdinData,
 	}
 	return cmd, cmdArgs, nil
-}
-
-func createTypedError(f string, args ...interface{}) *types.Error {
-	return &types.Error{
-		Code: 100,
-		Msg:  fmt.Sprintf(f, args...),
-	}
 }
 
 func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo version.PluginInfo, toCall func(*CmdArgs) error) *types.Error {
