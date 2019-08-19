@@ -1,7 +1,7 @@
 # Overview
 The `cnitool` is a utility that can be used to test a CNI plugin
 without the need for a container runtime. The `cnitool` takes a
-`network name` and a `network namespace` and a command to `ADD` or
+`network name` and a `network namespace` and a command of `ADD` or
 `DEL`,.i.e, attach or detach containers from a network. The `cnitool`
 relies on the following environment variables to operate properly:
 * `NETCONFPATH`: This environment variable needs to be set to a
