@@ -40,6 +40,10 @@ const (
 	CmdDel   = "del"
 )
 
+var (
+	DefaultBinDirs = []string{"/opt/cni/bin", "/usr/libexec/cni"}
+)
+
 func parseArgs(args string) ([][2]string, error) {
 	var result [][2]string
 
@@ -99,11 +103,16 @@ func main() {
 		exit(err)
 	}
 
+	binDirs := filepath.SplitList(os.Getenv(EnvCNIPath))
+	if len(binDirs) == 0 {
+		binDirs = DefaultBinDirs
+	}
+
 	// Generate the containerid by hashing the netns path
 	s := sha512.Sum512([]byte(netns))
 	containerID := fmt.Sprintf("cnitool-%x", s[:10])
 
-	cninet := libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
+	cninet := libcni.NewCNIConfig(binDirs, nil)
 
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,
