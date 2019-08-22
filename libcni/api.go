@@ -183,7 +183,10 @@ func (c *CNIConfig) ensureExec() invoke.Exec {
 
 type cachedInfo struct {
 	Kind           string                 `json:"kind"`
+	ContainerID    string                 `json:"containerId"`
 	Config         []byte                 `json:"config"`
+	IfName         string                 `json:"ifName"`
+	NetworkName    string                 `json:"networkName"`
 	CniArgs        [][2]string            `json:"cniArgs,omitempty"`
 	CapabilityArgs map[string]interface{} `json:"capabilityArgs,omitempty"`
 	RawResult      map[string]interface{} `json:"results,omitempty"`
@@ -209,13 +212,15 @@ func (c *CNIConfig) getCacheFilePath(netName string, rt *RuntimeConf) string {
 }
 
 func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string, rt *RuntimeConf) error {
-
 	cached := cachedInfo{
-		Config: config,
-		Kind:   CNICacheV1,
+		Kind:           CNICacheV1,
+		ContainerID:    rt.ContainerID,
+		Config:         config,
+		IfName:         rt.IfName,
+		NetworkName:    netName,
+		CniArgs:        rt.Args,
+		CapabilityArgs: rt.CapabilityArgs,
 	}
-	cached.CniArgs = rt.Args
-	cached.CapabilityArgs = rt.CapabilityArgs
 
 	// We need to get type.Result into cachedInfo as JSON map
 	// Marshal to []byte, then Unmarshal into cached.RawResult

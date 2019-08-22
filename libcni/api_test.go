@@ -1516,6 +1516,9 @@ var _ = Describe("Invoking plugins", func() {
 		firstIfname := "eth0"
 		secondIP := "10.1.2.5/24"
 		secondIfname := "eth1"
+		containerID := "some-container-id"
+		netName := "cachetest"
+		netNS := "/some/netns/path"
 
 		BeforeEach(func() {
 			debugFile, err := ioutil.TempFile("", "cni_debug")
@@ -1534,15 +1537,15 @@ var _ = Describe("Invoking plugins", func() {
 			cniBinPath = filepath.Dir(pluginPaths["noop"])
 			pluginConfig = fmt.Sprintf(`{
 				"type": "noop",
-				"name": "cachetest",
+				"name": "%s",
 				"cniVersion": "%s"
-			}`, current.ImplementedSpecVersion)
+			}`, netName, current.ImplementedSpecVersion)
 			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
 			runtimeConfig = &libcni.RuntimeConf{
-				ContainerID: "some-container-id",
-				NetNS:       "/some/netns/path",
+				ContainerID: containerID,
+				NetNS:       netNS,
 				IfName:      firstIfname,
 				Args:        [][2]string{{"DEBUG", debugFilePath}},
 			}
@@ -1573,11 +1576,10 @@ var _ = Describe("Invoking plugins", func() {
 			var foundFirst, foundSecond bool
 			for _, f := range files {
 				type cachedConfig struct {
-					Kind           string                 `json:"kind"`
-					CniVersion     string                 `json:"cniVersion"`
-					Config         []byte                 `json:"config"`
-					CniArgs        [][2]string            `json:"cniArgs,omitempty"`
-					CapabilityArgs map[string]interface{} `json:"capabilityArgs,omitempty"`
+					Kind        string `json:"kind"`
+					IfName      string `json:"ifName"`
+					ContainerID string `json:"containerId"`
+					NetworkName string `json:"networkName"`
 				}
 
 				data, err := ioutil.ReadFile(filepath.Join(resultsDir, f.Name()))
@@ -1586,16 +1588,42 @@ var _ = Describe("Invoking plugins", func() {
 				err = json.Unmarshal(data, cc)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cc.Kind).To(Equal("cniCacheV1"))
+				Expect(cc.ContainerID).To(Equal(containerID))
+				Expect(cc.NetworkName).To(Equal(netName))
 				if strings.HasSuffix(f.Name(), firstIfname) {
 					foundFirst = true
 					Expect(strings.Contains(string(data), firstIP)).To(BeTrue())
+					Expect(cc.IfName).To(Equal(firstIfname))
 				} else if strings.HasSuffix(f.Name(), secondIfname) {
 					foundSecond = true
 					Expect(strings.Contains(string(data), secondIP)).To(BeTrue())
+					Expect(cc.IfName).To(Equal(secondIfname))
 				}
 			}
 			Expect(foundFirst).To(BeTrue())
 			Expect(foundSecond).To(BeTrue())
+		})
+
+		It("returns an updated copy of RuntimeConf filled with cached info", func() {
+			_, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Ensure the cached config matches the sent one
+			rt := &libcni.RuntimeConf{
+				ContainerID: containerID,
+				NetNS:       netNS,
+				IfName:      firstIfname,
+			}
+			_, newRt, err := cniConfig.GetNetworkListCachedConfig(&libcni.NetworkConfigList{Name: netName}, rt)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(newRt.IfName).To(Equal(runtimeConfig.IfName))
+			Expect(newRt.ContainerID).To(Equal(runtimeConfig.ContainerID))
+			Expect(reflect.DeepEqual(newRt.Args, runtimeConfig.Args)).To(BeTrue())
+			expectedCABytes, err := json.Marshal(runtimeConfig.CapabilityArgs)
+			Expect(err).NotTo(HaveOccurred())
+			foundCABytes, err := json.Marshal(newRt.CapabilityArgs)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(foundCABytes).To(MatchJSON(expectedCABytes))
 		})
 
 		Context("when the cached config", func() {
