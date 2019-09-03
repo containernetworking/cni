@@ -207,8 +207,11 @@ func (c *CNIConfig) getCacheDir(rt *RuntimeConf) string {
 	return CacheDir
 }
 
-func (c *CNIConfig) getCacheFilePath(netName string, rt *RuntimeConf) string {
-	return filepath.Join(c.getCacheDir(rt), "results", fmt.Sprintf("%s-%s-%s", netName, rt.ContainerID, rt.IfName))
+func (c *CNIConfig) getCacheFilePath(netName string, rt *RuntimeConf) (string, error) {
+	if netName == "" || rt.ContainerID == "" || rt.IfName == "" {
+		return "", fmt.Errorf("cache file path requires network name (%q), container ID (%q), and interface name (%q)", netName, rt.ContainerID, rt.IfName)
+	}
+	return filepath.Join(c.getCacheDir(rt), "results", fmt.Sprintf("%s-%s-%s", netName, rt.ContainerID, rt.IfName)), nil
 }
 
 func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string, rt *RuntimeConf) error {
@@ -239,7 +242,10 @@ func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string,
 		return err
 	}
 
-	fname := c.getCacheFilePath(netName, rt)
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(fname), 0700); err != nil {
 		return err
 	}
@@ -248,15 +254,21 @@ func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string,
 }
 
 func (c *CNIConfig) cacheDel(netName string, rt *RuntimeConf) error {
-	fname := c.getCacheFilePath(netName, rt)
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		// Ignore error
+		return nil
+	}
 	return os.Remove(fname)
 }
 
 func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
 	var bytes []byte
-	var err error
 
-	fname := c.getCacheFilePath(netName, rt)
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return nil, nil, err
+	}
 	bytes, err = ioutil.ReadFile(fname)
 	if err != nil {
 		// Ignore read errors; the cached result may not exist on-disk
@@ -281,7 +293,10 @@ func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *R
 }
 
 func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
-	fname := c.getCacheFilePath(netName, rt)
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return nil, err
+	}
 	data, err := ioutil.ReadFile(fname)
 	if err != nil {
 		// Ignore read errors; the cached result may not exist on-disk
@@ -313,7 +328,10 @@ func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *Runtim
 }
 
 func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
-	fname := c.getCacheFilePath(netName, rt)
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return nil, err
+	}
 	fdata, err := ioutil.ReadFile(fname)
 	if err != nil {
 		// Ignore read errors; the cached result may not exist on-disk

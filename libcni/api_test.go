@@ -1626,6 +1626,68 @@ var _ = Describe("Invoking plugins", func() {
 			Expect(foundCABytes).To(MatchJSON(expectedCABytes))
 		})
 
+		Context("when the RuntimeConf is incomplete", func() {
+			var (
+				testRt          *libcni.RuntimeConf
+				testNetConf     *libcni.NetworkConfig
+				testNetConfList *libcni.NetworkConfigList
+			)
+
+			BeforeEach(func() {
+				testRt = &libcni.RuntimeConf{}
+				testNetConf = &libcni.NetworkConfig{
+					Network: &types.NetConf{},
+				}
+				testNetConfList = &libcni.NetworkConfigList{}
+			})
+
+			It("returns an error on missing network name", func() {
+				testRt.ContainerID = containerID
+				testRt.IfName = firstIfname
+				cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(testNetConf, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"\"), container ID (\"some-container-id\"), and interface name (\"eth0\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+
+				cachedConfig, newRt, err = cniConfig.GetNetworkListCachedConfig(testNetConfList, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"\"), container ID (\"some-container-id\"), and interface name (\"eth0\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+			})
+
+			It("returns an error on missing container ID", func() {
+				testNetConf.Network.Name = "foobar"
+				testNetConfList.Name = "foobar"
+				testRt.IfName = firstIfname
+
+				cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(testNetConf, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"foobar\"), container ID (\"\"), and interface name (\"eth0\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+
+				cachedConfig, newRt, err = cniConfig.GetNetworkListCachedConfig(testNetConfList, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"foobar\"), container ID (\"\"), and interface name (\"eth0\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+			})
+
+			It("returns an error on missing interface name", func() {
+				testNetConf.Network.Name = "foobar"
+				testNetConfList.Name = "foobar"
+				testRt.ContainerID = containerID
+
+				cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(testNetConf, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"foobar\"), container ID (\"some-container-id\"), and interface name (\"\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+
+				cachedConfig, newRt, err = cniConfig.GetNetworkListCachedConfig(testNetConfList, testRt)
+				Expect(err).To(MatchError("cache file path requires network name (\"foobar\"), container ID (\"some-container-id\"), and interface name (\"\")"))
+				Expect(cachedConfig).To(BeNil())
+				Expect(newRt).To(BeNil())
+			})
+		})
+
 		Context("when the cached config", func() {
 			Context("is invalid JSON", func() {
 				It("returns an error", func() {
