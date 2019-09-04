@@ -1004,6 +1004,36 @@ var _ = Describe("Invoking plugins", func() {
 				})
 			})
 
+			Context("when there is an invalid containerID", func() {
+				BeforeEach(func() {
+					runtimeConfig.ContainerID = "some-%%container-id"
+				})
+
+				It("returns the error", func() {
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    4,
+						Msg:     "invalid characters in containerID",
+						Details: "some-%%container-id",
+					}))
+				})
+			})
+
+			Context("when there is an invalid networkName", func() {
+				BeforeEach(func() {
+					netConfigList.Name = "invalid-%%-name"
+				})
+
+				It("returns the error", func() {
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    7,
+						Msg:     "invalid characters found in network name",
+						Details: "invalid-%%-name",
+					}))
+				})
+			})
+
 			Context("when the second plugin errors", func() {
 				BeforeEach(func() {
 					plugins[1].debug.ReportError = "plugin error: banana"
