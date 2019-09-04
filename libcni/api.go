@@ -263,25 +263,13 @@ func (c *CNIConfig) cacheDel(netName string, rt *RuntimeConf) error {
 	return os.Remove(fname)
 }
 
-func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
-	var bytes []byte
-
-	fname, err := c.getCacheFilePath(netName, rt)
-	if err != nil {
-		return nil, nil, err
-	}
-	bytes, err = ioutil.ReadFile(fname)
-	if err != nil {
-		// Ignore read errors; the cached result may not exist on-disk
-		return nil, nil, nil
-	}
-
+func (c *CNIConfig) getCachedConfig(data []byte, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
 	unmarshaled := cachedInfo{}
-	if err := json.Unmarshal(bytes, &unmarshaled); err != nil {
-		return nil, nil, fmt.Errorf("failed to unmarshal cached network %q config: %v", netName, err)
+	if err := json.Unmarshal(data, &unmarshaled); err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal cached config: %v", err)
 	}
 	if unmarshaled.Kind != CNICacheV1 {
-		return nil, nil, fmt.Errorf("read cached network %q config has wrong kind: %v", netName, unmarshaled.Kind)
+		return nil, nil, fmt.Errorf("read cached network config has wrong kind: %v", unmarshaled.Kind)
 	}
 
 	newRt := *rt
@@ -291,6 +279,20 @@ func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *R
 	newRt.CapabilityArgs = unmarshaled.CapabilityArgs
 
 	return unmarshaled.Config, &newRt, nil
+}
+
+func (c *CNIConfig) getCachedConfigFromFile(netName string, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return nil, nil, err
+	}
+	fdata, err := ioutil.ReadFile(fname)
+	if err != nil {
+		// Ignore read errors; the cached result may not exist on-disk
+		return nil, nil, nil
+	}
+
+	return c.getCachedConfig(fdata, rt)
 }
 
 func (c *CNIConfig) getLegacyCachedResult(data []byte, cniVersion string) (types.Result, error) {
@@ -382,13 +384,13 @@ func (c *CNIConfig) GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) 
 // GetNetworkListCachedConfig copies the input RuntimeConf to output
 // RuntimeConf with fields updated with info from the cached Config.
 func (c *CNIConfig) GetNetworkListCachedConfig(list *NetworkConfigList, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
-	return c.getCachedConfig(list.Name, rt)
+	return c.getCachedConfigFromFile(list.Name, rt)
 }
 
 // GetNetworkCachedConfig copies the input RuntimeConf to output
 // RuntimeConf with fields updated with info from the cached Config.
 func (c *CNIConfig) GetNetworkCachedConfig(net *NetworkConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
-	return c.getCachedConfig(net.Network.Name, rt)
+	return c.getCachedConfigFromFile(net.Network.Name, rt)
 }
 
 func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {

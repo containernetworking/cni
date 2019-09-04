@@ -1729,7 +1729,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(netConfig, runtimeConfig)
-					Expect(err).To(MatchError("failed to unmarshal cached network \"cachetest\" config: invalid character 'a' looking for beginning of value"))
+					Expect(err).To(MatchError("failed to unmarshal cached config: invalid character 'a' looking for beginning of value"))
 					Expect(cachedConfig).To(BeNil())
 					Expect(newRt).To(BeNil())
 				})
