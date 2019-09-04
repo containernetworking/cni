@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/invoke"
@@ -85,6 +86,14 @@ type CNI interface {
 
 	ValidateNetworkList(ctx context.Context, net *NetworkConfigList) ([]string, error)
 	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
+
+	GetContainerCachedInfo(containerID string) ([]ContainerCachedInfo, error)
+}
+
+type ContainerCachedInfo struct {
+	Config *NetworkConfigList
+	Result types.Result
+	RtConf *RuntimeConf
 }
 
 type CNIConfig struct {
@@ -367,6 +376,79 @@ func (c *CNIConfig) getCachedResultFromFile(netName, cniVersion string, rt *Runt
 	}
 
 	return c.getCachedResult(fdata, cniVersion)
+}
+
+// GetContainerCachedInfo returns all cached information for a given container
+func (c *CNIConfig) GetContainerCachedInfo(containerID string) ([]ContainerCachedInfo, error) {
+	dirPath := filepath.Join(c.getCacheDir(&RuntimeConf{}), "results")
+	entries, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNames := make([]string, 0, len(entries))
+	for _, e := range entries {
+		fileNames = append(fileNames, e.Name())
+	}
+	sort.Strings(fileNames)
+
+	cached := []ContainerCachedInfo{}
+	for _, fname := range fileNames {
+		// Ignore if the filename doesn't contain our container ID
+		if !strings.Contains(fname, containerID) {
+			continue
+		}
+		cacheFile := filepath.Join(dirPath, fname)
+		bytes, err := ioutil.ReadFile(cacheFile)
+		if err != nil {
+			continue
+		}
+
+		cachedInfo := cachedInfo{}
+		if err := json.Unmarshal(bytes, &cachedInfo); err != nil {
+			continue
+		}
+		if cachedInfo.Kind != CNICacheV1 {
+			continue
+		}
+
+		// Read config byes and fill RuntimeConf with
+		// CapabilityArgs and CNI Args
+		rt := &RuntimeConf{
+			ContainerID: containerID,
+			IfName:      cachedInfo.IfName,
+		}
+		confBytes, newRt, err := c.getCachedConfig(bytes, rt)
+		if err != nil {
+			continue
+		}
+
+		// Unmarshal the config into a ConfigList
+		confList, err := ConfListFromBytes(confBytes)
+		if err != nil {
+			conf, err := ConfFromBytes(confBytes)
+			if err != nil {
+				continue
+			}
+			confList, err = ConfListFromConf(conf)
+			if err != nil {
+				continue
+			}
+		}
+
+		// Read and unmarshal the result
+		result, err := c.getCachedResult(bytes, confList.CNIVersion)
+		if err != nil {
+			continue
+		}
+
+		cached = append(cached, ContainerCachedInfo{
+			Config: confList,
+			Result: result,
+			RtConf: newRt,
+		})
+	}
+	return cached, nil
 }
 
 // GetNetworkListCachedResult returns the cached Result of the previous
