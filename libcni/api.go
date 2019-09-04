@@ -186,7 +186,7 @@ type cachedInfo struct {
 	Config         []byte                 `json:"config"`
 	CniArgs        [][2]string            `json:"cniArgs,omitempty"`
 	CapabilityArgs map[string]interface{} `json:"capabilityArgs,omitempty"`
-	RawResult      map[string]interface{} `json:"results,omitempty"`
+	RawResult      map[string]interface{} `json:"result,omitempty"`
 	Result         types.Result           `json:"-"`
 }
 
