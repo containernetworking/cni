@@ -293,17 +293,7 @@ func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *R
 	return unmarshaled.Config, &newRt, nil
 }
 
-func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
-	fname, err := c.getCacheFilePath(netName, rt)
-	if err != nil {
-		return nil, err
-	}
-	data, err := ioutil.ReadFile(fname)
-	if err != nil {
-		// Ignore read errors; the cached result may not exist on-disk
-		return nil, nil
-	}
-
+func (c *CNIConfig) getLegacyCachedResult(data []byte, cniVersion string) (types.Result, error) {
 	// Read the version of the cached result
 	decoder := version.ConfigDecoder{}
 	resultCniVersion, err := decoder.Decode(data)
@@ -341,7 +331,7 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 
 	cachedInfo := cachedInfo{}
 	if err := json.Unmarshal(fdata, &cachedInfo); err != nil || cachedInfo.Kind != CNICacheV1 {
-		return c.getLegacyCachedResult(netName, cniVersion, rt)
+		return c.getLegacyCachedResult(fdata, cniVersion)
 	}
 
 	newBytes, err := json.Marshal(&cachedInfo.RawResult)
