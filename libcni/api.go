@@ -318,25 +318,15 @@ func (c *CNIConfig) getLegacyCachedResult(data []byte, cniVersion string) (types
 	return result, err
 }
 
-func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
-	fname, err := c.getCacheFilePath(netName, rt)
-	if err != nil {
-		return nil, err
-	}
-	fdata, err := ioutil.ReadFile(fname)
-	if err != nil {
-		// Ignore read errors; the cached result may not exist on-disk
-		return nil, nil
-	}
-
+func (c *CNIConfig) getCachedResult(data []byte, cniVersion string) (types.Result, error) {
 	cachedInfo := cachedInfo{}
-	if err := json.Unmarshal(fdata, &cachedInfo); err != nil || cachedInfo.Kind != CNICacheV1 {
-		return c.getLegacyCachedResult(fdata, cniVersion)
+	if err := json.Unmarshal(data, &cachedInfo); err != nil || cachedInfo.Kind != CNICacheV1 {
+		return c.getLegacyCachedResult(data, cniVersion)
 	}
 
 	newBytes, err := json.Marshal(&cachedInfo.RawResult)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal cached network %q config: %v", netName, err)
+		return nil, fmt.Errorf("failed to marshal cached network config: %v", err)
 	}
 
 	// Read the version of the cached result
@@ -363,16 +353,30 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 	return result, err
 }
 
+func (c *CNIConfig) getCachedResultFromFile(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
+	fname, err := c.getCacheFilePath(netName, rt)
+	if err != nil {
+		return nil, err
+	}
+	fdata, err := ioutil.ReadFile(fname)
+	if err != nil {
+		// Ignore read errors; the cached result may not exist on-disk
+		return nil, nil
+	}
+
+	return c.getCachedResult(fdata, cniVersion)
+}
+
 // GetNetworkListCachedResult returns the cached Result of the previous
 // AddNetworkList() operation for a network list, or an error.
 func (c *CNIConfig) GetNetworkListCachedResult(list *NetworkConfigList, rt *RuntimeConf) (types.Result, error) {
-	return c.getCachedResult(list.Name, list.CNIVersion, rt)
+	return c.getCachedResultFromFile(list.Name, list.CNIVersion, rt)
 }
 
 // GetNetworkCachedResult returns the cached Result of the previous
 // AddNetwork() operation for a network, or an error.
 func (c *CNIConfig) GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
-	return c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
+	return c.getCachedResultFromFile(net.Network.Name, net.Network.CNIVersion, rt)
 }
 
 // GetNetworkListCachedConfig copies the input RuntimeConf to output
@@ -454,7 +458,7 @@ func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigLis
 		return nil
 	}
 
-	cachedResult, err := c.getCachedResult(list.Name, list.CNIVersion, rt)
+	cachedResult, err := c.getCachedResultFromFile(list.Name, list.CNIVersion, rt)
 	if err != nil {
 		return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
 	}
@@ -491,7 +495,7 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
 		return err
 	} else if gtet {
-		cachedResult, err = c.getCachedResult(list.Name, list.CNIVersion, rt)
+		cachedResult, err = c.getCachedResultFromFile(list.Name, list.CNIVersion, rt)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
 		}
@@ -531,7 +535,7 @@ func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *Ru
 		return fmt.Errorf("configuration version %q does not support the CHECK command", net.Network.CNIVersion)
 	}
 
-	cachedResult, err := c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
+	cachedResult, err := c.getCachedResultFromFile(net.Network.Name, net.Network.CNIVersion, rt)
 	if err != nil {
 		return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
 	}
@@ -546,7 +550,7 @@ func (c *CNIConfig) DelNetwork(ctx context.Context, net *NetworkConfig, rt *Runt
 	if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
 		return err
 	} else if gtet {
-		cachedResult, err = c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
+		cachedResult, err = c.getCachedResultFromFile(net.Network.Name, net.Network.CNIVersion, rt)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
 		}
