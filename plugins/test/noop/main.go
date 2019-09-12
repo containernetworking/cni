@@ -95,7 +95,10 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 
 	if debugFilePath == "" {
 		fmt.Printf(`{}`)
-		os.Stderr.WriteString("CNI_ARGS or config empty, no debug behavior\n")
+		_, err = os.Stderr.WriteString("CNI_ARGS or config empty, no debug behavior\n")
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -116,7 +119,10 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		return err
 	}
 
-	os.Stderr.WriteString(debug.ReportStderr)
+	_, err = os.Stderr.WriteString(debug.ReportStderr)
+	if err != nil {
+		return err
+	}
 
 	if debug.ReportError != "" {
 		return errors.New(debug.ReportError)
@@ -139,9 +145,15 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal new result: %v", err)
 		}
-		os.Stdout.WriteString(string(resultBytes))
+		_, err = os.Stdout.WriteString(string(resultBytes))
+		if err != nil {
+			return err
+		}
 	} else {
-		os.Stdout.WriteString(debug.ReportResult)
+		_, err = os.Stdout.WriteString(debug.ReportResult)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
