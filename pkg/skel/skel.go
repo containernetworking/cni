@@ -202,12 +202,13 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	}
 
 	if cmd != "VERSION" {
-		err = validateConfig(cmdArgs.StdinData)
-		if err != nil {
+		if err = validateConfig(cmdArgs.StdinData); err != nil {
 			return err
 		}
-		err = utils.ValidateContainerID(cmdArgs.ContainerID)
-		if err != nil {
+		if err = utils.ValidateContainerID(cmdArgs.ContainerID); err != nil {
+			return err
+		}
+		if err = utils.ValidateInterfaceName(cmdArgs.IfName); err != nil {
 			return err
 		}
 	}
