@@ -15,14 +15,21 @@
 package utils
 
 import (
+	"bytes"
+	"fmt"
 	"regexp"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
 
-// cniValidNameChars is the regexp used to validate valid characters in
-// containerID and networkName
-const cniValidNameChars = `[a-zA-Z0-9][a-zA-Z0-9_.\-]`
+const (
+	// cniValidNameChars is the regexp used to validate valid characters in
+	// containerID and networkName
+	cniValidNameChars = `[a-zA-Z0-9][a-zA-Z0-9_.\-]`
+
+	// maxInterfaceNameLength is the length max of a valid interface name
+	maxInterfaceNameLength = 15
+)
 
 var cniReg = regexp.MustCompile(`^` + cniValidNameChars + `*$`)
 
@@ -46,6 +53,24 @@ func ValidateNetworkName(networkName string) *types.Error {
 	}
 	if !cniReg.MatchString(networkName) {
 		return types.NewError(types.ErrInvalidNetworkConfig, "invalid characters found in network name", networkName)
+	}
+	return nil
+}
+
+// ValidateInterfaceName will validate the interface name based on the three rules below
+// 1. The name must not be empty
+// 2. The name must be less than 16 characters
+// 3. The name must not contain / or any whitespace characters
+// ref to https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/tree/lib/utils.c?id=1f420318bda3cc62156e89e1b56d60cc744b48ad#n827
+func ValidateInterfaceName(ifName string) *types.Error {
+	if len(ifName) == 0 {
+		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is empty", "")
+	}
+	if len(ifName) > maxInterfaceNameLength {
+		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is overflow", fmt.Sprintf("interface name length should be less than %d characters", maxInterfaceNameLength+1))
+	}
+	if bytes.ContainsAny([]byte(ifName), `/ `) {
+		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name contains / or whitespace characters", "")
 	}
 	return nil
 }
