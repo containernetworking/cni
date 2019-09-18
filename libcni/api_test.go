@@ -1012,7 +1012,7 @@ var _ = Describe("Invoking plugins", func() {
 				It("returns the error", func() {
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(Equal(&types.Error{
-						Code:    4,
+						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "invalid characters in containerID",
 						Details: "some-%%container-id",
 					}))
@@ -1027,9 +1027,55 @@ var _ = Describe("Invoking plugins", func() {
 				It("returns the error", func() {
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(err).To(Equal(&types.Error{
-						Code:    7,
+						Code:    types.ErrInvalidNetworkConfig,
 						Msg:     "invalid characters found in network name",
 						Details: "invalid-%%-name",
+					}))
+				})
+			})
+
+			Context("return errors when interface name is invalid", func() {
+				It("interface name is empty", func() {
+					runtimeConfig.IfName = ""
+
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    types.ErrInvalidEnvironmentVariables,
+						Msg:     "interface name is empty",
+						Details: "",
+					}))
+				})
+
+				It("interface name is overflow", func() {
+					runtimeConfig.IfName = "1234567890123456"
+
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    types.ErrInvalidEnvironmentVariables,
+						Msg:     "interface name is overflow",
+						Details: "interface name length should be less than 16 characters",
+					}))
+				})
+
+				It("interface name contains invalid characters /", func() {
+					runtimeConfig.IfName = "test/test"
+
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    types.ErrInvalidEnvironmentVariables,
+						Msg:     "interface name contains / or whitespace characters",
+						Details: "",
+					}))
+				})
+
+				It("interface name contains invalid characters whitespace", func() {
+					runtimeConfig.IfName = "test test"
+
+					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+					Expect(err).To(Equal(&types.Error{
+						Code:    types.ErrInvalidEnvironmentVariables,
+						Msg:     "interface name contains / or whitespace characters",
+						Details: "",
 					}))
 				})
 			})
