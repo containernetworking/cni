@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"unicode"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
@@ -60,17 +61,24 @@ func ValidateNetworkName(networkName string) *types.Error {
 // ValidateInterfaceName will validate the interface name based on the three rules below
 // 1. The name must not be empty
 // 2. The name must be less than 16 characters
-// 3. The name must not contain / or any whitespace characters
-// ref to https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/tree/lib/utils.c?id=1f420318bda3cc62156e89e1b56d60cc744b48ad#n827
+// 3. The name must not be "." or ".."
+// 3. The name must not contain / or : or any whitespace characters
+// ref to https://github.com/torvalds/linux/blob/master/net/core/dev.c#L1024
 func ValidateInterfaceName(ifName string) *types.Error {
 	if len(ifName) == 0 {
 		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is empty", "")
 	}
 	if len(ifName) > maxInterfaceNameLength {
-		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is overflow", fmt.Sprintf("interface name length should be less than %d characters", maxInterfaceNameLength+1))
+		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is too long", fmt.Sprintf("interface name should be less than %d characters", maxInterfaceNameLength+1))
 	}
-	if bytes.ContainsAny([]byte(ifName), `/ `) {
-		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name contains / or whitespace characters", "")
+	if ifName == "." || ifName == ".." {
+		return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name is . or ..", "")
 	}
+	for _, r := range bytes.Runes([]byte(ifName)) {
+		if r == '/' || r == ':' || unicode.IsSpace(r) {
+			return types.NewError(types.ErrInvalidEnvironmentVariables, "interface name contains / or : or whitespace characters", "")
+		}
+	}
+
 	return nil
 }
