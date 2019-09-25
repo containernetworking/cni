@@ -100,10 +100,7 @@ Plugins should generally complete a `DEL` action without error even if some reso
     - The plugin must return either nothing or an error.
   - The plugin must consult the `prevResult` to determine the expected interfaces and addresses.
   - The plugin must allow for a later chained plugin to have modified networking resources, e.g. routes.
-  - The plugin should return an error if a resource included in the CNI Result type (interface, address or route):
-    - was created by the plugin, and
-    - is listed in `prevResult`, and
-    - does not exist, or is in an invalid state.
+  - The plugin should return an error if a resource included in the CNI Result type (interface, address or route) was created by the plugin, and is listed in `prevResult`, but is missing or in an invalid state.
   - The plugin should return an error if other resources not tracked in the Result type such as the following are missing or are in an invalid state:
     - Firewall rules
     - Traffic shaping controls
