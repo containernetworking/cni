@@ -119,10 +119,84 @@ var _ = Describe("dispatching to the correct callback", func() {
 			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(&types.Error{
-				Code:    4,
+				Code:    types.ErrInvalidEnvironmentVariables,
 				Msg:     "invalid characters in containerID",
 				Details: "some-%%container-id",
 			}))
+		})
+
+		Context("return errors when interface name is invalid", func() {
+			It("interface name is too long", func() {
+				environment["CNI_IFNAME"] = "1234567890123456"
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name is too long",
+					Details: "interface name should be less than 16 characters",
+				}))
+			})
+
+			It("interface name is .", func() {
+				environment["CNI_IFNAME"] = "."
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name is . or ..",
+					Details: "",
+				}))
+			})
+
+			It("interface name is ..", func() {
+				environment["CNI_IFNAME"] = ".."
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name is . or ..",
+					Details: "",
+				}))
+			})
+
+			It("interface name contains invalid characters /", func() {
+				environment["CNI_IFNAME"] = "test/test"
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name contains / or : or whitespace characters",
+					Details: "",
+				}))
+			})
+
+			It("interface name contains invalid characters :", func() {
+				environment["CNI_IFNAME"] = "test:test"
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name contains / or : or whitespace characters",
+					Details: "",
+				}))
+			})
+
+			It("interface name contains invalid characters whitespace", func() {
+				environment["CNI_IFNAME"] = "test test"
+
+				err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(&types.Error{
+					Code:    types.ErrInvalidEnvironmentVariables,
+					Msg:     "interface name contains / or : or whitespace characters",
+					Details: "",
+				}))
+			})
 		})
 
 		It("does not call cmdCheck or cmdDel", func() {

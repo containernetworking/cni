@@ -409,6 +409,9 @@ func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net
 	if err := utils.ValidateNetworkName(name); err != nil {
 		return nil, err
 	}
+	if err := utils.ValidateInterfaceName(rt.IfName); err != nil {
+		return nil, err
+	}
 
 	newConf, err := buildOneConfig(name, cniVersion, net, prevResult, rt)
 	if err != nil {
