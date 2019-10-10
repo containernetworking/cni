@@ -835,6 +835,11 @@ var _ = Describe("Invoking plugins", func() {
 				_, err := cniConfig.ValidateNetwork(ctx, netConfig)
 				Expect(err).To(MatchError("plugin noop does not support config version \"broken\""))
 			})
+			It("allows version to be omitted", func() {
+				netConfig.Network.CNIVersion = ""
+				_, err := cniConfig.ValidateNetwork(ctx, netConfig)
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 	})
 
