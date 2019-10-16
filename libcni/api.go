@@ -632,6 +632,9 @@ func (c *CNIConfig) validatePlugin(ctx context.Context, pluginName, expectedVers
 	if err != nil {
 		return err
 	}
+	if expectedVersion == "" {
+		expectedVersion = "0.1.0"
+	}
 
 	vi, err := invoke.GetVersionInfo(ctx, pluginPath, c.exec)
 	if err != nil {
