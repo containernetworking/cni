@@ -199,6 +199,15 @@ However, in the future CNI might want to branch out into other directions:
 
 If these topics are of interest, please contact the team via the mailing list or IRC and find some like-minded people in the community to put a proposal together.
 
+## Where are the binaries?
+
+The plugins moved to a separate repo:
+https://github.com/containernetworking/plugins, and the releases there
+include binaries and checksums.
+
+Prior to release 0.7.0 the `cni` release also included a `cnitool`
+binary; as this is a developer tool we suggest you build it yourself.
+
 ## Contact
 
 For any questions about CNI, please reach out on the mailing list:
