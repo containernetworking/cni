@@ -1,17 +1,24 @@
 [![Linux Build Status](https://travis-ci.org/containernetworking/cni.svg?branch=master)](https://travis-ci.org/containernetworking/cni)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/wtrkou8oow7x533e/branch/master?svg=true)](https://ci.appveyor.com/project/cni-bot/cni/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
-[![Slack Status](https://cryptic-tundra-43194.herokuapp.com/badge.svg)](https://cryptic-tundra-43194.herokuapp.com/)
 
 ![CNI Logo](logo.png)
 
 ---
 
-# Community Sync Meeting
+# CNI at KubeCon / CloudNativeCon
 
-There is a community sync meeting for users and developers every 1-2 months. The next meeting will be held on a Google Hangout and the link is in the [agenda](https://docs.google.com/document/d/10ECyT2mBGewsJUcmYmS8QNo1AcNgy2ZIe2xS7lShYhE/edit?usp=sharing) (Notes from previous meeting are also in this doc).
+The CNI maintainers are hosting two sessions at KubeCon / CloudNativeCon 2019:
 
-The next meeting will be held on *Wednesday, January 30th, 2019* at *4:00pm UTC / 11:00am EDT / 8:00am PDT* [Add to Calendar](https://www.worldtimebuddy.com/?qm=1&lid=100,5,2643743,5391959&h=100&date=2019-01-30&sln=16-17).
+- [Introduction to CNI](https://kccncna19.sched.com/event/Uaif/introduction-to-cni-the-container-network-interface-project-bryan-boreham-weaveworks-dan-williams-red-hat)
+- [CNI deep dive](https://kccncna19.sched.com/event/Uaga/deep-dive-cni-bryan-boreham-weaveworks-dan-williams-red-hat)
+
+---
+
+# CNI Slack
+
+The CNI slack has been sunsetted - please join us in #cni and #cni-dev on the [CNCF slack](https://slack.cncf.io/)
+
 
 ---
 
@@ -213,4 +220,5 @@ binary; as this is a developer tool we suggest you build it yourself.
 For any questions about CNI, please reach out on the mailing list:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.org:6667/#containernetworking) channel on freenode.org
-- Slack: [containernetworking.slack.com](https://cryptic-tundra-43194.herokuapp.com)
+- #cni on the [CNCF slack](https://slack.cncf.io/)
+
