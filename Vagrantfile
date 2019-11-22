@@ -17,6 +17,9 @@ Vagrant.configure(2) do |config|
     echo 'export GOPATH=/go; export PATH=/usr/local/go/bin:$GOPATH/bin:$PATH' >> /root/.bashrc
     eval `tail -n1 /root/.bashrc`
 
+    go get github.com/onsi/ginkgo/ginkgo
+    go get github.com/onsi/gomega/...
+
     cd /go/src/github.com/containernetworking/cni
   SHELL
 end
