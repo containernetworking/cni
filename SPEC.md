@@ -1,11 +1,27 @@
 # Container Network Interface Specification
 
+- [Version](#version)
+- [Overview](#overview)
+- [General considerations](#general-considerations)
+- [CNI Plugin](#cni-plugin)
+  * [Overview](#overview-1)
+  * [Parameters](#parameters)
+  * [Result](#result)
+  * [Network Configuration](#network-configuration)
+  * [Example configurations](#example-configurations)
+  * [Network Configuration Lists](#network-configuration-lists)
+  * [IP Allocation](#ip-allocation)
+  * [Well-known Structures](#well-known-structures)
+- [Well-known Error Codes](#well-known-error-codes)
+
 ## Version
+
 This is CNI **spec** version **0.4.0**.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
 #### Released versions
+
 Released versions of the spec are available as Git tags.
 
 | tag                                                                                  | spec permalink                                                                        | major changes                     |
