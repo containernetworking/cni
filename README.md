@@ -55,6 +55,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 
 ### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
+- [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
