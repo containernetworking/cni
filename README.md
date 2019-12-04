@@ -55,7 +55,6 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 
 ### 3rd party plugins
 - [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
-- [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
@@ -78,6 +77,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [cni-route-override - a meta CNI plugin that override route information](https://github.com/redhat-nfvpe/cni-route-override)
 - [Terway - a collection of CNI Plugins based on alibaba cloud VPC/ECS network product](https://github.com/AliyunContainerService/terway)
 - [Cisco ACI CNI - for on-prem and cloud container networking with consistent policy and security model.](https://github.com/noironetworks/aci-containers)
+- [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
