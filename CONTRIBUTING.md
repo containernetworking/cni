@@ -62,7 +62,7 @@ cd /go/src/github.com/containernetworking/cni
 ./test.sh
 
 # to focus on a particular test suite
-cd plugins/main/loopback
+cd libcni
 go test
 ```
 
