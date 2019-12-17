@@ -183,7 +183,7 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 }
 
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
-	files, err := ConfFiles(dir, []string{".conflist"})
+	files, err := ConfFiles(dir, []string{".conflist", ".conf"})
 	if err != nil {
 		return nil, err
 	}
