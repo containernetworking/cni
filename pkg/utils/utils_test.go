@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package utils_test
 
 import (
 	"reflect"
 	"testing"
 
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/utils"
 )
 
 func TestValidateContainerID(t *testing.T) {
@@ -45,7 +46,7 @@ func TestValidateContainerID(t *testing.T) {
 	}
 
 	for _, tt := range testData {
-		err := ValidateContainerID(tt.containerID)
+		err := utils.ValidateContainerID(tt.containerID)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("Expected '%v' but got '%v'", tt.err, err)
 		}
@@ -76,7 +77,7 @@ func TestValidateNetworkName(t *testing.T) {
 	}
 
 	for _, tt := range testData {
-		err := ValidateNetworkName(tt.networkName)
+		err := utils.ValidateNetworkName(tt.networkName)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("Expected '%v' but got '%v'", tt.err, err)
 		}
@@ -122,7 +123,7 @@ func TestValidateInterfaceName(t *testing.T) {
 	}
 
 	for _, tt := range testData {
-		err := ValidateInterfaceName(tt.interfaceName)
+		err := utils.ValidateInterfaceName(tt.interfaceName)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("Expected '%v' but got '%v'", tt.err, err)
 		}
