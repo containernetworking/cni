@@ -255,7 +255,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ### Example configurations
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "dbnet",
@@ -274,7 +274,7 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "pci",
@@ -295,7 +295,7 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "wan",
@@ -344,7 +344,7 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
 
 #### Example network configuration lists
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "dbnet",
@@ -386,7 +386,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 1) first call the `bridge` plugin with the following JSON:
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "dbnet",
@@ -453,7 +453,7 @@ Given the same network configuration JSON list, the container runtime would perf
 
 1) first call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "dbnet",
@@ -588,7 +588,7 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
 
 2) next call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` action:
 
-```json
+```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "dbnet",
