@@ -1,10 +1,12 @@
-# How to upgrade to CNI Specification v0.3.1
+# How to upgrade to CNI Specification
+
+## v0.3.1 Upgrade
 
 The 0.3.0 specification contained a small error. The Result structure's `ip` field should have been renamed to `ips` to be consistent with the IPAM result structure definition; this rename was missed when updating the Result to accommodate multiple IP addresses and interfaces. All first-party CNI plugins (bridge, host-local, etc) were updated to use `ips` (and thus be inconsistent with the 0.3.0 specification) and most other plugins have not been updated to the 0.3.0 specification yet, so few (if any) users should be impacted by this change.
 
 The 0.3.1 specification corrects the Result structure to use the `ips` field name as originally intended.  This is the only change between 0.3.0 and 0.3.1.
 
-# How to upgrade to CNI Specification v0.3.0
+## v0.3.0 Upgrade
 
 Version 0.3.0 of the [CNI Specification](../SPEC.md) provides rich information
 about container network configuration, including details of network interfaces
@@ -26,24 +28,27 @@ and Release v0.5.0 supports Spec v0.3.0.
 ----
 
 ## For CNI Users
+
 If you maintain CNI configuration files for a container runtime that uses CNI,
 ensure that the configuration files specify a `cniVersion` field and that the
 version there is supported by your container runtime and CNI plugins.
-Configuration files without a version field should be given version 0.2.0. 
-The CNI spec includes example configuration files for 
+Configuration files without a version field should be given version 0.2.0.
+The CNI spec includes example configuration files for
 [single plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations)
 and for [lists of chained plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations).
 
 Consult the documentation for your runtime and plugins to determine what
-CNI spec versions they support. Test any plugin upgrades before deploying to 
+CNI spec versions they support. Test any plugin upgrades before deploying to
 production. You may find [cnitool](https://github.com/containernetworking/cni/tree/master/cnitool)
 useful. Specifically, your configuration version should be the lowest common
 version supported by your plugins.
 
 ## For Plugin Authors
+
 This section provides guidance for upgrading plugins to CNI Spec Version 0.3.0.
 
 ### General guidance for all plugins (language agnostic)
+
 To provide the smoothest upgrade path, **existing plugins should support
 multiple versions of the CNI spec**.  In particular, plugins with existing
 installed bases should add support for CNI spec version 0.3.0 while maintaining
@@ -61,7 +66,7 @@ command with the following JSON data:
 ```
 
 Second, for the `ADD` command, a plugin must respect the `cniVersion` field
-provided in the [network configuration JSON](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration). 
+provided in the [network configuration JSON](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration).
 That field is a request for the plugin to return results of a particular format:
 
 - If the `cniVersion` field is not present, then spec v0.2.0 should be assumed
@@ -80,8 +85,9 @@ support for v0.2.0 and v0.3.0.  When it receives `cniVersion` key of `0.2.0`,
 the plugin must return result JSON conforming to CNI spec version 0.2.0.
 
 ### Specific guidance for plugins written in Go
+
 Plugins written in Go may leverage the Go language packages in this repository
-to ease the process of upgrading and supporting multiple versions.  CNI 
+to ease the process of upgrading and supporting multiple versions.  CNI
 [Library and Plugins Release v0.5.0](https://github.com/containernetworking/cni/releases/tag/v0.5.0)
 includes important changes to the Golang APIs.  Plugins using these APIs will
 require some changes now, but should more-easily handle spec changes and
@@ -151,7 +157,6 @@ result, err := current.NewResultFromResult(ipamResult)
 Other examples of spec v0.3.0-compatible plugins are the
 [main plugins in this repo](https://github.com/containernetworking/plugins/tree/master/plugins)
 
-
 ## For Runtime Authors
 
 This section provides guidance for upgrading container runtimes to support
@@ -160,6 +165,7 @@ CNI Spec Version 0.3.0.
 ### General guidance for all runtimes (language agnostic)
 
 #### Support multiple CNI spec versions
+
 To provide the smoothest upgrade path and support the broadest range of CNI
 plugins, **container runtimes should support multiple versions of the CNI spec**.
 In particular, runtimes with existing installed bases should add support for CNI
@@ -177,9 +183,11 @@ in the format defined by that CNI spec version, and the runtime must parse
 and handle this result.
 
 #### Handle errors due to version incompatibility
+
 Plugins may respond with error indicating that they don't support the requested
 CNI version (see [Well-known Error Codes](https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes)),
 e.g.
+
 ```json
 {
   "cniVersion": "0.2.0",
@@ -187,10 +195,12 @@ e.g.
   "msg": "CNI version not supported"
 }
 ```
+
 In that case, the runtime may retry with a lower CNI spec version, or take
 some other action.
 
 #### (optional) Discover plugin version support
+
 Runtimes may discover which CNI spec versions are supported by a plugin, by
 calling the plugin with the `VERSION` command.  The `VERSION` command was
 added in CNI spec v0.2.0, so older plugins may not respect it.  In the absence
@@ -198,6 +208,7 @@ of a successful response to `VERSION`, assume that the plugin only supports
 CNI spec v0.1.0.
 
 #### Handle missing data in v0.3.0 results
+
 The Result for the `ADD` command in CNI spec version 0.3.0 includes a new field
 `interfaces`.  An IP address in the `ip` field may describe which interface
 it is assigned to, by placing a numeric index in the `interface` subfield.
@@ -209,6 +220,7 @@ on the existence of the interface data.  In that case, provide the user an
 error message that helps diagnose the issue.
 
 ### Specific guidance for container runtimes written in Go
+
 Container runtimes written in Go may leverage the Go language packages in this
 repository to ease the process of upgrading and supporting multiple versions.
 CNI [Library and Plugins Release v0.5.0](https://github.com/containernetworking/cni/releases)
@@ -217,9 +229,9 @@ require some changes now, but should more-easily handle spec changes and
 new features going forward.
 
 For runtimes, the biggest changes to the Go libraries are in the `types` package.
-It has been refactored to make working with versioned results simpler. The top-level 
+It has been refactored to make working with versioned results simpler. The top-level
 `types.Result` is now an opaque interface instead of a struct, and APIs exposed by
-other packages, such as the high-level `libcni` package, have been updated to use 
+other packages, such as the high-level `libcni` package, have been updated to use
 this interface.  Concrete types are now per-version subpackages. The `types/current`
 subpackage contains the latest (spec v0.3.0) types.
 
@@ -234,13 +246,10 @@ will be lost.
 | To 0.2 |  ✔  |  ✔  |  x  |
 | To 0.3 |  ✴  |  ✴  |  ✔  |
 
-
 Key:
-> ✔ : lossless conversion <br>
-> ✴ : higher-version output may have empty fields <br>
-> x : lower-version output is missing some data <br>
-
-
+> ✔ : lossless conversion  
+> ✴ : higher-version output may have empty fields  
+> x : lower-version output is missing some data  
 
 A container runtime should use `current.NewResultFromResult()` to convert the
 opaque  `types.Result` to a concrete `current.Result` struct.  It may then
