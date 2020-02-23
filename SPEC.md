@@ -17,9 +17,7 @@
     - [Network Configuration Lists](#network-configuration-lists)
       - [Network Configuration List Error Handling](#network-configuration-list-error-handling)
       - [Example network configuration lists](#example-network-configuration-lists)
-      - [Network configuration list runtime examples - ADD](#network-configuration-list-runtime-examples---add)
-      - [Network configuration list runtime examples - CHECK](#network-configuration-list-runtime-examples---check)
-      - [Network configuration list runtime examples - DEL](#network-configuration-list-runtime-examples---del)
+      - [Network configuration list runtime examples](#network-configuration-list-runtime-examples)
     - [IP Allocation](#ip-allocation)
       - [IP Address Management (IPAM) Interface](#ip-address-management-ipam-interface)
       - [Notes](#notes)
@@ -425,7 +423,7 @@ Note that bridge type settings are plugin specific, args may be ignored by plugi
 }
 ```
 
-#### Network configuration list runtime examples - ADD
+#### Network configuration list runtime examples
 
 Given the network configuration list JSON [shown above](#example-network-configuration-lists) the container runtime would perform the following steps for the `ADD` action.
 Note that the runtime adds the `cniVersion` and `name` fields from configuration list to the configuration JSON passed to each plugin, to ensure consistent versioning and names for all plugins in the list.
@@ -495,11 +493,6 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
       }
     }
     ```
-<<<<<<< HEAD
-
-#### Network configuration list runtime examples - CHECK
-=======
->>>>>>> fix linting warnings with spec.md
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `CHECK` action.
 
@@ -593,11 +586,6 @@ Given the same network configuration JSON list, the container runtime would perf
       }
     }
     ```
-<<<<<<< HEAD
-
-#### Network configuration list runtime examples - DEL
-=======
->>>>>>> fix linting warnings with spec.md
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `DEL` action.
 
