@@ -1,18 +1,28 @@
 # Container Network Interface Specification
 
-- [Version](#version)
-- [Overview](#overview)
-- [General considerations](#general-considerations)
-- [CNI Plugin](#cni-plugin)
-  * [Overview](#overview-1)
-  * [Parameters](#parameters)
-  * [Result](#result)
-  * [Network Configuration](#network-configuration)
-  * [Example configurations](#example-configurations)
-  * [Network Configuration Lists](#network-configuration-lists)
-  * [IP Allocation](#ip-allocation)
-  * [Well-known Structures](#well-known-structures)
-- [Well-known Error Codes](#well-known-error-codes)
+- [Container Network Interface Specification](#container-network-interface-specification)
+  - [Version](#version)
+      - [Released versions](#released-versions)
+  - [Overview](#overview)
+  - [General considerations](#general-considerations)
+  - [CNI Plugin](#cni-plugin)
+    - [Overview](#overview-1)
+    - [Operations and Parameters](#operations-and-parameters)
+    - [Result](#result)
+    - [Network Configuration](#network-configuration)
+    - [Example configurations](#example-configurations)
+    - [Network Configuration Lists](#network-configuration-lists)
+      - [Network Configuration List Error Handling](#network-configuration-list-error-handling)
+      - [Example network configuration lists](#example-network-configuration-lists)
+      - [Network configuration list runtime examples](#network-configuration-list-runtime-examples)
+    - [IP Allocation](#ip-allocation)
+      - [IP Address Management (IPAM) Interface](#ip-address-management-ipam-interface)
+      - [Notes](#notes)
+    - [Well-known Structures](#well-known-structures)
+      - [IPs](#ips)
+      - [Routes](#routes)
+      - [DNS](#dns)
+  - [Well-known Error Codes](#well-known-error-codes)
 
 ## Version
 
@@ -41,10 +51,12 @@ This document proposes a generic plugin-based networking solution for applicatio
 It is derived from the rkt Networking Proposal, which aimed to satisfy many of the design considerations for networking in [rkt][rkt-github].
 
 For the purposes of this proposal, we define two terms very specifically:
-- _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation: for example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
-- _network_ refers to a group of entities that are uniquely addressable that can communicate amongst each other. This could be either an individual container (as specified above), a machine, or some other network device (e.g. a router). Containers can be conceptually _added to_ or _removed from_ one or more networks.
+1. _container_ can be considered synonymous with a [Linux _network namespace_][namespaces]. What unit this corresponds to depends on a particular container runtime implementation. For example, in implementations of the [App Container Spec][appc-github] like rkt, each _pod_ runs in a unique network namespace. In [Docker][docker], on the other hand, network namespaces generally exist for each separate Docker container.
+2. _network_ refers to a group of entities that are uniquely addressable that can communicate amongst each other. This could be either an individual container (as specified above), a machine, or some other network device (e.g. a router). Containers can be conceptually _added to_ or _removed from_ one or more networks.
 
-This document aims to specify the interface between "runtimes" and "plugins". Whilst there are certain well known fields, runtimes may wish to pass additional information to plugins. These extensions are not part of this specification but are documented as [conventions](CONVENTIONS.md). The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
+This document aims to specify the interface between "runtimes" and "plugins". In addition to using well known fields, runtimes can pass additional information to plugins. These extensions are not part of this specification but are documented as [conventions](CONVENTIONS.md). 
+
+The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
 [rkt-github]: https://github.com/coreos/rkt
 [namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html 
@@ -72,9 +84,9 @@ This document aims to specify the interface between "runtimes" and "plugins". Wh
 Each CNI plugin must be implemented as an executable that is invoked by the container management system (e.g. rkt or Kubernetes).
 
 A CNI plugin is responsible for inserting a network interface into the container network namespace (e.g. one end of a veth pair) and making any necessary changes on the host (e.g. attaching the other end of the veth into a bridge).
-It should then assign the IP to the interface and setup the routes consistent with the IP Address Management section by invoking appropriate IPAM plugin.
+It should then assign the IP to the interface and setup the routes consistent with the IP Address Management section by invoking the appropriate IPAM plugin.
 
-### Parameters
+### Operations and Parameters
 
 The operations that CNI plugins must support are:
 
@@ -165,37 +177,47 @@ Plugins must indicate success with a return code of zero and the following JSON 
 ```
 {
   "cniVersion": "0.4.0",
-  "interfaces": [                                            (this key omitted by IPAM plugins)
-      {
+  "interfaces": [
+      {  
           "name": "<name>",
-          "mac": "<MAC address>",                            (required if L2 addresses are meaningful)
-          "sandbox": "<netns path or hypervisor identifier>" (required for container/hypervisor interfaces, empty/omitted for host interfaces)
+          "mac": "<MAC address>",
+          "sandbox": "<netns path or hypervisor identifier>"
       }
   ],
   "ips": [
       {
           "version": "<4-or-6>",
           "address": "<ip-and-prefix-in-CIDR>",
-          "gateway": "<ip-address-of-the-gateway>",          (optional)
+          "gateway": "<ip-address-of-the-gateway>",
           "interface": <numeric index into 'interfaces' list>
       },
       ...
   ],
-  "routes": [                                                (optional)
+  "routes": [
       {
           "dst": "<ip-and-prefix-in-cidr>",
-          "gw": "<ip-of-next-hop>"                           (optional)
+          "gw": "<ip-of-next-hop>"
       },
       ...
   ],
-  "dns": {                                                   (optional)
-    "nameservers": <list-of-nameservers>                     (optional)
-    "domain": <name-of-local-domain>                         (optional)
-    "search": <list-of-additional-search-domains>            (optional)
-    "options": <list-of-options>                             (optional)
+  "dns": {
+    "nameservers": <list-of-nameservers>
+    "domain": <name-of-local-domain>
+    "search": <list-of-additional-search-domains>
+    "options": <list-of-options>
   }
 }
 ```
+
+Notes about result:
+
+- interfaces key is omitted by IPAM plugins
+- interfaces.mac address required if L2 addresses are meaningful
+- interfaces.sandbox required for container/hypervisor interfaces, empty/omitted for host interfaces
+- ips.gateway optional
+- routes key optional
+- routes.gw optional
+- dns key and all child keys optional
 
 `cniVersion` specifies a [Semantic Version 2.0](https://semver.org) of CNI specification used by the plugin. A plugin may support multiple CNI spec versions (as it reports via the `VERSION` command), here the `cniVersion` returned by the plugin in the result must be consistent with the `cniVersion` specified in [Network Configuration](#network-configuration). If the `cniVersion` in the network configuration is not supported by the plugin, the plugin should return an error code 1 (see [Well-known Error Codes](#well-known-error-codes) for details).
 
@@ -225,9 +247,11 @@ Errors must be indicated by a non-zero return code and the following JSON being 
   "cniVersion": "0.4.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
-  "details": <long-error-message> (optional)
+  "details": <long-error-message>
 }
 ```
+
+Note: details key is optional.
 
 `cniVersion` specifies a [Semantic Version 2.0](https://semver.org) of CNI specification used by the plugin.
 Error codes 0-99 are reserved for well-known errors (see [Well-known Error Codes](#well-known-error-codes) section).
@@ -260,11 +284,10 @@ Plugins may define additional fields that they accept and may generate an error 
   "cniVersion": "0.4.0",
   "name": "dbnet",
   "type": "bridge",
-  // type (plugin) specific
+  
   "bridge": "cni0",
   "ipam": {
     "type": "host-local",
-    // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
   },
@@ -274,19 +297,19 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
+
+
 ```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "pci",
   "type": "ovs",
-  // type (plugin) specific
   "bridge": "ovs0",
   "vxlanID": 42,
   "ipam": {
     "type": "dhcp",
     "routes": [ { "dst": "10.3.0.0/16" }, { "dst": "10.4.0.0/16" } ]
   },
-  // args may be ignored by plugins
   "args": {
     "labels" : {
         "appVersion" : "1.0"
@@ -295,12 +318,13 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
+*Note: args can be ignored by plugins*
+
 ```jsonc
 {
   "cniVersion": "0.4.0",
   "name": "wan",
   "type": "macvlan",
-  // ipam specific
   "ipam": {
     "type": "dhcp",
     "routes": [ { "dst": "10.0.0.0/8", "gw": "10.0.0.1" } ]
@@ -310,6 +334,8 @@ Plugins may define additional fields that they accept and may generate an error 
   }
 }
 ```
+
+*Note: macvlan type is ipam specific*
 
 ### Network Configuration Lists
 
@@ -323,10 +349,15 @@ The list is described in JSON form, and can be stored on disk or generated from 
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
 
 When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself. This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
-The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
+
+The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. 
+
+See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
 
 For the `ADD` action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the `Result` of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
+
 For the `CHECK` and `DEL` actions, the runtime MUST (except that it may be omitted for `DEL` if not available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
+
 For the `ADD` action, plugins SHOULD echo the contents of the `prevResult` field to their stdout to allow subsequent plugins (and the runtime) to receive the result, unless they wish to modify or suppress a previous result.
 Plugins are allowed to modify or suppress all or part of a `prevResult`.
 However, plugins that support a version of the CNI specification that includes the `prevResult` field MUST handle `prevResult` by either passing it through, modifying it, or suppressing it explicitly.
@@ -344,6 +375,8 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
 
 #### Example network configuration lists
 
+Note that bridge type settings are plugin specific, args may be ignored by plugins, host-local type settings are ipam specific
+
 ```jsonc
 {
   "cniVersion": "0.4.0",
@@ -351,9 +384,7 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
   "plugins": [
     {
       "type": "bridge",
-      // type (plugin) specific
       "bridge": "cni0",
-      // args may be ignored by plugins
       "args": {
         "labels" : {
             "appVersion" : "1.0"
@@ -361,7 +392,6 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
       },
       "ipam": {
         "type": "host-local",
-        // ipam specific
         "subnet": "10.1.0.0/16",
         "gateway": "10.1.0.1"
       },
@@ -384,7 +414,8 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
 Given the network configuration list JSON [shown above](#example-network-configuration-lists) the container runtime would perform the following steps for the `ADD` action.
 Note that the runtime adds the `cniVersion` and `name` fields from configuration list to the configuration JSON passed to each plugin, to ensure consistent versioning and names for all plugins in the list.
 
-1) first call the `bridge` plugin with the following JSON:
+1) call the `bridge` plugin with the following JSON:
+
 
 ```jsonc
 {
@@ -399,7 +430,6 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
   },
   "ipam": {
     "type": "host-local",
-    // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
   },
@@ -408,8 +438,9 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
   }
 }
 ```
+*Note: host-local type configuration is ipam specific*
 
-2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
+2) call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `bridge` plugin:
 
 ```json
 {
@@ -451,7 +482,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `CHECK` action.
 
-1) first call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
+1) call the `bridge` plugin, including the `prevResult` field containing the JSON response from the `ADD` operation, with the following JSON:
 
 ```jsonc
 {
@@ -466,7 +497,6 @@ Given the same network configuration JSON list, the container runtime would perf
   },
   "ipam": {
     "type": "host-local",
-    // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
   },
@@ -503,7 +533,7 @@ Given the same network configuration JSON list, the container runtime would perf
 }
 ```
 
-2) next call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` operation:
+2) call the `tuning` plugin, including the `prevResult` field containing the JSON response from the `ADD` operation, with the following JSON:
 
 ```json
 {
@@ -544,9 +574,10 @@ Given the same network configuration JSON list, the container runtime would perf
 ```
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `DEL` action.
+
 Note that plugins are executed in reverse order from the `ADD` and `CHECK` actions.
 
-1) first call the `tuning` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` action:
+1) call the `tuning` plugin, including the `prevResult` field containing the JSON response from the `ADD` action, with the following JSON:
 
 ```json
 {
@@ -586,7 +617,7 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
 }
 ```
 
-2) next call the `bridge` plugin with the following JSON, including the `prevResult` field containing the JSON response from the `ADD` action:
+2) call the `bridge` plugin, including the `prevResult` field containing the JSON response from the `ADD` action:
 
 ```jsonc
 {
@@ -601,7 +632,6 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
   },
   "ipam": {
     "type": "host-local",
-    // ipam specific
     "subnet": "10.1.0.0/16",
     "gateway": "10.1.0.1"
   },
@@ -657,25 +687,27 @@ Success must be indicated by a zero return code and the following JSON being pri
       {
           "version": "<4-or-6>",
           "address": "<ip-and-prefix-in-CIDR>",
-          "gateway": "<ip-address-of-the-gateway>"  (optional)
+          "gateway": "<ip-address-of-the-gateway>"
       },
       ...
   ],
-  "routes": [                                       (optional)
+  "routes": [
       {
           "dst": "<ip-and-prefix-in-cidr>",
-          "gw": "<ip-of-next-hop>"                  (optional)
+          "gw": "<ip-of-next-hop>"
       },
       ...
   ]
-  "dns": {                                          (optional)
-    "nameservers": <list-of-nameservers>            (optional)
-    "domain": <name-of-local-domain>                (optional)
-    "search": <list-of-search-domains>              (optional)
-    "options": <list-of-options>                    (optional)
+  "dns": {
+    "nameservers": <list-of-nameservers>
+    "domain": <name-of-local-domain>
+    "search": <list-of-search-domains>
+    "options": <list-of-options>
   }
 }
 ```
+
+Note: ips.gateway, routes, routes.gw, dns, dns.nameservers, dns.domain, dns.search, dns.options are all optional.
 
 Note that unlike regular CNI plugins, IPAM plugins should return an abbreviated `Result` structure that does not include the `interfaces` key, since IPAM plugins should be unaware of interfaces configured by their parent plugin except those specifically required for IPAM (eg, like the `dhcp` IPAM plugin).
 
@@ -768,11 +800,13 @@ The `dns` field contains a dictionary consisting of common DNS information.
 
 Error codes 1-99 must not be used other than as specified here.
 
-- `1` - Incompatible CNI version
-- `2` - Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
-- `3` - Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
-- `4` - Invalid necessary environment variables, like CNI_COMMAND, CNI_CONTAINERID, etc. The error message must contain the names of invalid variables.
-- `5` - I/O failure. For example, failed to read network config bytes from stdin.
-- `6` - Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
-- `7` - Invalid network config. If some validations on network configs do not pass, this error will be raised.
-- `11` - Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
+Error Code|Error Description
+---|---
+- `1`|Incompatible CNI version
+- `2`|Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
+- `3`|Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
+- `4`|Invalid necessary environment variables, like CNI_COMMAND, CNI_CONTAINERID, etc. The error message must contain the names of invalid variables.
+- `5`|I/O failure. For example, failed to read network config bytes from stdin.
+- `6`|Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
+- `7`|Invalid network config. If some validations on network configs do not pass, this error will be raised.
+- `11`|Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
