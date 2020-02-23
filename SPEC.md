@@ -495,8 +495,11 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
       }
     }
     ```
+<<<<<<< HEAD
 
 #### Network configuration list runtime examples - CHECK
+=======
+>>>>>>> fix linting warnings with spec.md
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `CHECK` action.
 
@@ -590,8 +593,11 @@ Given the same network configuration JSON list, the container runtime would perf
       }
     }
     ```
+<<<<<<< HEAD
 
 #### Network configuration list runtime examples - DEL
+=======
+>>>>>>> fix linting warnings with spec.md
 
 Given the same network configuration JSON list, the container runtime would perform the following steps for the `DEL` action.
 
