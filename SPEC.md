@@ -430,16 +430,16 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
     "interfaces": [
         {
             "name": "cni0",
-            "mac": "00:11:22:33:44:55",
+            "mac": "00:11:22:33:44:55"
         },
         {
             "name": "veth3243",
-            "mac": "55:44:33:22:11:11",
+            "mac": "55:44:33:22:11:11"
         },
         {
             "name": "eth0",
             "mac": "99:88:77:66:55:44",
-            "sandbox": "/var/run/netns/blue",
+            "sandbox": "/var/run/netns/blue"
         }
     ],
     "dns": {
@@ -484,16 +484,16 @@ Given the same network configuration JSON list, the container runtime would perf
     "interfaces": [
         {
             "name": "cni0",
-            "mac": "00:11:22:33:44:55",
+            "mac": "00:11:22:33:44:55"
         },
         {
             "name": "veth3243",
-            "mac": "55:44:33:22:11:11",
+            "mac": "55:44:33:22:11:11"
         },
         {
             "name": "eth0",
             "mac": "99:88:77:66:55:44",
-            "sandbox": "/var/run/netns/blue",
+            "sandbox": "/var/run/netns/blue"
         }
     ],
     "dns": {
@@ -524,16 +524,16 @@ Given the same network configuration JSON list, the container runtime would perf
     "interfaces": [
         {
             "name": "cni0",
-            "mac": "00:11:22:33:44:55",
+            "mac": "00:11:22:33:44:55"
         },
         {
             "name": "veth3243",
-            "mac": "55:44:33:22:11:11",
+            "mac": "55:44:33:22:11:11"
         },
         {
             "name": "eth0",
             "mac": "99:88:77:66:55:44",
-            "sandbox": "/var/run/netns/blue",
+            "sandbox": "/var/run/netns/blue"
         }
     ],
     "dns": {
@@ -619,16 +619,16 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
     "interfaces": [
         {
             "name": "cni0",
-            "mac": "00:11:22:33:44:55",
+            "mac": "00:11:22:33:44:55"
         },
         {
             "name": "veth3243",
-            "mac": "55:44:33:22:11:11",
+            "mac": "55:44:33:22:11:11"
         },
         {
             "name": "eth0",
             "mac": "99:88:77:66:55:44",
-            "sandbox": "/var/run/netns/blue",
+            "sandbox": "/var/run/netns/blue"
         }
     ],
     "dns": {
