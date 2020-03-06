@@ -89,6 +89,7 @@ The operations that CNI plugins must support are:
     - **Interfaces list**. Depending on the plugin, this can include the sandbox (eg, container or hypervisor) interface name and/or the host interface name, the hardware addresses of each interface, and details about the sandbox (if any) the interface is in.
     - **IP configuration assigned to each interface**. The IPv4 and/or IPv6 addresses, gateways, and routes assigned to sandbox and/or host interfaces.
     - **DNS information**. Dictionary that includes DNS information for nameservers, domain, search domains and options.
+    - **Extra result**. An optional dictionary that includes additional information, it could be consumed by the downstream plugins for making some plugin-specifically tasks.
 
 - `DEL`: Delete container from network
   - Parameters:
@@ -160,7 +161,7 @@ Network configuration in JSON format must be streamed to the plugin through stdi
 
 Note that IPAM plugins should return an abbreviated `Result` structure as described in [IP Allocation](#ip-allocation).
 
-Plugins must indicate success with a return code of zero and the following JSON printed to stdout in the case of the ADD command. The `ips`, `dns` and `capabilityArgs` items should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details) except that the plugin should fill in the `interface` indexes appropriately, which are missing from IPAM plugin output since IPAM plugins should be unaware of interfaces.
+Plugins must indicate success with a return code of zero and the following JSON printed to stdout in the case of the ADD command. The `ips`, `dns` items should be the same output as was returned by the IPAM plugin (see [IP Allocation](#ip-allocation) for details) except that the plugin should fill in the `interface` indexes appropriately, which are missing from IPAM plugin output since IPAM plugins should be unaware of interfaces. The `extras` item is optional, if it is set, the plugin is free to update it or keep it with the same.
 
 ```
 {
@@ -194,7 +195,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
     "search": <list-of-additional-search-domains>            (optional)
     "options": <list-of-options>                             (optional)
   },
-  "capabilityArgs": {                                        (optional)
+  "extras": {                                                (optional)
     "<name-of-the-arg>": <value-of-the-arg>                  (optional)
     ...
   }
@@ -220,8 +221,8 @@ See the [Routes well-known structure](#routes) section for more information.
 The `dns` field contains a dictionary consisting of common DNS information.
 See the [DNS well-known structure](#dns) section for more information.
 
-The `capabilityArgs` field contains a dictionary which carries additional plugin execution information.
-See the [CapabilityArgs well-known structure](#capabilityArgs) section for more information.
+The `extras` field contains a dictionary which carries additional plugin execution information.
+See the [Extras well-known structure](#extras) section for more information.
 
 The specification does not declare how this information must be processed by CNI consumers.
 Examples include generating an `/etc/resolv.conf` file to be injected into the container filesystem or running a DNS forwarder on the host.
@@ -451,7 +452,8 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
     ],
     "dns": {
       "nameservers": [ "10.1.0.1" ]
-    }
+    },
+    "extras": {},
   }
 }
 ```
@@ -505,7 +507,8 @@ Given the same network configuration JSON list, the container runtime would perf
     ],
     "dns": {
       "nameservers": [ "10.1.0.1" ]
-    }
+    },
+    "extras": {},
   }
 }
 ```
@@ -545,7 +548,8 @@ Given the same network configuration JSON list, the container runtime would perf
     ],
     "dns": {
       "nameservers": [ "10.1.0.1" ]
-    }
+    },
+    "extras": {},
   }
 }
 ```
@@ -588,7 +592,8 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
     ],
     "dns": {
       "nameservers": [ "10.1.0.1" ]
-    }
+    },
+    "extras": {},
   }
 }
 ```
@@ -640,7 +645,8 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
     ],
     "dns": {
       "nameservers": [ "10.1.0.1" ]
-    }
+    },
+    "extras": {}
   }
 }
 ```
@@ -681,7 +687,7 @@ Success must be indicated by a zero return code and the following JSON being pri
     "search": <list-of-search-domains>              (optional)
     "options": <list-of-options>                    (optional)
   },
-  "capabilityArgs": {                               (optional)
+  "extras": {                                       (optional)
     "<name-of-the-arg>": <value-of-the-arg>         (optional)
     ...
   }
@@ -701,8 +707,8 @@ See the [Routes well-known structure](#routes) section for more information.
 The `dns` field contains a dictionary consisting of common DNS information.
 See the [DNS well-known structure](#dns) section for more information.
 
-The `capabilityArgs` field contains a dictionary which carries additional plugin execution information.
-See the [CapabilityArgs well-known structure](#capabilityArgs) section for more information.
+The `extras` field contains a dictionary which carries additional plugin execution information.
+See the [Extras well-known structure](#extras) section for more information.
 
 Errors and logs are communicated in the same way as the CNI plugin. See [CNI Plugin Result](#result) section for details.
 
@@ -778,17 +784,17 @@ The `dns` field contains a dictionary consisting of common DNS information.
 - `options` (list of strings): list of options that can be passed to the resolver.
   See [CNI Plugin Result](#result) section for more information.
 
-#### CapabilityArgs
+#### Extras
 
 ```
-  "capabilityArgs": {                               (optional)
+  "extras": {                                       (optional)
     "<name-of-the-arg>": <value-of-the-arg>         (optional)
     ...
   }
 ```
 
-The `capabilityArgs` field contains a dictionary which carries additional plugin execution information.
-For the each item of `capabilityArgs`, both the key and value are string type. If `capabilityArgs` is set, it could be passed through the chain, and the downstream plugins could consume this additional information.
+The `extras` field contains a dictionary which carries additional plugin execution information.
+For the each item of `extras`, both the key and value are string type. If `extras` is set, it could be passed through the chain, and the downstream plugins could consume this additional information.
 
 ## Well-known Error Codes
 
