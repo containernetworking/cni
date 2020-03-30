@@ -243,6 +243,7 @@ The network configuration is described in JSON form. The configuration may be st
 - `type` (string): Refers to the filename of the CNI plugin executable.
 - `args` (dictionary, optional): Additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under `args`.
 - `ipMasq` (boolean, optional): If supported by the plugin, sets up an IP masquerade on the host for this network. This is necessary if the host will act as a gateway to subnets that are not able to route to the IP assigned to the container.
+- `networkScaling` (boolean, optional): If supported by the plugin, sets up an RPS/RFS for this network.
 - `ipam` (dictionary, optional): Dictionary with IPAM specific values:
   - `type` (string): Refers to the filename of the IPAM plugin executable.
 - `dns` (dictionary, optional): Dictionary with DNS specific values:
