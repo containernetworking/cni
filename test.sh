@@ -4,13 +4,14 @@ set -euo pipefail
 # switch into the repo root directory
 cd "$(dirname $0)"
 
+PKGS=${PKGS:-$(go list ./... | xargs echo)}
+
 echo -n "Running tests "
 function testrun {
     bash -c "umask 0; PATH=$PATH go test $@"
 }
 if [ ! -z "${COVERALLS:-""}" ]; then
     # coverage profile only works per-package
-    PKGS="$(go list ./... | xargs echo)"
     echo "with coverage profile generation..."
     i=0
     for t in ${PKGS}; do
@@ -21,18 +22,20 @@ if [ ! -z "${COVERALLS:-""}" ]; then
     goveralls -service=travis-ci -coverprofile=gover.coverprofile
 else
     echo "without coverage profile generation..."
-    testrun "./..."
+    for t in ${PKGS}; do
+        testrun "${t}"
+    done
 fi
 
 echo "Checking gofmt..."
-fmtRes=$(go fmt ./...)
+fmtRes=$(go fmt ${PKGS})
 if [ -n "${fmtRes}" ]; then
 	echo -e "go fmt checking failed:\n${fmtRes}"
 	exit 255
 fi
 
 echo "Checking govet..."
-vetRes=$(go vet ./...)
+vetRes=$(go vet ${PKGS})
 if [ -n "${vetRes}" ]; then
 	echo -e "go vet checking failed:\n${vetRes}"
 	exit 255
