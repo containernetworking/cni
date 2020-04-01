@@ -110,18 +110,15 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	debug.CmdArgs = *args
 	debug.Command = command
 
-	if debug.ReportResult == "" {
-		debug.ReportResult = fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
-	}
-
 	err = debug.WriteDebug(debugFilePath)
 	if err != nil {
 		return err
 	}
 
-	_, err = os.Stderr.WriteString(debug.ReportStderr)
-	if err != nil {
-		return err
+	if debug.ReportStderr != "" {
+		if _, err = os.Stderr.WriteString(debug.ReportStderr); err != nil {
+			return err
+		}
 	}
 
 	if debug.ReportError != "" {
@@ -149,13 +146,16 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if debug.ReportResult != "" {
 		_, err = os.Stdout.WriteString(debug.ReportResult)
 		if err != nil {
 			return err
 		}
 	}
 
+	if debug.ExitWithCode > 0 {
+		os.Exit(debug.ExitWithCode)
+	}
 	return nil
 }
 

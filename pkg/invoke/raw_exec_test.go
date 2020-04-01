@@ -105,14 +105,39 @@ var _ = Describe("RawExec", func() {
 
 	Context("when the plugin errors", func() {
 		BeforeEach(func() {
-			debug.ReportError = "banana"
-			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+			debug.ReportResult = ""
 		})
 
-		It("wraps and returns the error", func() {
+		Context("and writes valid error JSON to stdout", func() {
+			It("wraps and returns the error", func() {
+				debug.ReportError = "banana"
+				Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+				_, err := execer.ExecPlugin(ctx, pathToPlugin, stdin, environ)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError("banana"))
+			})
+		})
+
+		Context("and writes to stderr", func() {
+			It("returns an error message with stderr output", func() {
+				debug.ExitWithCode = 1
+				Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+				_, err := execer.ExecPlugin(ctx, pathToPlugin, stdin, environ)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(`netplugin failed: "some stderr message"`))
+			})
+		})
+	})
+
+	Context("when the plugin errors with no output on stdout or stderr", func() {
+		It("returns the exec error message", func() {
+			debug.ExitWithCode = 1
+			debug.ReportResult = ""
+			debug.ReportStderr = ""
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 			_, err := execer.ExecPlugin(ctx, pathToPlugin, stdin, environ)
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("banana"))
+			Expect(err).To(MatchError("netplugin failed with no error message: exit status 1"))
 		})
 	})
 
