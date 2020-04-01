@@ -31,26 +31,27 @@ type RawExec struct {
 
 func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
 	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
 	c := exec.CommandContext(ctx, pluginPath)
 	c.Env = environ
 	c.Stdin = bytes.NewBuffer(stdinData)
 	c.Stdout = stdout
-	c.Stderr = e.Stderr
+	c.Stderr = stderr
 	if err := c.Run(); err != nil {
-		return nil, pluginErr(err, stdout.Bytes())
+		return nil, pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
 	return stdout.Bytes(), nil
 }
 
-func pluginErr(err error, output []byte) error {
+func pluginErr(err error, output, stderr []byte) error {
 	if exitError, ok := err.(*exec.ExitError); ok {
 		emsg := types.Error{}
 		if len(output) == 0 {
-			if len(exitError.Stderr) == 0 {
-				emsg.Msg = "netplugin failed with no error message"
+			if len(stderr) == 0 {
+				emsg.Msg = "netplugin failed with no error message: " + exitError.Error()
 			} else {
-				emsg.Msg = fmt.Sprintf("netplugin failed: %q", string(exitError.Stderr))
+				emsg.Msg = fmt.Sprintf("netplugin failed: %q", string(stderr))
 			}
 		} else if perr := json.Unmarshal(output, &emsg); perr != nil {
 			emsg.Msg = fmt.Sprintf("netplugin failed but error parsing its diagnostic message %q: %v", string(output), perr)
