@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
@@ -37,7 +39,24 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 	c.Stdin = bytes.NewBuffer(stdinData)
 	c.Stdout = stdout
 	c.Stderr = stderr
-	if err := c.Run(); err != nil {
+
+	// Retry the command on "text file busy" errors
+	for i := 0; i <= 5; i++ {
+		err := c.Run()
+
+		// Command succeeded
+		if err == nil {
+			break
+		}
+
+		// If the plugin is currently about to be written, then we wait a
+		// second and try it again
+		if strings.Contains(err.Error(), "text file busy") {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// All other errors except than the busy text file
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
