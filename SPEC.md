@@ -277,7 +277,7 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
-#### Example pci configuration
+#### Example ovs configuration
 
 ```jsonc
 {
