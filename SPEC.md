@@ -300,7 +300,7 @@ Plugins may define additional fields that they accept and may generate an error 
 }
 ```
 
-#### Example wan configuration
+#### Example macvlan configuration
 
 ```jsonc
 {
