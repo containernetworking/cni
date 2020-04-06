@@ -1,18 +1,31 @@
 # Container Network Interface Specification
 
-- [Version](#version)
-- [Overview](#overview)
-- [General considerations](#general-considerations)
-- [CNI Plugin](#cni-plugin)
-  * [Overview](#overview-1)
-  * [Parameters](#parameters)
-  * [Result](#result)
-  * [Network Configuration](#network-configuration)
-  * [Example configurations](#example-configurations)
-  * [Network Configuration Lists](#network-configuration-lists)
-  * [IP Allocation](#ip-allocation)
-  * [Well-known Structures](#well-known-structures)
-- [Well-known Error Codes](#well-known-error-codes)
+- [Container Network Interface Specification](#container-network-interface-specification)
+  - [Version](#version)
+      - [Released versions](#released-versions)
+  - [Overview](#overview)
+  - [General considerations](#general-considerations)
+  - [CNI Plugin](#cni-plugin)
+    - [Overview](#overview-1)
+    - [Parameters](#parameters)
+    - [Result](#result)
+    - [Network Configuration](#network-configuration)
+    - [Example configurations](#example-configurations)
+      - [Example bridge configuration](#example-bridge-configuration)
+      - [Example ovs configuration](#example-ovs-configuration)
+      - [Example macvlan configuration](#example-macvlan-configuration)
+    - [Network Configuration Lists](#network-configuration-lists)
+      - [Network Configuration List Error Handling](#network-configuration-list-error-handling)
+      - [Example network configuration lists](#example-network-configuration-lists)
+      - [Network configuration list runtime examples](#network-configuration-list-runtime-examples)
+    - [IP Allocation](#ip-allocation)
+      - [IP Address Management (IPAM) Interface](#ip-address-management-ipam-interface)
+      - [Notes](#notes)
+    - [Well-known Structures](#well-known-structures)
+      - [IPs](#ips)
+      - [Routes](#routes)
+      - [DNS](#dns)
+  - [Well-known Error Codes](#well-known-error-codes)
 
 ## Version
 
@@ -778,11 +791,11 @@ Error codes 1-99 must not be used other than as specified here.
 
 Error Code|Error Description
 ---|---
-- `1`|Incompatible CNI version
-- `2`|Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
-- `3`|Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
-- `4`|Invalid necessary environment variables, like CNI_COMMAND, CNI_CONTAINERID, etc. The error message must contain the names of invalid variables.
-- `5`|I/O failure. For example, failed to read network config bytes from stdin.
-- `6`|Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
-- `7`|Invalid network config. If some validations on network configs do not pass, this error will be raised.
-- `11`|Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
+`-1`|Incompatible CNI version
+`-2`|Unsupported field in network configuration. The error message must contain the key and value of the unsupported field.
+`-3`|Container unknown or does not exist. This error implies the runtime does not need to perform any container network cleanup (for example, calling the `DEL` action on the container).
+`-4`|Invalid necessary environment variables, like CNI_COMMAND, CNI_CONTAINERID, etc. The error message must contain the names of invalid variables.
+`-5`|I/O failure. For example, failed to read network config bytes from stdin.
+`-6`|Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
+`-7`|Invalid network config. If some validations on network configs do not pass, this error will be raised.
+`-11`|Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
