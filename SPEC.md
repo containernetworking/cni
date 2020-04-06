@@ -331,9 +331,7 @@ The list is described in JSON form, and can be stored on disk or generated from 
 - `plugins` (list): A list of standard CNI network configuration dictionaries (see above).
 
 When executing a plugin list, the runtime MUST replace the `name` and `cniVersion` fields in each individual network configuration in the list with the `name` and `cniVersion` field of the list itself. This ensures that the name and CNI version is the same for all plugin executions in the list, preventing versioning conflicts between plugins.
-The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration.
-
-See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
+The runtime may also pass capability-based keys as a map in the top-level `runtimeConfig` key of the plugin's config JSON if a plugin advertises it supports a specific capability via the `capabilities` key of its network configuration.  The key passed in `runtimeConfig` MUST match the name of the specific capability from the `capabilities` key of the plugins network configuration. See CONVENTIONS.md for more information on capabilities and how they are sent to plugins via the `runtimeConfig` key.
 
 For the `ADD` action, the runtime MUST also add a `prevResult` field to the configuration JSON of any plugin after the first one, which MUST be the `Result` of the previous plugin (if any) in JSON format ([see below](#network-configuration-list-runtime-examples)).
 For the `CHECK` and `DEL` actions, the runtime MUST (except that it may be omitted for `DEL` if not available) add a `prevResult` field to the configuration JSON of each plugin, which MUST be the `Result` of the immediately previous `ADD` action in JSON format ([see below](#network-configuration-list-runtime-examples)).
