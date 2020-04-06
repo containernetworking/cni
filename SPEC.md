@@ -256,7 +256,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ### Example configurations
 
-#### Example dbnet configuration
+#### Example bridge configuration
 
 ```jsonc
 {
