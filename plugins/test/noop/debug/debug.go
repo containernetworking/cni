@@ -31,6 +31,7 @@ type Debug struct {
 	ReportError          string
 	ReportStderr         string
 	ReportVersionSupport []string
+	ExitWithCode         int
 
 	// Command stores the CNI command that the plugin received
 	Command string
