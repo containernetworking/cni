@@ -156,7 +156,9 @@ var _ = Describe("Invoking plugins", func() {
 			Expect(debugFile.Close()).To(Succeed())
 			debugFilePath = debugFile.Name()
 
-			debug = &noop_debug.Debug{}
+			debug = &noop_debug.Debug{
+				ReportResult: fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage),
+			}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
 			pluginConfig = []byte(fmt.Sprintf(`{

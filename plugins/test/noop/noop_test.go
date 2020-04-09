@@ -196,9 +196,46 @@ var _ = Describe("No-op plugin", func() {
 			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 		})
 
-		It("substitutes a helpful message for the test author", func() {
-			expectedResultString := fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
+		It("returns no result", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(Equal([]byte{}))
 
+			debug, err := noop_debug.ReadDebug(debugFileName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debug.ReportResult).To(Equal(""))
+		})
+	})
+
+	Context("when the ExitWithCode debug field is set", func() {
+		BeforeEach(func() {
+			debug.ReportResult = ""
+			debug.ExitWithCode = 3
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+		})
+
+		It("returns no result and exits with the expected code", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(3))
+			Expect(session.Out.Contents()).To(Equal([]byte{}))
+
+			debug, err := noop_debug.ReadDebug(debugFileName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(debug.ReportResult).To(Equal(""))
+		})
+	})
+
+	Context("when the ReportResult debug field is set", func() {
+		var expectedResultString = fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
+
+		BeforeEach(func() {
+			debug.ReportResult = expectedResultString
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+		})
+
+		It("substitutes a helpful message for the test author", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
