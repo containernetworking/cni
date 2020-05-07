@@ -79,6 +79,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Cisco ACI CNI - for on-prem and cloud container networking with consistent policy and security model.](https://github.com/noironetworks/aci-containers)
 - [Kube-OVN - a CNI plugin that bases on OVN/OVS and provides advanced features like subnet, static ip, ACL, QoS, etc.](https://github.com/alauda/kube-ovn)
 - [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
+- [OVN4NFV-K8S-Plugin - a OVN based CNI controller plugin to provide cloud native based Service function chaining(SFC), Multiple OVN overlay networking](https://github.com/opnfv/ovn4nfv-k8s-plugin)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
