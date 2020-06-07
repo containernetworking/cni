@@ -13,15 +13,6 @@ The CNI maintainers are hosting two sessions at KubeCon / CloudNativeCon 2019:
 - [Introduction to CNI](https://kccncna19.sched.com/event/Uaif/introduction-to-cni-the-container-network-interface-project-bryan-boreham-weaveworks-dan-williams-red-hat)
 - [CNI deep dive](https://kccncna19.sched.com/event/Uaga/deep-dive-cni-bryan-boreham-weaveworks-dan-williams-red-hat)
 
----
-
-# CNI Slack
-
-The CNI slack has been sunsetted - please join us in #cni and #cni-dev on the [CNCF slack](https://slack.cncf.io/)
-
-
----
-
 # CNI - the Container Network Interface
 
 ## What is CNI?
@@ -221,8 +212,7 @@ binary; as this is a developer tool we suggest you build it yourself.
 
 ## Contact
 
-For any questions about CNI, please reach out on the mailing list:
+For any questions about CNI, please reach out via:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
-- IRC: #[containernetworking](irc://irc.freenode.org:6667/#containernetworking) channel on freenode.org
-- #cni on the [CNCF slack](https://slack.cncf.io/)
-
+- IRC: #[containernetworking](irc://irc.freenode.net:6667/#containernetworking) channel on [freenode.net](https://freenode.net/)
+- Slack: #cni on the [CNCF slack](https://slack.cncf.io/).  NOTE: the previous CNI Slack (containernetworking.slack.com) has been sunsetted.
