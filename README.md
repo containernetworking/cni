@@ -6,13 +6,6 @@
 
 ---
 
-# CNI at KubeCon / CloudNativeCon
-
-The CNI maintainers are hosting two sessions at KubeCon / CloudNativeCon 2019:
-
-- [Introduction to CNI](https://kccncna19.sched.com/event/Uaif/introduction-to-cni-the-container-network-interface-project-bryan-boreham-weaveworks-dan-williams-red-hat)
-- [CNI deep dive](https://kccncna19.sched.com/event/Uaga/deep-dive-cni-bryan-boreham-weaveworks-dan-williams-red-hat)
-
 # CNI - the Container Network Interface
 
 ## What is CNI?
@@ -25,6 +18,11 @@ As well as the [specification](SPEC.md), this repository contains the Go source 
 
 The template code makes it straight-forward to create a CNI plugin for an existing container networking project.
 CNI also makes a good framework for creating a new container networking project from scratch.
+
+Here are the recordings of two sessions that the CNI maintainers hosted at KubeCon/CloudNativeCon 2019:
+
+- [Introduction to CNI](https://youtu.be/YjjrQiJOyME)
+- [CNI deep dive](https://youtu.be/zChkx-AB5Xc)
 
 ## Why develop CNI?
 
