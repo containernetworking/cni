@@ -7,14 +7,14 @@ it easier to get your contribution accepted.
 
 We gratefully welcome improvements to documentation as well as to code.
 
-# Certificate of Origin
+## Certificate of Origin
 
 By contributing to this project you agree to the Developer Certificate of
 Origin (DCO). This document was created by the Linux Kernel community and is a
 simple statement that you, as a contributor, have the legal right to make the
 contribution. See the [DCO](DCO) file for details.
 
-# Email and Chat
+## Email and Chat
 
 The project uses the cni-dev email list, IRC chat, and Slack:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
@@ -39,14 +39,15 @@ This is a rough outline of how to prepare a contribution:
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.
 - If you changed code:
-   - add automated tests to cover your changes, using the [Ginkgo](https://onsi.github.io/ginkgo/) & [Gomega](https://onsi.github.io/gomega/) style
-   - if the package did not previously have any test coverage, add it to the list
+  - add automated tests to cover your changes, using the [Ginkgo](https://onsi.github.io/ginkgo/) & [Gomega](https://onsi.github.io/gomega/) style
+  - if the package did not previously have any test coverage, add it to the list
    of `TESTABLE` packages in the `test.sh` script.
-   - run the full test script and ensure it passes
+  - run the full test script and ensure it passes
 - Make sure any new code files have a license header (this is now enforced by automated tests)
 - Submit a pull request to the original repository.
 
 ## How to run the test suite
+
 We generally require test coverage of any new features or bug fixes.
 
 Here's how you can run the test suite on any system (even Mac or Windows) using
@@ -67,15 +68,15 @@ cd libcni
 go test
 ```
 
-# Acceptance policy
+## Acceptance policy
 
 These things will make a PR more likely to be accepted:
 
- * a well-described requirement
- * tests for new code
- * tests for old code!
- * new code and tests follow the conventions in old code and tests
- * a good commit message (see below)
+- a well-described requirement
+- tests for new code
+- tests for old code!
+- new code and tests follow the conventions in old code and tests
+- a good commit message (see below)
 
 In general, we will merge a PR once two maintainers have endorsed it.
 Trivial changes (e.g., corrections to spelling) may get waved through.
@@ -87,7 +88,7 @@ We follow a rough convention for commit messages that is designed to answer two
 questions: what changed and why. The subject line should feature the what and
 the body of the commit should describe the why.
 
-```
+```md
 scripts: add the test-cluster command
 
 this uses tmux to setup a test cluster that you can easily kill and
@@ -98,7 +99,7 @@ Fixes #38
 
 The format can be described more formally as follows:
 
-```
+```md
 <subsystem>: <what changed>
 <BLANK LINE>
 <why this change was made>
@@ -112,6 +113,7 @@ This allows the message to be easier to read on GitHub as well as in various
 git tools.
 
 ## 3rd party plugins
+
 So you've built a CNI plugin.  Where should it live?
 
 Short answer: We'd be happy to link to it from our [list of 3rd party plugins](README.md#3rd-party-plugins).
