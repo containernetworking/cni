@@ -16,10 +16,10 @@ contribution. See the [DCO](DCO) file for details.
 
 ## Email and Chat
 
-The project uses the cni-dev email list and IRC chat:
-
+The project uses the cni-dev email list, IRC chat, and Slack:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.net:6667/#containernetworking) channel on [freenode.net](https://freenode.net/)
+- Slack: #cni on the [CNCF slack](https://slack.cncf.io/).  NOTE: the previous CNI Slack (containernetworking.slack.com) has been sunsetted.
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
 are very busy and read the mailing lists.
