@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package testhelpers_test
+package testhelpers
 
 import (
 	"io/ioutil"
@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/containernetworking/cni/pkg/version/testhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -59,7 +58,7 @@ func main() { skel.PluginMain(c, c) }
 	It("builds the provided source code using the CNI library at the given git ref", func() {
 		Expect(outputFilePath).NotTo(BeAnExistingFile())
 
-		err := testhelpers.BuildAt(programSource, gitRef, outputFilePath)
+		err := BuildAt(programSource, gitRef, outputFilePath)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(outputFilePath).To(BeAnExistingFile())
@@ -71,40 +70,3 @@ func main() { skel.PluginMain(c, c) }
 		Expect(output).To(ContainSubstring("unknown CNI_COMMAND: VERSION"))
 	})
 })
-
-var _ = Describe("LocateCurrentGitRepo", func() {
-	It("returns the path to the root of the CNI git repo", func() {
-		path, err := testhelpers.LocateCurrentGitRepo()
-		Expect(err).NotTo(HaveOccurred())
-
-		AssertItIsTheCNIRepoRoot(path)
-	})
-
-	Context("when run from a different directory", func() {
-		BeforeEach(func() {
-			os.Chdir("..")
-		})
-
-		It("still finds the CNI repo root", func() {
-			path, err := testhelpers.LocateCurrentGitRepo()
-			Expect(err).NotTo(HaveOccurred())
-
-			AssertItIsTheCNIRepoRoot(path)
-		})
-	})
-})
-
-func AssertItIsTheCNIRepoRoot(path string) {
-	Expect(path).To(BeADirectory())
-	files, err := ioutil.ReadDir(path)
-	Expect(err).NotTo(HaveOccurred())
-
-	names := []string{}
-	for _, file := range files {
-		names = append(names, file.Name())
-	}
-
-	Expect(names).To(ContainElement("SPEC.md"))
-	Expect(names).To(ContainElement("libcni"))
-	Expect(names).To(ContainElement("cnitool"))
-}
