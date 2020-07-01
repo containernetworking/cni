@@ -23,12 +23,10 @@ package testhelpers
 import (
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 const packageBaseName = "github.com/containernetworking/cni"
@@ -42,114 +40,63 @@ func run(cmd *exec.Cmd) error {
 	return nil
 }
 
-func goBuildEnviron(gopath string) []string {
-	environ := os.Environ()
-	for i, kvp := range environ {
-		if strings.HasPrefix(kvp, "GOPATH=") {
-			environ[i] = "GOPATH=" + gopath
-			return environ
+// unset GOPATH if it's set, so we use modules
+func goBuildEnviron() []string {
+	out := []string{}
+	for _, kvp := range os.Environ() {
+		if !strings.HasPrefix(kvp, "GOPATH=") {
+			out = append(out, kvp)
 		}
 	}
-	environ = append(environ, "GOPATH="+gopath)
-	return environ
+	return out
 }
 
-func buildGoProgram(gopath, packageName, outputFilePath string) error {
-	cmd := exec.Command("go", "build", "-o", outputFilePath, packageName)
-	cmd.Env = goBuildEnviron(gopath)
+func buildGoProgram(modPath, outputFilePath string) error {
+	cmd := exec.Command("go", "build", "-o", outputFilePath, ".")
+	cmd.Dir = modPath
+	cmd.Env = goBuildEnviron()
 	return run(cmd)
 }
 
-func createSingleFilePackage(gopath, packageName string, fileContents []byte) error {
-	dirName := filepath.Join(gopath, "src", packageName)
-	err := os.MkdirAll(dirName, 0700)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(filepath.Join(dirName, "main.go"), fileContents, 0600)
+func modInit(path, name string) error {
+	cmd := exec.Command("go", "mod", "init", name)
+	cmd.Dir = path
+	return run(cmd)
 }
 
-func removePackage(gopath, packageName string) error {
-	dirName := filepath.Join(gopath, "src", packageName)
-	return os.RemoveAll(dirName)
-}
-
-func isRepoRoot(path string) bool {
-	_, err := ioutil.ReadDir(filepath.Join(path, ".git"))
-	return (err == nil) && (filepath.Base(path) == "cni")
-}
-
-func LocateCurrentGitRepo() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for i := 0; i < 5; i++ {
-		if isRepoRoot(dir) {
-			return dir, nil
-		}
-
-		dir, err = filepath.Abs(filepath.Dir(dir))
-		if err != nil {
-			return "", fmt.Errorf("abs(dir(%q)): %s", dir, err)
-		}
-	}
-
-	return "", fmt.Errorf("unable to find cni repo root, landed at %q", dir)
-}
-
-func gitCloneThisRepo(cloneDestination string) error {
-	err := os.MkdirAll(cloneDestination, 0700)
-	if err != nil {
-		return err
-	}
-
-	currentGitRepo, err := LocateCurrentGitRepo()
-	if err != nil {
-		return err
-	}
-
-	return run(exec.Command("git", "clone", currentGitRepo, cloneDestination))
-}
-
-func gitCheckout(localRepo string, gitRef string) error {
-	return run(exec.Command("git", "-C", localRepo, "checkout", gitRef))
+func addLibcni(path, gitRef string) error {
+	cmd := exec.Command("go", "get", "github.com/containernetworking/cni@"+gitRef)
+	cmd.Dir = path
+	return run(cmd)
 }
 
 // BuildAt builds the go programSource using the version of the CNI library
 // at gitRef, and saves the resulting binary file at outputFilePath
 func BuildAt(programSource []byte, gitRef string, outputFilePath string) error {
-	tempGoPath, err := ioutil.TempDir("", "cni-git-")
+	tempDir, err := ioutil.TempDir(os.Getenv("GOTMPDIR"), "cni-test-")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempGoPath)
+	defer os.RemoveAll(tempDir)
 
-	cloneDestination := filepath.Join(tempGoPath, "src", packageBaseName)
-	err = gitCloneThisRepo(cloneDestination)
-	if err != nil {
+	modName := filepath.Base(tempDir)
+
+	if err := modInit(tempDir, modName); err != nil {
 		return err
 	}
 
-	err = gitCheckout(cloneDestination, gitRef)
-	if err != nil {
+	// go get
+	if err := addLibcni(tempDir, gitRef); err != nil {
 		return err
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	testPackageName := fmt.Sprintf("test-package-%x", rand.Int31())
-
-	err = createSingleFilePackage(tempGoPath, testPackageName, programSource)
-	if err != nil {
+	if err := ioutil.WriteFile(filepath.Join(tempDir, "main.go"), programSource, 0600); err != nil {
 		return err
 	}
-	defer removePackage(tempGoPath, testPackageName)
 
-	err = buildGoProgram(tempGoPath, testPackageName, outputFilePath)
+	err = buildGoProgram(tempDir, outputFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build: %w", err)
 	}
 
 	return nil
