@@ -214,3 +214,5 @@ For any questions about CNI, please reach out via:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.net:6667/#containernetworking) channel on [freenode.net](https://freenode.net/)
 - Slack: #cni on the [CNCF slack](https://slack.cncf.io/).  NOTE: the previous CNI Slack (containernetworking.slack.com) has been sunsetted.
+
+If you have a _security_ issue to report, please do so privately to the email addresses listed in the [MAINTAINERS](MAINTAINERS) file.
