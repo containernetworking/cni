@@ -97,7 +97,7 @@ var _ = Describe("Version operations", func() {
 			}
 
 			err := version.ParsePrevResult(conf)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(MatchError("could not parse prevResult: result type supports [0.3.0 0.3.1 0.4.0] but unmarshalled CNIVersion is \"5678.456\""))
 		})
 
 		It("fails if the prevResult is invalid", func() {
@@ -111,7 +111,25 @@ var _ = Describe("Version operations", func() {
 			}
 
 			err := version.ParsePrevResult(conf)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).To(MatchError("could not parse prevResult: result type supports [0.3.0 0.3.1 0.4.0] but unmarshalled CNIVersion is \"\""))
+		})
+
+		It("fails if the prevResult version does not match the prevResult version", func() {
+			conf := &types.NetConf{
+				CNIVersion: "0.3.0",
+				Name:       "foobar",
+				Type:       "baz",
+				RawPrevResult: map[string]interface{}{
+					"cniVersion": "0.2.0",
+					"ip4": map[string]interface{}{
+						"ip":      "1.2.3.30/24",
+						"gateway": "1.2.3.1",
+					},
+				},
+			}
+
+			err := version.ParsePrevResult(conf)
+			Expect(err).To(MatchError("could not parse prevResult: result type supports [0.3.0 0.3.1 0.4.0] but unmarshalled CNIVersion is \"0.2.0\""))
 		})
 	})
 

@@ -157,7 +157,11 @@ var _ = Describe("Invoking plugins", func() {
 			debugFilePath = debugFile.Name()
 
 			debug = &noop_debug.Debug{
-				ReportResult: fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage),
+				ReportResult: `{
+					"cniVersion": "0.4.0",
+					"ips": [{"version": "4", "address": "10.1.2.3/24"}],
+					"dns": {}
+				}`,
 			}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 

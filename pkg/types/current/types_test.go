@@ -174,7 +174,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(string(out)).To(MatchJSON(`{
-    "cniVersion": "0.2.0",
+    "cniVersion": "0.1.0",
     "ip4": {
         "ip": "1.2.3.30/24",
         "gateway": "1.2.3.1",

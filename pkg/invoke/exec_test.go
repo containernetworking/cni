@@ -42,7 +42,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 	BeforeEach(func() {
 		rawExec = &fakes.RawExec{}
-		rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "ips": [ { "version": "4", "address": "1.2.3.4/24" } ] }`)
+		rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "cniVersion": "0.3.1", "ips": [ { "version": "4", "address": "1.2.3.4/24" } ] }`)
 
 		versionDecoder = &fakes.VersionDecoder{}
 		versionDecoder.DecodeCall.Returns.PluginInfo = version.PluginSupports("0.42.0")

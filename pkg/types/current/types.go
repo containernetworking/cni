@@ -22,19 +22,41 @@ import (
 	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/020"
+	types020 "github.com/containernetworking/cni/pkg/types/020"
+	convert "github.com/containernetworking/cni/pkg/types/internal"
 )
 
 const ImplementedSpecVersion string = "0.4.0"
 
 var SupportedVersions = []string{"0.3.0", "0.3.1", ImplementedSpecVersion}
 
+// Register converters for all versions less than the implemented spec version
+func init() {
+	// Up-converters
+	convert.Register("0.1.0", SupportedVersions, convertFrom02x)
+	convert.Register("0.2.0", SupportedVersions, convertFrom02x)
+	convert.Register("0.3.0", SupportedVersions, convertInternal)
+	convert.Register("0.3.1", SupportedVersions, convertInternal)
+
+	// Down-converters
+	convert.Register("0.4.0", []string{"0.3.0", "0.3.1"}, convertInternal)
+	convert.Register("0.4.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.Register("0.3.1", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.Register("0.3.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+}
+
 func NewResult(data []byte) (types.Result, error) {
 	result := &Result{}
 	if err := json.Unmarshal(data, result); err != nil {
 		return nil, err
 	}
-	return result, nil
+	for _, v := range SupportedVersions {
+		if result.CNIVersion == v {
+			return result, nil
+		}
+	}
+	return nil, fmt.Errorf("result type supports %v but unmarshalled CNIVersion is %q",
+		SupportedVersions, result.CNIVersion)
 }
 
 func GetResult(r types.Result) (*Result, error) {
@@ -49,76 +71,12 @@ func GetResult(r types.Result) (*Result, error) {
 	return result, nil
 }
 
-var resultConverters = []struct {
-	versions []string
-	convert  func(types.Result) (*Result, error)
-}{
-	{types020.SupportedVersions, convertFrom020},
-	{SupportedVersions, convertFrom030},
-}
-
-func convertFrom020(result types.Result) (*Result, error) {
-	oldResult, err := types020.GetResult(result)
+func NewResultFromResult(result types.Result) (*Result, error) {
+	newResult, err := convert.Convert(result, ImplementedSpecVersion)
 	if err != nil {
 		return nil, err
 	}
-
-	newResult := &Result{
-		CNIVersion: ImplementedSpecVersion,
-		DNS:        oldResult.DNS,
-		Routes:     []*types.Route{},
-	}
-
-	if oldResult.IP4 != nil {
-		newResult.IPs = append(newResult.IPs, &IPConfig{
-			Version: "4",
-			Address: oldResult.IP4.IP,
-			Gateway: oldResult.IP4.Gateway,
-		})
-		for _, route := range oldResult.IP4.Routes {
-			newResult.Routes = append(newResult.Routes, &types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
-			})
-		}
-	}
-
-	if oldResult.IP6 != nil {
-		newResult.IPs = append(newResult.IPs, &IPConfig{
-			Version: "6",
-			Address: oldResult.IP6.IP,
-			Gateway: oldResult.IP6.Gateway,
-		})
-		for _, route := range oldResult.IP6.Routes {
-			newResult.Routes = append(newResult.Routes, &types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
-			})
-		}
-	}
-
-	return newResult, nil
-}
-
-func convertFrom030(result types.Result) (*Result, error) {
-	newResult, ok := result.(*Result)
-	if !ok {
-		return nil, fmt.Errorf("failed to convert result")
-	}
-	newResult.CNIVersion = ImplementedSpecVersion
-	return newResult, nil
-}
-
-func NewResultFromResult(result types.Result) (*Result, error) {
-	version := result.Version()
-	for _, converter := range resultConverters {
-		for _, supportedVersion := range converter.versions {
-			if version == supportedVersion {
-				return converter.convert(result)
-			}
-		}
-	}
-	return nil, fmt.Errorf("unsupported CNI result22 version %q", version)
+	return newResult.(*Result), nil
 }
 
 // Result is what gets returned from the plugin (via stdout) to the caller
@@ -130,68 +88,116 @@ type Result struct {
 	DNS        types.DNS      `json:"dns,omitempty"`
 }
 
-// Convert to the older 0.2.0 CNI spec Result type
-func (r *Result) convertTo020() (*types020.Result, error) {
-	oldResult := &types020.Result{
-		CNIVersion: types020.ImplementedSpecVersion,
-		DNS:        r.DNS,
+func convert020IPConfig(from *types020.IPConfig, ipVersion string) *IPConfig {
+	return &IPConfig{
+		Version: ipVersion,
+		Address: from.IP,
+		Gateway: from.Gateway,
+	}
+}
+
+func convertFrom02x(from types.Result, toVersion string) (types.Result, error) {
+	fromResult := from.(*types020.Result)
+	toResult := &Result{
+		CNIVersion: toVersion,
+		DNS:        *fromResult.DNS.Copy(),
+		Routes:     []*types.Route{},
+	}
+	if fromResult.IP4 != nil {
+		toResult.IPs = append(toResult.IPs, convert020IPConfig(fromResult.IP4, "4"))
+		for _, fromRoute := range fromResult.IP4.Routes {
+			toResult.Routes = append(toResult.Routes, fromRoute.Copy())
+		}
 	}
 
-	for _, ip := range r.IPs {
+	if fromResult.IP6 != nil {
+		toResult.IPs = append(toResult.IPs, convert020IPConfig(fromResult.IP6, "6"))
+		for _, fromRoute := range fromResult.IP6.Routes {
+			toResult.Routes = append(toResult.Routes, fromRoute.Copy())
+		}
+	}
+
+	return toResult, nil
+}
+
+func convertInternal(from types.Result, toVersion string) (types.Result, error) {
+	fromResult := from.(*Result)
+	toResult := &Result{
+		CNIVersion: toVersion,
+		DNS:        *fromResult.DNS.Copy(),
+		Routes:     []*types.Route{},
+	}
+	for _, fromIntf := range fromResult.Interfaces {
+		toResult.Interfaces = append(toResult.Interfaces, fromIntf.Copy())
+	}
+	for _, fromIPC := range fromResult.IPs {
+		toResult.IPs = append(toResult.IPs, fromIPC.Copy())
+	}
+	for _, fromRoute := range fromResult.Routes {
+		toResult.Routes = append(toResult.Routes, fromRoute.Copy())
+	}
+	return toResult, nil
+}
+
+func convertTo02x(from types.Result, toVersion string) (types.Result, error) {
+	fromResult := from.(*Result)
+	toResult := &types020.Result{
+		CNIVersion: toVersion,
+		DNS:        *fromResult.DNS.Copy(),
+	}
+
+	for _, fromIP := range fromResult.IPs {
 		// Only convert the first IP address of each version as 0.2.0
 		// and earlier cannot handle multiple IP addresses
-		if ip.Version == "4" && oldResult.IP4 == nil {
-			oldResult.IP4 = &types020.IPConfig{
-				IP:      ip.Address,
-				Gateway: ip.Gateway,
+		if fromIP.Version == "4" && toResult.IP4 == nil {
+			toResult.IP4 = &types020.IPConfig{
+				IP:      fromIP.Address,
+				Gateway: fromIP.Gateway,
 			}
-		} else if ip.Version == "6" && oldResult.IP6 == nil {
-			oldResult.IP6 = &types020.IPConfig{
-				IP:      ip.Address,
-				Gateway: ip.Gateway,
+		} else if fromIP.Version == "6" && toResult.IP6 == nil {
+			toResult.IP6 = &types020.IPConfig{
+				IP:      fromIP.Address,
+				Gateway: fromIP.Gateway,
 			}
 		}
-
-		if oldResult.IP4 != nil && oldResult.IP6 != nil {
+		if toResult.IP4 != nil && toResult.IP6 != nil {
 			break
 		}
 	}
 
-	for _, route := range r.Routes {
-		is4 := route.Dst.IP.To4() != nil
-		if is4 && oldResult.IP4 != nil {
-			oldResult.IP4.Routes = append(oldResult.IP4.Routes, types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
+	for _, fromRoute := range fromResult.Routes {
+		is4 := fromRoute.Dst.IP.To4() != nil
+		if is4 && toResult.IP4 != nil {
+			toResult.IP4.Routes = append(toResult.IP4.Routes, types.Route{
+				Dst: fromRoute.Dst,
+				GW:  fromRoute.GW,
 			})
-		} else if !is4 && oldResult.IP6 != nil {
-			oldResult.IP6.Routes = append(oldResult.IP6.Routes, types.Route{
-				Dst: route.Dst,
-				GW:  route.GW,
+		} else if !is4 && toResult.IP6 != nil {
+			toResult.IP6.Routes = append(toResult.IP6.Routes, types.Route{
+				Dst: fromRoute.Dst,
+				GW:  fromRoute.GW,
 			})
 		}
 	}
 
-	if oldResult.IP4 == nil && oldResult.IP6 == nil {
+	if toResult.IP4 == nil && toResult.IP6 == nil {
 		return nil, fmt.Errorf("cannot convert: no valid IP addresses")
 	}
 
-	return oldResult, nil
+	return toResult, nil
 }
 
 func (r *Result) Version() string {
-	return ImplementedSpecVersion
+	return r.CNIVersion
 }
 
 func (r *Result) GetAsVersion(version string) (types.Result, error) {
-	switch version {
-	case "0.3.0", "0.3.1", ImplementedSpecVersion:
-		r.CNIVersion = version
-		return r, nil
-	case types020.SupportedVersions[0], types020.SupportedVersions[1], types020.SupportedVersions[2]:
-		return r.convertTo020()
+	// If the creator of the result did not set the CNIVersion, assume it
+	// should be the highest spec version implemented by this Result
+	if r.CNIVersion == "" {
+		r.CNIVersion = ImplementedSpecVersion
 	}
-	return nil, fmt.Errorf("cannot convert version 0.3.x to %q", version)
+	return convert.Convert(r, version)
 }
 
 func (r *Result) Print() error {
@@ -207,11 +213,6 @@ func (r *Result) PrintTo(writer io.Writer) error {
 	return err
 }
 
-// Convert this old version result to the current CNI version result
-func (r *Result) Convert() (*Result, error) {
-	return r, nil
-}
-
 // Interface contains values about the created interfaces
 type Interface struct {
 	Name    string `json:"name"`
@@ -221,6 +222,14 @@ type Interface struct {
 
 func (i *Interface) String() string {
 	return fmt.Sprintf("%+v", *i)
+}
+
+func (i *Interface) Copy() *Interface {
+	if i == nil {
+		return nil
+	}
+	newIntf := *i
+	return &newIntf
 }
 
 // Int returns a pointer to the int value passed in.  Used to
@@ -241,6 +250,23 @@ type IPConfig struct {
 
 func (i *IPConfig) String() string {
 	return fmt.Sprintf("%+v", *i)
+}
+
+func (i *IPConfig) Copy() *IPConfig {
+	if i == nil {
+		return nil
+	}
+
+	ipc := &IPConfig{
+		Version: i.Version,
+		Address: i.Address,
+		Gateway: i.Gateway,
+	}
+	if i.Interface != nil {
+		intf := *i.Interface
+		ipc.Interface = &intf
+	}
+	return ipc
 }
 
 // JSON (un)marshallable types
