@@ -20,12 +20,13 @@ import (
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/020"
-	"github.com/containernetworking/cni/pkg/types/current"
+	"github.com/containernetworking/cni/pkg/types/040"
+	current "github.com/containernetworking/cni/pkg/types/100"
 )
 
 // Current reports the version of the CNI spec implemented by this library
 func Current() string {
-	return "0.4.0"
+	return current.ImplementedSpecVersion
 }
 
 // Legacy PluginInfo describes a plugin that is backwards compatible with the
@@ -36,13 +37,14 @@ func Current() string {
 // Any future CNI spec versions which meet this definition should be added to
 // this list.
 var Legacy = PluginSupports("0.1.0", "0.2.0")
-var All = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0")
+var All = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0")
 
 var resultFactories = []struct {
 	supportedVersions []string
 	newResult         types.ResultFactoryFunc
 }{
 	{current.SupportedVersions, current.NewResult},
+	{types040.SupportedVersions, types040.NewResult},
 	{types020.SupportedVersions, types020.NewResult},
 }
 
@@ -66,6 +68,13 @@ func NewResult(version string, resultBytes []byte) (types.Result, error) {
 func ParsePrevResult(conf *types.NetConf) error {
 	if conf.RawPrevResult == nil {
 		return nil
+	}
+
+	// Prior to 1.0.0, Result types may not marshal a CNIVersion. Since the
+	// result version must match the config version, if the Result's version
+	// is empty, inject the config version.
+	if ver, ok := conf.RawPrevResult["CNIVersion"]; !ok || ver == "" {
+		conf.RawPrevResult["CNIVersion"] = conf.CNIVersion
 	}
 
 	resultBytes, err := json.Marshal(conf.RawPrevResult)

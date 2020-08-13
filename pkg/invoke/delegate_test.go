@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 
 	"github.com/containernetworking/cni/pkg/invoke"
-	"github.com/containernetworking/cni/pkg/types/current"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/plugins/test/noop/debug"
 
 	. "github.com/onsi/ginkgo"
@@ -43,14 +43,13 @@ var _ = Describe("Delegate", func() {
 	BeforeEach(func() {
 		netConf, _ = json.Marshal(map[string]string{
 			"name":       "delegate-test",
-			"cniVersion": "0.4.0",
+			"cniVersion": current.ImplementedSpecVersion,
 		})
 
 		expectedResult = &current.Result{
-			CNIVersion: "0.4.0",
+			CNIVersion: current.ImplementedSpecVersion,
 			IPs: []*current.IPConfig{
 				{
-					Version: "4",
 					Address: net.IPNet{
 						IP:   net.ParseIP("10.1.2.3"),
 						Mask: net.CIDRMask(24, 32),
