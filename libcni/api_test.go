@@ -559,6 +559,12 @@ var _ = Describe("Invoking plugins", func() {
 
 				Context("equal to 0.4.0", func() {
 					It("passes a prevResult to the plugin", func() {
+						ipResult := `{
+							"cniVersion": "0.4.0",
+							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
+							"dns": {}
+						}`
+
 						var err error
 						netConfig, err = libcni.ConfFromBytes([]byte(`{
 							"type": "noop",
@@ -572,18 +578,10 @@ var _ = Describe("Invoking plugins", func() {
 						}`))
 						Expect(err).NotTo(HaveOccurred())
 
-						err = ioutil.WriteFile(cacheFile, []byte(`{
-							"cniVersion": "0.4.0",
-							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
-							"dns": {}
-						}`), 0600)
+						err = ioutil.WriteFile(cacheFile, []byte(ipResult), 0600)
 						Expect(err).NotTo(HaveOccurred())
 
-						debug.ReportResult = `{
-							"cniVersion": "0.4.0",
-							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
-							"dns": {}
-						}`
+						debug.ReportResult = ipResult
 						Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
 						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)

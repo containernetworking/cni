@@ -99,20 +99,6 @@ var _ = Describe("Version operations", func() {
 			Expect(err).To(MatchError("could not parse prevResult: result type supports [1.0.0] but unmarshalled CNIVersion is \"5678.456\""))
 		})
 
-		It("fails if the prevResult is invalid", func() {
-			conf := &types.NetConf{
-				CNIVersion: current.ImplementedSpecVersion,
-				Name:       "foobar",
-				Type:       "baz",
-				RawPrevResult: map[string]interface{}{
-					"adsfasdfasdfasdfasdfaf": nil,
-				},
-			}
-
-			err := version.ParsePrevResult(conf)
-			Expect(err).To(MatchError("could not parse prevResult: result type supports [1.0.0] but unmarshalled CNIVersion is \"\""))
-		})
-
 		It("fails if the prevResult version does not match the prevResult version", func() {
 			conf := &types.NetConf{
 				CNIVersion: current.ImplementedSpecVersion,
