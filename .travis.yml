@@ -1,7 +1,4 @@
 language: go
-arch:
-  - amd64
-  - ppc64le
 dist: bionic
 
 go:
@@ -18,7 +15,21 @@ env:
 
 matrix:
   fast_finish: true
-
+  include:
+    - os: windows
+      env: TARGET=amd64
+      go: 1.13.x
+    - os: windows
+      env: TARGET=amd64
+      go: 1.14.x
+    - os: linux
+      env: TARGET=ppc64le
+      go: 1.13.x
+      arch: ppc64le
+    - os: linux
+      env: TARGET=ppc64le
+      go: 1.14.x
+      arch: ppc64le
 install:
  - go get golang.org/x/tools/cmd/cover
  - go get github.com/modocache/gover
@@ -28,9 +39,7 @@ install:
 script:
  - >
     if [ "${TARGET}" == "amd64" ]; then
-      if [ "${TRAVIS_CPU_ARCH}" != "ppc64le" ]; then
-         GOARCH="${TARGET}" ./test.sh;
-      fi
+        GOARCH="${TARGET}" ./test.sh;
     else
       GOARCH="${TARGET}" go list ./... | xargs -n1 go build -v -o /dev/null
     fi
