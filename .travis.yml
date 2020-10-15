@@ -15,6 +15,16 @@ env:
 
 matrix:
   fast_finish: true
+  #power on support added
+  include:
+    - os: linux
+      env: TARGET=ppc64le
+      go: 1.13.x
+      arch: ppc64le
+    - os: linux
+      env: TARGET=ppc64le
+      go: 1.14.x
+      arch: ppc64le
 
 install:
  - go get golang.org/x/tools/cmd/cover
@@ -24,12 +34,13 @@ install:
 
 script:
  - >
-    if [ "${TARGET}" == "amd64" ]; then
+    if [[ "${TARGET}" == $(go env GOARCH) ]]; then
       GOARCH="${TARGET}" ./test.sh;
+      echo "Running Test";
     else
       GOARCH="${TARGET}" go list ./... | xargs -n1 go build -v -o /dev/null
+      echo "Skipped Test";
     fi
-
 notifications:
   email: false
 
