@@ -29,7 +29,7 @@
 
 ## Version
 
-This is CNI **spec** version **0.4.0**.
+This is CNI **spec** version **1.0.0 pre-release** and is still under active development.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
@@ -152,8 +152,8 @@ Plugins should generally complete a `DEL` action without error even if some reso
 
       ```
       {
-        "cniVersion": "0.4.0", // the version of the CNI spec in use for this output
-        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0" ] // the list of CNI spec versions that this plugin supports
+        "cniVersion": "1.0.0", // the version of the CNI spec in use for this output
+        "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0" ] // the list of CNI spec versions that this plugin supports
       }
       ```
 
@@ -178,7 +178,7 @@ Plugins must indicate success with a return code of zero and the following JSON 
 
 ```
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "interfaces": [                                            (this key omitted by IPAM plugins)
       {
           "name": "<name>",
@@ -188,7 +188,6 @@ Plugins must indicate success with a return code of zero and the following JSON 
   ],
   "ips": [
       {
-          "version": "<4-or-6>",
           "address": "<ip-and-prefix-in-CIDR>",
           "gateway": "<ip-address-of-the-gateway>",          (optional)
           "interface": <numeric index into 'interfaces' list>
@@ -236,7 +235,7 @@ Examples include generating an `/etc/resolv.conf` file to be injected into the c
 Errors must be indicated by a non-zero return code and the following JSON being printed to stdout:
 ```
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "code": <numeric-error-code>,
   "msg": <short-error-message>,
   "details": <long-error-message> (optional)
@@ -273,7 +272,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "bridge",
   // type (plugin) specific
@@ -294,7 +293,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "pci",
   "type": "ovs",
   // type (plugin) specific
@@ -317,7 +316,7 @@ Plugins may define additional fields that they accept and may generate an error 
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "wan",
   "type": "macvlan",
   // ipam specific
@@ -367,7 +366,7 @@ If an `ADD` action fails, when the runtime decides to handle the failure it shou
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "plugins": [
     {
@@ -409,7 +408,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -434,7 +433,7 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
 
 ```json
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -443,7 +442,6 @@ Note that the runtime adds the `cniVersion` and `name` fields from configuration
   "prevResult": {
     "ips": [
         {
-          "version": "4",
           "address": "10.0.0.5/32",
           "interface": 2
         }
@@ -476,7 +474,7 @@ Given the same network configuration JSON list, the container runtime would perf
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -497,7 +495,6 @@ Given the same network configuration JSON list, the container runtime would perf
   "prevResult": {
     "ips": [
         {
-          "version": "4",
           "address": "10.0.0.5/32",
           "interface": 2
         }
@@ -528,7 +525,7 @@ Given the same network configuration JSON list, the container runtime would perf
 
 ```json
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -537,7 +534,6 @@ Given the same network configuration JSON list, the container runtime would perf
   "prevResult": {
     "ips": [
         {
-          "version": "4",
           "address": "10.0.0.5/32",
           "interface": 2
         }
@@ -571,7 +567,7 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
 
 ```json
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -580,7 +576,6 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
   "prevResult": {
     "ips": [
         {
-          "version": "4",
           "address": "10.0.0.5/32",
           "interface": 2
         }
@@ -611,7 +606,7 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
 
 ```jsonc
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -632,7 +627,6 @@ Note that plugins are executed in reverse order from the `ADD` and `CHECK` actio
   "prevResult": {
     "ips": [
         {
-          "version": "4",
           "address": "10.0.0.5/32",
           "interface": 2
         }
@@ -673,10 +667,9 @@ Success must be indicated by a zero return code and the following JSON being pri
 
 ```
 {
-  "cniVersion": "0.4.0",
+  "cniVersion": "1.0.0",
   "ips": [
       {
-          "version": "<4-or-6>",
           "address": "<ip-and-prefix-in-CIDR>",
           "gateway": "<ip-address-of-the-gateway>"  (optional)
       },
@@ -728,7 +721,6 @@ IPAM plugin examples:
 ```
   "ips": [
       {
-          "version": "<4-or-6>",
           "address": "<ip-and-prefix-in-CIDR>",
           "gateway": "<ip-address-of-the-gateway>",      (optional)
           "interface": <numeric index into 'interfaces' list> (not required for IPAM plugins)
@@ -740,8 +732,6 @@ IPAM plugin examples:
 The `ips` field is a list of IP configuration information determined by the plugin. Each item is a dictionary describing of IP configuration for a network interface.
 IP configuration for multiple network interfaces and multiple IP configurations for a single interface may be returned as separate items in the `ips` list.
 All properties known to the plugin should be provided, even if not strictly required.
-- `version` (string): either "4" or "6" and corresponds to the IP version of the addresses in the entry.
-   All IP addresses and gateways provided must be valid for the given `version`.
 - `address` (string): an IP address in CIDR notation (eg "192.168.1.3/24").
 - `gateway` (string): the default gateway for this subnet, if one exists.
    It does not instruct the CNI plugin to add any routes with this gateway: routes to add are specified separately via the `routes` field.
