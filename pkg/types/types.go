@@ -118,6 +118,24 @@ type DNS struct {
 	Options     []string `json:"options,omitempty"`
 }
 
+func (d *DNS) Copy() *DNS {
+	if d == nil {
+		return nil
+	}
+
+	to := &DNS{Domain: d.Domain}
+	for _, ns := range d.Nameservers {
+		to.Nameservers = append(to.Nameservers, ns)
+	}
+	for _, s := range d.Search {
+		to.Search = append(to.Search, s)
+	}
+	for _, o := range d.Options {
+		to.Options = append(to.Options, o)
+	}
+	return to
+}
+
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
@@ -125,6 +143,17 @@ type Route struct {
 
 func (r *Route) String() string {
 	return fmt.Sprintf("%+v", *r)
+}
+
+func (r *Route) Copy() *Route {
+	if r == nil {
+		return nil
+	}
+
+	return &Route{
+		Dst: r.Dst,
+		GW:  r.GW,
+	}
 }
 
 // Well known error codes

@@ -15,9 +15,9 @@
 package types020_test
 
 import (
-	"io/ioutil"
+	"encoding/json"
+	"fmt"
 	"net"
-	"os"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/020"
@@ -26,68 +26,52 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Ensures compatibility with the 0.1.0/0.2.0 spec", func() {
-	It("correctly encodes a 0.1.0/0.2.0 Result", func() {
-		ipv4, err := types.ParseCIDR("1.2.3.30/24")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(ipv4).NotTo(BeNil())
+func testResult(resultCNIVersion, jsonCNIVersion string) (*types020.Result, string) {
+	ipv4, err := types.ParseCIDR("1.2.3.30/24")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(ipv4).NotTo(BeNil())
 
-		routegwv4, routev4, err := net.ParseCIDR("15.5.6.8/24")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(routev4).NotTo(BeNil())
-		Expect(routegwv4).NotTo(BeNil())
+	routegwv4, routev4, err := net.ParseCIDR("15.5.6.8/24")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(routev4).NotTo(BeNil())
+	Expect(routegwv4).NotTo(BeNil())
 
-		ipv6, err := types.ParseCIDR("abcd:1234:ffff::cdde/64")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(ipv6).NotTo(BeNil())
+	ipv6, err := types.ParseCIDR("abcd:1234:ffff::cdde/64")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(ipv6).NotTo(BeNil())
 
-		routegwv6, routev6, err := net.ParseCIDR("1111:dddd::aaaa/80")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(routev6).NotTo(BeNil())
-		Expect(routegwv6).NotTo(BeNil())
+	routegwv6, routev6, err := net.ParseCIDR("1111:dddd::aaaa/80")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(routev6).NotTo(BeNil())
+	Expect(routegwv6).NotTo(BeNil())
 
-		// Set every field of the struct to ensure source compatibility
-		res := types020.Result{
-			CNIVersion: types020.ImplementedSpecVersion,
-			IP4: &types020.IPConfig{
-				IP:      *ipv4,
-				Gateway: net.ParseIP("1.2.3.1"),
-				Routes: []types.Route{
-					{Dst: *routev4, GW: routegwv4},
-				},
+	// Set every field of the struct to ensure source compatibility
+	res := &types020.Result{
+		CNIVersion: resultCNIVersion,
+		IP4: &types020.IPConfig{
+			IP:      *ipv4,
+			Gateway: net.ParseIP("1.2.3.1"),
+			Routes: []types.Route{
+				{Dst: *routev4, GW: routegwv4},
 			},
-			IP6: &types020.IPConfig{
-				IP:      *ipv6,
-				Gateway: net.ParseIP("abcd:1234:ffff::1"),
-				Routes: []types.Route{
-					{Dst: *routev6, GW: routegwv6},
-				},
+		},
+		IP6: &types020.IPConfig{
+			IP:      *ipv6,
+			Gateway: net.ParseIP("abcd:1234:ffff::1"),
+			Routes: []types.Route{
+				{Dst: *routev6, GW: routegwv6},
 			},
-			DNS: types.DNS{
-				Nameservers: []string{"1.2.3.4", "1::cafe"},
-				Domain:      "acompany.com",
-				Search:      []string{"somedomain.com", "otherdomain.net"},
-				Options:     []string{"foo", "bar"},
-			},
-		}
+		},
+		DNS: types.DNS{
+			Nameservers: []string{"1.2.3.4", "1::cafe"},
+			Domain:      "acompany.com",
+			Search:      []string{"somedomain.com", "otherdomain.net"},
+			Options:     []string{"foo", "bar"},
+		},
+	}
 
-		// Redirect stdout to capture JSON result
-		oldStdout := os.Stdout
-		r, w, err := os.Pipe()
-		Expect(err).NotTo(HaveOccurred())
-
-		os.Stdout = w
-		err = res.Print()
-		w.Close()
-		Expect(err).NotTo(HaveOccurred())
-
-		// parse the result
-		out, err := ioutil.ReadAll(r)
-		os.Stdout = oldStdout
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(string(out)).To(Equal(`{
-    "cniVersion": "0.2.0",
+	json := fmt.Sprintf(`{
+    "cniVersion": "%s",
     "ip4": {
         "ip": "1.2.3.30/24",
         "gateway": "1.2.3.1",
@@ -123,6 +107,41 @@ var _ = Describe("Ensures compatibility with the 0.1.0/0.2.0 spec", func() {
             "bar"
         ]
     }
-}`))
+}`, jsonCNIVersion)
+
+	return res, json
+}
+
+var _ = Describe("Ensures compatibility with the 0.1.0/0.2.0 spec", func() {
+	It("correctly encodes a 0.2.0 Result", func() {
+		res, expectedJSON := testResult(types020.ImplementedSpecVersion, types020.ImplementedSpecVersion)
+		out, err := json.Marshal(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(MatchJSON(expectedJSON))
+	})
+
+	It("correctly encodes a 0.1.0 Result", func() {
+		res, expectedJSON := testResult("0.1.0", "0.1.0")
+		out, err := json.Marshal(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(MatchJSON(expectedJSON))
+	})
+
+	It("converts a 0.2.0 result to 0.1.0", func() {
+		res, expectedJSON := testResult(types020.ImplementedSpecVersion, "0.1.0")
+		res010, err := res.GetAsVersion("0.1.0")
+		Expect(err).NotTo(HaveOccurred())
+		out, err := json.Marshal(res010)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(MatchJSON(expectedJSON))
+	})
+
+	It("converts a 0.1.0 result to 0.2.0", func() {
+		res, expectedJSON := testResult("0.1.0", types020.ImplementedSpecVersion)
+		res020, err := res.GetAsVersion(types020.ImplementedSpecVersion)
+		Expect(err).NotTo(HaveOccurred())
+		out, err := json.Marshal(res020)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(out).To(MatchJSON(expectedJSON))
 	})
 })

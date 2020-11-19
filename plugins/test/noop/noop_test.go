@@ -107,6 +107,7 @@ var _ = Describe("No-op plugin", func() {
 	"some":"stdin-json",
 	"cniVersion": "0.3.1",
 	"prevResult": {
+		"cniVersion": "0.3.1",
 		"ips": [{"version": "4", "address": "10.1.2.15/24"}]
 	}
 }`)
@@ -125,6 +126,7 @@ var _ = Describe("No-op plugin", func() {
 	"some":"stdin-json",
 	"cniVersion": "0.4.0",
 	"prevResult": {
+		"cniVersion": "0.4.0",
 		"ips": [{"version": "4", "address": "10.1.2.15/24"}]
 	}
 }`)
@@ -143,7 +145,7 @@ var _ = Describe("No-op plugin", func() {
 	"some":"stdin-json",
 	"cniVersion": "0.4.0",
 	"prevResult": {
-		"cniVersion": "0.3.1",
+		"cniVersion": "0.4.0",
 		"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 		"dns": {}
 	}
@@ -153,7 +155,7 @@ var _ = Describe("No-op plugin", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
 		Expect(session.Out.Contents()).To(MatchJSON(`{
-  "cniVersion": "0.4.0",
+	"cniVersion": "0.4.0",
 	"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 	"dns": {"nameservers": ["1.2.3.4"]}
 }`))
