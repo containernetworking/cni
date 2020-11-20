@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// debug supports tests that use the noop plugin
+// Package debug supports tests that use the noop plugin
 package debug
 
 import (
