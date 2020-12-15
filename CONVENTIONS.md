@@ -65,6 +65,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 | mac | Dynamically assign MAC. Runtime can pass this to plugins which need MAC as input. | `mac` | `MAC` (string entry). <pre> "c2:11:22:33:44:55" </pre> | none | CNI `tuning` plugin |
 | infiniband guid | Dynamically assign Infiniband GUID to network interface. Runtime can pass this to plugins which need Infiniband GUID as input. | `infinibandGUID` | `GUID` (string entry). <pre> "c2:11:22:33:44:55:66:77" </pre> | none | CNI [`ib-sriov-cni`](https://github.com/Mellanox/ib-sriov-cni) plugin |
 | device id | Provide device identifier which is associated with the network to allow the CNI plugin to perform device dependent network configurations. | `deviceID` | `deviceID` (string entry). <pre> "0000:04:00.5" </pre> | none | CNI `host-local` plugin |
+| alias | Provide a list of names that will be mapped to the IP addresses assigned to this interface. Other containers on the same network may use one of these names to access the container.| `alias` | List of `alias` (string entry). <pre> db </pre> | none | CNI `host-local` plugin |
 
 ## "args" in network config
 `args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.2.0` release of the CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
