@@ -83,8 +83,6 @@ type NetConfList struct {
 	Plugins      []*NetConf `json:"plugins,omitempty"`
 }
 
-type ResultFactoryFunc func([]byte) (Result, error)
-
 // Result is an interface that provides the result of plugin execution
 type Result interface {
 	// The highest CNI specification result version the result supports

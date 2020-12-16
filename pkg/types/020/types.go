@@ -27,12 +27,15 @@ import (
 
 const ImplementedSpecVersion string = "0.2.0"
 
-var SupportedVersions = []string{"", "0.1.0", ImplementedSpecVersion}
+var supportedVersions = []string{"", "0.1.0", ImplementedSpecVersion}
 
 // Register converters for all versions less than the implemented spec version
 func init() {
-	convert.Register("0.1.0", []string{ImplementedSpecVersion}, convertFrom010)
-	convert.Register(ImplementedSpecVersion, []string{"0.1.0"}, convertTo010)
+	convert.RegisterConverter("0.1.0", []string{ImplementedSpecVersion}, convertFrom010)
+	convert.RegisterConverter(ImplementedSpecVersion, []string{"0.1.0"}, convertTo010)
+
+	// Creator
+	convert.RegisterCreator(supportedVersions, NewResult)
 }
 
 // Compatibility types for CNI version 0.1.0 and 0.2.0
@@ -44,13 +47,13 @@ func NewResult(data []byte) (types.Result, error) {
 	if err := json.Unmarshal(data, result); err != nil {
 		return nil, err
 	}
-	for _, v := range SupportedVersions {
+	for _, v := range supportedVersions {
 		if result.CNIVersion == v {
 			return result, nil
 		}
 	}
 	return nil, fmt.Errorf("result type supports %v but unmarshalled CNIVersion is %q",
-		SupportedVersions, result.CNIVersion)
+		supportedVersions, result.CNIVersion)
 }
 
 // GetResult converts the given Result object to the ImplementedSpecVersion

@@ -69,9 +69,9 @@ func Convert(from types.Result, toVersion string) (types.Result, error) {
 	return c.convertFn(from, toVersion)
 }
 
-// Register registers a CNI Result converter. SHOULD NOT BE CALLED
+// RegisterConverter registers a CNI Result converter. SHOULD NOT BE CALLED
 // EXCEPT FROM CNI ITSELF.
-func Register(fromVersion string, toVersions []string, convertFn ConvertFn) {
+func RegisterConverter(fromVersion string, toVersions []string, convertFn ConvertFn) {
 	// Make sure there is no converter already registered for these
 	// from and to versions
 	for _, v := range toVersions {

@@ -19,14 +19,13 @@ import (
 	"fmt"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/020"
-	"github.com/containernetworking/cni/pkg/types/040"
-	current "github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/types/create"
 )
 
 // Current reports the version of the CNI spec implemented by this library
 func Current() string {
-	return current.ImplementedSpecVersion
+	return types100.ImplementedSpecVersion
 }
 
 // Legacy PluginInfo describes a plugin that is backwards compatible with the
@@ -39,28 +38,10 @@ func Current() string {
 var Legacy = PluginSupports("0.1.0", "0.2.0")
 var All = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0")
 
-var resultFactories = []struct {
-	supportedVersions []string
-	newResult         types.ResultFactoryFunc
-}{
-	{current.SupportedVersions, current.NewResult},
-	{types040.SupportedVersions, types040.NewResult},
-	{types020.SupportedVersions, types020.NewResult},
-}
-
 // Finds a Result object matching the requested version (if any) and asks
 // that object to parse the plugin result, returning an error if parsing failed.
 func NewResult(version string, resultBytes []byte) (types.Result, error) {
-	reconciler := &Reconciler{}
-	for _, resultFactory := range resultFactories {
-		err := reconciler.CheckRaw(version, resultFactory.supportedVersions)
-		if err == nil {
-			// Result supports this version
-			return resultFactory.newResult(resultBytes)
-		}
-	}
-
-	return nil, fmt.Errorf("unsupported CNI result version %q", version)
+	return create.Create(version, resultBytes)
 }
 
 // ParsePrevResult parses a prevResult in a NetConf structure and sets
