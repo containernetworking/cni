@@ -28,20 +28,23 @@ import (
 
 const ImplementedSpecVersion string = "1.0.0"
 
-var SupportedVersions = []string{ImplementedSpecVersion}
+var supportedVersions = []string{ImplementedSpecVersion}
 
 // Register converters for all versions less than the implemented spec version
 func init() {
 	// Up-converters
-	convert.Register("0.1.0", SupportedVersions, convertFrom02x)
-	convert.Register("0.2.0", SupportedVersions, convertFrom02x)
-	convert.Register("0.3.0", SupportedVersions, convertFrom04x)
-	convert.Register("0.3.1", SupportedVersions, convertFrom04x)
-	convert.Register("0.4.0", SupportedVersions, convertFrom04x)
+	convert.RegisterConverter("0.1.0", supportedVersions, convertFrom02x)
+	convert.RegisterConverter("0.2.0", supportedVersions, convertFrom02x)
+	convert.RegisterConverter("0.3.0", supportedVersions, convertFrom04x)
+	convert.RegisterConverter("0.3.1", supportedVersions, convertFrom04x)
+	convert.RegisterConverter("0.4.0", supportedVersions, convertFrom04x)
 
 	// Down-converters
-	convert.Register("1.0.0", []string{"0.3.0", "0.3.1", "0.4.0"}, convertTo04x)
-	convert.Register("1.0.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("1.0.0", []string{"0.3.0", "0.3.1", "0.4.0"}, convertTo04x)
+	convert.RegisterConverter("1.0.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+
+	// Creator
+	convert.RegisterCreator(supportedVersions, NewResult)
 }
 
 func NewResult(data []byte) (types.Result, error) {
@@ -49,13 +52,13 @@ func NewResult(data []byte) (types.Result, error) {
 	if err := json.Unmarshal(data, result); err != nil {
 		return nil, err
 	}
-	for _, v := range SupportedVersions {
+	for _, v := range supportedVersions {
 		if result.CNIVersion == v {
 			return result, nil
 		}
 	}
 	return nil, fmt.Errorf("result type supports %v but unmarshalled CNIVersion is %q",
-		SupportedVersions, result.CNIVersion)
+		supportedVersions, result.CNIVersion)
 }
 
 func GetResult(r types.Result) (*Result, error) {

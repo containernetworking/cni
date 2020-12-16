@@ -28,21 +28,24 @@ import (
 
 const ImplementedSpecVersion string = "0.4.0"
 
-var SupportedVersions = []string{"0.3.0", "0.3.1", ImplementedSpecVersion}
+var supportedVersions = []string{"0.3.0", "0.3.1", ImplementedSpecVersion}
 
 // Register converters for all versions less than the implemented spec version
 func init() {
 	// Up-converters
-	convert.Register("0.1.0", SupportedVersions, convertFrom02x)
-	convert.Register("0.2.0", SupportedVersions, convertFrom02x)
-	convert.Register("0.3.0", SupportedVersions, convertInternal)
-	convert.Register("0.3.1", SupportedVersions, convertInternal)
+	convert.RegisterConverter("0.1.0", supportedVersions, convertFrom02x)
+	convert.RegisterConverter("0.2.0", supportedVersions, convertFrom02x)
+	convert.RegisterConverter("0.3.0", supportedVersions, convertInternal)
+	convert.RegisterConverter("0.3.1", supportedVersions, convertInternal)
 
 	// Down-converters
-	convert.Register("0.4.0", []string{"0.3.0", "0.3.1"}, convertInternal)
-	convert.Register("0.4.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
-	convert.Register("0.3.1", []string{"0.1.0", "0.2.0"}, convertTo02x)
-	convert.Register("0.3.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("0.4.0", []string{"0.3.0", "0.3.1"}, convertInternal)
+	convert.RegisterConverter("0.4.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("0.3.1", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("0.3.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+
+	// Creator
+	convert.RegisterCreator(supportedVersions, NewResult)
 }
 
 func NewResult(data []byte) (types.Result, error) {
@@ -50,13 +53,13 @@ func NewResult(data []byte) (types.Result, error) {
 	if err := json.Unmarshal(data, result); err != nil {
 		return nil, err
 	}
-	for _, v := range SupportedVersions {
+	for _, v := range supportedVersions {
 		if result.CNIVersion == v {
 			return result, nil
 		}
 	}
 	return nil, fmt.Errorf("result type supports %v but unmarshalled CNIVersion is %q",
-		SupportedVersions, result.CNIVersion)
+		supportedVersions, result.CNIVersion)
 }
 
 func GetResult(r types.Result) (*Result, error) {
