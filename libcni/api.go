@@ -428,7 +428,11 @@ func (c *CNIConfig) AddNetworkList(ctx context.Context, list *NetworkConfigList,
 	for _, net := range list.Plugins {
 		result, err = c.addNetwork(ctx, list.Name, list.CNIVersion, net, result, rt)
 		if err != nil {
-			return nil, err
+			name := "<missing>"
+			if net.Network != nil {
+				name = net.Network.Name
+			}
+			return nil, fmt.Errorf("plugin %q failed (add): %w", name, err)
 		}
 	}
 
@@ -513,7 +517,11 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	for i := len(list.Plugins) - 1; i >= 0; i-- {
 		net := list.Plugins[i]
 		if err := c.delNetwork(ctx, list.Name, list.CNIVersion, net, cachedResult, rt); err != nil {
-			return err
+			name := "<missing>"
+			if net.Network != nil {
+				name = net.Network.Name
+			}
+			return fmt.Errorf("plugin %q failed (delete): %w", name, err)
 		}
 	}
 	_ = c.cacheDel(list.Name, rt)
