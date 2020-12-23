@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -1040,11 +1041,12 @@ var _ = Describe("Invoking plugins", func() {
 
 				It("returns the error", func() {
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "invalid characters in containerID",
 						Details: "some-%%container-id",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 			})
 
@@ -1055,11 +1057,12 @@ var _ = Describe("Invoking plugins", func() {
 
 				It("returns the error", func() {
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidNetworkConfig,
 						Msg:     "invalid characters found in network name",
 						Details: "invalid-%%-name",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 			})
 
@@ -1068,7 +1071,7 @@ var _ = Describe("Invoking plugins", func() {
 					runtimeConfig.IfName = ""
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name is empty",
 						Details: "",
@@ -1079,7 +1082,7 @@ var _ = Describe("Invoking plugins", func() {
 					runtimeConfig.IfName = "1234567890123456"
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name is too long",
 						Details: "interface name should be less than 16 characters",
@@ -1090,55 +1093,60 @@ var _ = Describe("Invoking plugins", func() {
 					runtimeConfig.IfName = "."
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name is . or ..",
 						Details: "",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 
 				It("interface name is ..", func() {
 					runtimeConfig.IfName = ".."
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name is . or ..",
 						Details: "",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 
 				It("interface name contains invalid characters /", func() {
 					runtimeConfig.IfName = "test/test"
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name contains / or : or whitespace characters",
 						Details: "",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 
 				It("interface name contains invalid characters :", func() {
 					runtimeConfig.IfName = "test:test"
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name contains / or : or whitespace characters",
 						Details: "",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 
 				It("interface name contains invalid characters whitespace", func() {
 					runtimeConfig.IfName = "test test"
 
 					_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(Equal(&types.Error{
+					Expect(errors.Unwrap(err)).To(Equal(&types.Error{
 						Code:    types.ErrInvalidEnvironmentVariables,
 						Msg:     "interface name contains / or : or whitespace characters",
 						Details: "",
 					}))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 			})
 
@@ -1150,7 +1158,8 @@ var _ = Describe("Invoking plugins", func() {
 				It("unmarshals and returns the error", func() {
 					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 					Expect(result).To(BeNil())
-					Expect(err).To(MatchError("plugin error: banana"))
+					Expect(errors.Unwrap(err)).To(MatchError("plugin error: banana"))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (add):"))
 				})
 				It("should not have written cache files", func() {
 					resultCacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
@@ -1425,7 +1434,8 @@ var _ = Describe("Invoking plugins", func() {
 				})
 				It("unmarshals and returns the error", func() {
 					err := cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(MatchError("plugin error: banana"))
+					Expect(errors.Unwrap(err)).To(MatchError("plugin error: banana"))
+					Expect(err.Error()).To(HavePrefix("plugin type=\"noop\" failed (delete):"))
 				})
 			})
 
