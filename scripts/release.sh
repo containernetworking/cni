@@ -18,7 +18,7 @@ docker run -i -v ${SRC_DIR}:/opt/src --rm golang:1.14-alpine \
 /bin/sh -xe -c "\
     apk --no-cache add bash tar;
     cd /opt/src; umask 0022;
-    for arch in amd64 arm arm64 ppc64le s390x; do \
+    for arch in amd64 arm arm64 ppc64le s390x mips64le; do \
         rm -f ${OUTPUT_DIR}/* ; \
         CGO_ENABLED=0 GOARCH=\$arch ./build.sh ${BUILDFLAGS}; \
         for format in tgz; do \
