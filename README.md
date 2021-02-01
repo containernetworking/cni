@@ -1,7 +1,3 @@
-[![Linux Build Status](https://travis-ci.org/containernetworking/cni.svg?branch=master)](https://travis-ci.org/containernetworking/cni)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/wtrkou8oow7x533e/branch/master?svg=true)](https://ci.appveyor.com/project/cni-bot/cni/branch/master)
-[![Coverage Status](https://coveralls.io/repos/github/containernetworking/cni/badge.svg?branch=master)](https://coveralls.io/github/containernetworking/cni?branch=master)
-
 ![CNI Logo](logo.png)
 
 ---
