@@ -99,5 +99,13 @@ var _ = Describe("FindInPath", func() {
 				Expect(err).To(MatchError(fmt.Sprintf("failed to find plugin %q in path %s", pluginName, pathsWithNothing)))
 			})
 		})
+
+		Context("When the plugin contains a directory separator", func() {
+			It("returns an error", func() {
+				bogusPlugin := ".." + string(os.PathSeparator) + "pluginname"
+				_, err := invoke.FindInPath(bogusPlugin, []string{anotherTempDir})
+				Expect(err).To(MatchError("invalid plugin name: " + bogusPlugin))
+			})
+		})
 	})
 })
