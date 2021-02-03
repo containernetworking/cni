@@ -1,0 +1,17 @@
+name: commands
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  retest:
+    if: github.repository == 'containernetworking/cni'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Re-Test Action
+        uses: ./.github/actions/retest-action
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
