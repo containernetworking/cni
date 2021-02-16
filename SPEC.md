@@ -460,6 +460,37 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
     - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
     - `options` (list of strings): list of options that can be passed to the resolver.
 
+#### Interfaces array
+
+The interfaces array should include all interfaces created by the plugin(s). It should also include interfaces that would have been created, were they not already existing (e.g. a shared bridge).
+
+The order of entries in the interfaces array should reflect the flow of packets from the container to the host. In other words, the first entry should be the one specified by CNI_IFNAME inside the container, and the final entry should be where packets would enter the host's networking environment (if applicable). In the event packets may take multiple flows, a loose ordering should be preserved.
+
+For all examples, assume `CNI_IFNAME=eth0`
+
+**Example 1: Bridge**
+
+The bridge plugin creates a "veth pair", then a bridge. The interface array would be
+
+```jsonc
+[
+  {"name": "eth0", "sandbox":"AAA" },
+  {"name": "vethYYY"},
+  {"name": "mybridge"}
+]
+```
+
+**Eample 2: macvlan**
+
+Macvlan interfaces are "directly" attached to a host-interface, with a special mac-address muxing "bridge". Thus, only one interface is created by the plugin, and only one interface is returned.
+
+```jsonc
+[
+  {"name": "eth0", "sandbox":"AAA" }
+]
+```
+
+
 #### Delegated plugins (IPAM)
 Delegated plugins may omit irrelevant sections.
 
