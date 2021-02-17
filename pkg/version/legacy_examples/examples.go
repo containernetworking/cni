@@ -127,7 +127,7 @@ var ExpectedResult = &types020.Result{
 		},
 		Gateway: net.ParseIP("10.1.2.1"),
 		Routes: []types.Route{
-			types.Route{
+			{
 				Dst: net.IPNet{
 					IP:   net.ParseIP("0.0.0.0"),
 					Mask: net.CIDRMask(0, 32),
