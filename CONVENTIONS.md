@@ -10,7 +10,7 @@ Establishing these conventions allows plugins to work across multiple runtimes. 
 
 ## Plugins
 * Plugin authors should aim to support these conventions where it makes sense for their plugin. This means they are more likely to "just work" with a wider range of runtimes.
-* Plugins should accept arguments according to these conventions if they implement the same basic functionality as other plugins. If plugins have shared functionality that isn't coverered by these conventions then a PR should be opened against this document.
+* Plugins should accept arguments according to these conventions if they implement the same basic functionality as other plugins. If plugins have shared functionality that isn't covered by these conventions then a PR should be opened against this document.
 
 ## Runtimes
 * Runtime authors should follow these conventions if they want to pass additional information to plugins. This will allow the extra information to be consumed by the widest range of plugins.
@@ -64,7 +64,8 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 | ips | Dynamically allocate IPs for container interface. Runtime which has the ability of address allocation can pass these to plugins.  | `ips` | A list of `IP` (string entries). <pre> [ "10.10.0.1/24", "3ffe:ffff:0:01ff::1/64" ] </pre> | none | CNI `static` plugin |
 | mac | Dynamically assign MAC. Runtime can pass this to plugins which need MAC as input. | `mac` | `MAC` (string entry). <pre> "c2:11:22:33:44:55" </pre> | none | CNI `tuning` plugin |
 | infiniband guid | Dynamically assign Infiniband GUID to network interface. Runtime can pass this to plugins which need Infiniband GUID as input. | `infinibandGUID` | `GUID` (string entry). <pre> "c2:11:22:33:44:55:66:77" </pre> | none | CNI [`ib-sriov-cni`](https://github.com/Mellanox/ib-sriov-cni) plugin |
-| device id | Provide device identifier which is associated with the network to allow the CNI plugin to perform device dependent network configurations. | `deviceID` | `deviceID` (string entry). <pre> "0000:04:00.5" </pre> | none | CNI `host-local` plugin |
+| device id | Provide device identifier which is associated with the network to allow the CNI plugin to perform device dependent network configurations. | `deviceID` | `deviceID` (string entry). <pre> "0000:04:00.5" </pre> | none | CNI `host-device` plugin |
+| aliases | Provide a list of names that will be mapped to the IP addresses assigned to this interface. Other containers on the same network may use one of these names to access the container.| `aliases` | List of `alias` (string entry). <pre> ["my-container", "primary-db"] </pre> | none | CNI `alias` plugin |
 
 ## "args" in network config
 `args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.2.0` release of the CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 

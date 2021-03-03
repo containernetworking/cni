@@ -7,28 +7,23 @@ cd "$(dirname $0)"
 PKGS=${PKGS:-$(go list ./... | xargs echo)}
 
 echo -n "Running tests "
-function testrun {
-    bash -c "umask 0; PATH=$PATH go test $@"
-}
 if [ ! -z "${COVERALLS:-""}" ]; then
     # coverage profile only works per-package
     echo "with coverage profile generation..."
     i=0
     for t in ${PKGS}; do
-        testrun "-covermode set -coverprofile ${i}.coverprofile ${t}"
+        go test -covermode set -coverprofile ${i}.coverprofile "${t}"
         i=$((i+1))
     done
-    gover
-    goveralls -service=travis-ci -coverprofile=gover.coverprofile
 else
     echo "without coverage profile generation..."
-    for t in ${PKGS}; do
-        testrun "${t}"
-    done
+    go test ${PKGS}
 fi
 
+GO_FILES=$(find . -name '*.go' -type f -print)
+
 echo "Checking gofmt..."
-fmtRes=$(go fmt ${PKGS})
+fmtRes=$(gofmt -d -e -s ${GO_FILES})
 if [ -n "${fmtRes}" ]; then
 	echo -e "go fmt checking failed:\n${fmtRes}"
 	exit 255

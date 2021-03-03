@@ -183,6 +183,7 @@ func convertTo02x(from types.Result, toVersion string) (types.Result, error) {
 		}
 	}
 
+	// 0.2.0 and earlier require at least one IP address in the Result
 	if toResult.IP4 == nil && toResult.IP6 == nil {
 		return nil, fmt.Errorf("cannot convert: no valid IP addresses")
 	}

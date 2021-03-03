@@ -352,6 +352,14 @@ var _ = Describe("040 types operations", func() {
 		Expect(recovered).To(Equal(ipc))
 	})
 
+	It("fails when downconverting a config to 0.2.0 that has no IPs", func() {
+		res := testResult()
+		res.IPs = nil
+		res.Routes = nil
+		_, err := res.GetAsVersion("0.2.0")
+		Expect(err).To(MatchError("cannot convert: no valid IP addresses"))
+	})
+
 	Context("when unmarshalling json fails", func() {
 		It("returns an error", func() {
 			recovered := &types040.IPConfig{}
