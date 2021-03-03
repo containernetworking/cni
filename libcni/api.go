@@ -428,7 +428,7 @@ func (c *CNIConfig) AddNetworkList(ctx context.Context, list *NetworkConfigList,
 	for _, net := range list.Plugins {
 		result, err = c.addNetwork(ctx, list.Name, list.CNIVersion, net, result, rt)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("plugin %s failed (add): %w", pluginDescription(net.Network), err)
 		}
 	}
 
@@ -513,12 +513,25 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	for i := len(list.Plugins) - 1; i >= 0; i-- {
 		net := list.Plugins[i]
 		if err := c.delNetwork(ctx, list.Name, list.CNIVersion, net, cachedResult, rt); err != nil {
-			return err
+			return fmt.Errorf("plugin %s failed (delete): %w", pluginDescription(net.Network), err)
 		}
 	}
 	_ = c.cacheDel(list.Name, rt)
 
 	return nil
+}
+
+func pluginDescription(net *types.NetConf) string {
+	if net == nil {
+		return "<missing>"
+	}
+	pluginType := net.Type
+	out := fmt.Sprintf("type=%q", pluginType)
+	name := net.Name
+	if name != "" {
+		out += fmt.Sprintf(" name=%q", name)
+	}
+	return out
 }
 
 // AddNetwork executes the plugin with the ADD command
