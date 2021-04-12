@@ -305,3 +305,54 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	c.Gateway = ipc.Gateway
 	return nil
 }
+
+type Route struct {
+	Dst net.IPNet
+	GW  net.IP
+	MTU *int
+}
+
+func (r *Route) String() string {
+	return fmt.Sprintf("%+v", *r)
+}
+
+func (r *Route) Copy() *Route {
+	if r == nil {
+		return nil
+	}
+
+	return &Route{
+		Dst: r.Dst,
+		GW:  r.GW,
+		MTU: r.MTU,
+	}
+}
+
+// JSON (un)marshallable types
+type route struct {
+	Dst net.IPNet `json:"dst"`
+	GW  net.IP    `json:"gw,omitempty"`
+	MTU int       `json:"mtu,omitempty"`
+}
+
+func (r *Route) UnmarshalJSON(data []byte) error {
+	rt := route{}
+	if err := json.Unmarshal(data, &rt); err != nil {
+		return err
+	}
+
+	r.Dst = net.IPNet(rt.Dst)
+	r.GW = rt.GW
+	r.MTU = &rt.MTU
+	return nil
+}
+
+func (r *Route) MarshalJSON() ([]byte, error) {
+	rt := route{
+		Dst: net.IPNet(r.Dst),
+		GW:  r.GW,
+		MTU: *r.MTU,
+	}
+
+	return json.Marshal(rt)
+}
