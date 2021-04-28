@@ -343,7 +343,7 @@ While a network configuration should not change between _attachments_, there are
 - **Container ID:** A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-). During execution, always set as the  `CNI_CONTAINERID` parameter.
 - **Namespace**: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`). During execution, always set as the `CNI_NETNS` parameter.
 - **Container interface name**: Name of the interface to create inside the container. During execution, always set as the `CNI_IFNAME` parameter.
-- **Generic Arguments**: Extra arguments, in the form of key-value string pairs, that are relevant to a specific attachment.  During execution, always set as the `CNI_ARGS` parameter as well as provided in the generated configuration, see below.
+- **Generic Arguments**: Extra arguments, in the form of key-value string pairs, that are relevant to a specific attachment.  During execution, always set as the `CNI_ARGS` parameter.
 - **Capability Arguments**: These are also key-value pairs. The key is a string, whereas the value is any JSON-serializable type. The keys and values are defined by [convention](CONVENTIONS.md).
 
 Furthermore, the runtime must be provided a list of paths to search for CNI plugins. This must also be provided to plugins during execution via the `CNI_PATH` environment variable.
@@ -395,7 +395,6 @@ The execution configuration for a single plugin invocation is also JSON. It cons
 The following fields must be inserted into the execution configuration by the runtime:
 - `cniVersion`: taken from the `cniVersion` field of the network configuration
 - `name`: taken from the `name` field of the network configuration
-- `args`: A JSON object, consisting of the generic arguments provided as an attachment parameter
 - `runtimeConfig`: A JSON object, consisting of the union of capabilities provided by the plugin and requested by the runtime (more detail below)
 - `prevResult`: A JSON object, consisting of the result type returned by the "previous" plugin. The meaning of "previous" is defined by the specific operation (_add_, _delete_, or _check_).
 
@@ -406,7 +405,7 @@ All other fields should be passed through unaltered.
 
 #### Deriving `runtimeConfig`
 
-Whereas `args` and CNI_ARGS are provided to all plugins, with no indication if they are going to be consumed, _Capability arguments_ need to be declared explicitly in configuration. The runtime, thus, can determine if a given network configuration supports a specific _capability_. Capabilities are not defined by the specification - rather, they are documented [conventions](CONVENTIONS.md).
+Whereas CNI_ARGS are provided to all plugins, with no indication if they are going to be consumed, _Capability arguments_ need to be declared explicitly in configuration. The runtime, thus, can determine if a given network configuration supports a specific _capability_. Capabilities are not defined by the specification - rather, they are documented [conventions](CONVENTIONS.md).
 
 As defined in section 1, the plugin configuration includes an optional key, `capabilities`. This example shows a that supports the `portMapping` capability:
 
@@ -569,7 +568,6 @@ The container runtime would perform the following steps for the `add` operation.
     "type": "bridge",
     "bridge": "cni0",
     "keyA": ["some more", "plugin specific", "configuration"],
-    "args": {"argA": "foo"},
     "ipam": {
         "type": "host-local",
         "subnet": "10.1.0.0/16",
@@ -648,7 +646,6 @@ The plugin returns the following result, configuring the interface according to 
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
-  "args": {"argA": "foo"},
   "sysctl": {
     "net.core.somaxconn": "500"
   },
@@ -734,7 +731,6 @@ The plugin returns the following result. Note that the **mac** has changed.
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "portmap",
-  "args": {"argA": "foo"},
   "runtimeConfig": {
     "portMappings" : [
       { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }
@@ -791,7 +787,6 @@ Given the previous _Add_, the container runtime would perform the following step
   "type": "bridge",
   "bridge": "cni0",
   "keyA": ["some more", "plugin specific", "configuration"],
-  "args": {"argA": "foo"},
   "ipam": {
     "type": "host-local",
     "subnet": "10.1.0.0/16",
@@ -846,7 +841,6 @@ Assuming the `bridge` plugin is satisfied, it produces no output on standard out
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
-  "args": {"argA": "foo"},
   "sysctl": {
     "net.core.somaxconn": "500"
   },
@@ -897,7 +891,6 @@ Likewise, the `tuning` plugin exits indicating success.
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "portmap",
-  "args": {"argA": "foo"},
   "runtimeConfig": {
     "portMappings" : [
       { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }
@@ -951,7 +944,6 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "portmap",
-  "args": {"argA": "foo"},
   "runtimeConfig": {
     "portMappings" : [
       { "hostPort": 8080, "containerPort": 80, "protocol": "tcp" }
@@ -1000,7 +992,6 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
   "cniVersion": "1.0.0",
   "name": "dbnet",
   "type": "tuning",
-  "args": {"argA": "foo"},
   "sysctl": {
     "net.core.somaxconn": "500"
   },
@@ -1051,7 +1042,6 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
   "type": "bridge",
   "bridge": "cni0",
   "keyA": ["some more", "plugin specific", "configuration"],
-  "args": {"argA": "foo"},
   "ipam": {
     "type": "host-local",
     "subnet": "10.1.0.0/16",
