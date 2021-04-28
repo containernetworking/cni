@@ -68,7 +68,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 | aliases | Provide a list of names that will be mapped to the IP addresses assigned to this interface. Other containers on the same network may use one of these names to access the container.| `aliases` | List of `alias` (string entry). <pre> ["my-container", "primary-db"] </pre> | none | CNI `alias` plugin |
 
 ## "args" in network config
-`args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were introduced as an optional field into the `0.2.0` release of the CNI spec. The first CNI code release that it appeared in was `v0.4.0`. 
+`args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were reserved as a  field in the `0.2.0` release of the CNI spec.
 > args (dictionary): Optional additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under args.
 
 `args` provide a way of providing more structured data than the flat strings that CNI_ARGS can support.
@@ -80,7 +80,7 @@ This method of passing information to a plugin is recommended when the informati
 The conventions documented here are all namespaced under `cni` so they don't conflict with any existing `args`.
 
 For example:
-```json
+```jsonc
 {  
    "cniVersion":"0.2.0",
    "name":"net",
@@ -89,9 +89,9 @@ For example:
          "labels": [{"key": "app", "value": "myapp"}]
       }
    },
-   <REST OF CNI CONFIG HERE>
+   // <REST OF CNI CONFIG HERE>
    "ipam":{  
-     <IPAM CONFIG HERE>
+   //  <IPAM CONFIG HERE>
    }
 }
 ```
