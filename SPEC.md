@@ -71,7 +71,7 @@ For the purposes of this proposal, we define three terms very specifically:
 
 This document aims to specify the interface between "runtimes" and "plugins". The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
-[namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html 
+[namespaces]: http://man7.org/linux/man-pages/man7/namespaces.7.html
 [rfc-2119]: https://www.ietf.org/rfc/rfc2119.txt
 
 
@@ -90,7 +90,7 @@ The CNI specification defines:
 
 CNI defines a network configuration format for administrators. It contains
 directives for both the container runtime as well as the plugins to consume. At
-plugin execution time, this configuration format is interpreted by the runtime and 
+plugin execution time, this configuration format is interpreted by the runtime and
 transformed in to a form to be passed to the plugins.
 
 In general, the network configuration is intended to be static. It can conceptually
@@ -107,7 +107,7 @@ A network configuration consists of a JSON object with the following keys:
 - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
 
 #### Plugin configuration objects:
-Plugin configuration objects may contain additional fields than the ones defined here. 
+Plugin configuration objects may contain additional fields than the ones defined here.
 The runtime MUST pass through these fields, unchanged, to the plugin, as defined in section 3.
 
 **Required keys:**
@@ -136,7 +136,7 @@ Plugins that consume any of these configuration keys should respect their intend
     - `options` (list of strings, optional): list of options that can be passed to the resolver
 
 **Other keys:**
-Plugins may define additional fields that they accept and may generate an error if called with unknown fields. Runtimes must preserve unknown fields in plugin configuration objects when transforming for execution. 
+Plugins may define additional fields that they accept and may generate an error if called with unknown fields. Runtimes must preserve unknown fields in plugin configuration objects when transforming for execution.
 
 #### Example configuration
 ```jsonc
@@ -166,7 +166,7 @@ Plugins may define additional fields that they accept and may generate an error 
     {
       "type": "tuning",
       "capabilities": {
-        "mac": true,
+        "mac": true
       },
       "sysctl": {
         "net.core.somaxconn": "500"
@@ -195,21 +195,21 @@ a [result](#Section-5-Result-Types) on stdout on success, or an error on stderr 
 
 Parameters define invocation-specific settings, whereas configuration is, with some exceptions, the same for any given network.
 
-The runtime must execute the plugin in the runtime's networking domain. (For most cases, this means the root network namespace / `dom0`). 
+The runtime must execute the plugin in the runtime's networking domain. (For most cases, this means the root network namespace / `dom0`).
 
 ### Parameters
 
 Protocol parameters are passed to the plugins via OS environment variables.
 
 - `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, or `VERSION`.
-- `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-).
+- `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-).
 - `CNI_NETNS`: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`)
 - `CNI_IFNAME`: Name of the interface to create inside the container; if the plugin is unable to use this interface name it must return an error.
 - `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
 - `CNI_PATH`: List of paths to search for CNI plugin executables. Paths are separated by an OS-specific list separator; for example ':' on Linux and ';' on Windows
 
 ### Errors
-A plugin must exit with a return code of 0 on success, and non-zero on failure. If the plugin encounters an error, the it should output an ["error" result structure](#Error) (see below).
+A plugin must exit with a return code of 0 on success, and non-zero on failure. If the plugin encounters an error, it should output an ["error" result structure](#Error) (see below).
 
 ### CNI operations
 
@@ -227,7 +227,7 @@ If an interface of the requested name already exists in the container, the CNI p
 
 A runtime should not call `ADD` twice (without an intervening DEL) for the same `(CNI_CONTAINERID, CNI_IFNAME)` tuple. This implies that a given container ID may be added to a specific network more than once only if each addition is done with a different interface name.
 
-**Input:** 
+**Input:**
 
 The runtime will provide a JSON-serialized plugin configuration object (defined below) on standard in.
 
@@ -253,7 +253,7 @@ Plugins MUST accept multiple `DEL` calls for the same (`CNI_CONTAINERID`, `CNI_I
 
 **Input:**
 
-The runtime will provide a JSON-serialized plugin configuration object (defined below) on standard in. 
+The runtime will provide a JSON-serialized plugin configuration object (defined below) on standard in.
 
 Required environment parameters:
 - `CNI_COMMAND`
@@ -286,7 +286,7 @@ Plugin considerations:
 
 Runtime considerations:
 - A runtime must not call `CHECK` for a container that has not been `ADD`ed, or has been `DEL`eted after its last `ADD`.
-- A runtime must not call `CHECK` if `disableCheck` is set to `true` in the [configuration list](#network-configuration-lists).
+- A runtime must not call `CHECK` if `disableCheck` is set to `true` in the [configuration](#configuration-format).
 - A runtime must include a `prevResult` field in the network configuration containing the `Result` of the immediately preceding `ADD` for the container. The runtime may wish to use libcni's support for caching `Result`s.
 - A runtime may choose to stop executing `CHECK` for a chain when a plugin returns an error.
 - A runtime may execute `CHECK` from immediately after a successful `ADD`, up until the container is `DEL`eted from the network.
@@ -295,7 +295,7 @@ Runtime considerations:
 
 **Input:**
 
-The runtime will provide a json-serialized plugin configuration object (defined below) on standard in. 
+The runtime will provide a json-serialized plugin configuration object (defined below) on standard in.
 
 Required environment parameters:
 - `CNI_COMMAND`
@@ -340,7 +340,7 @@ The operation of a network configuration on a container is called an _attachment
 ### Attachment Parameters
 While a network configuration should not change between _attachments_, there are certain parameters supplied by the container runtime that are per-attachment. They are:
 
-- **Container ID:** A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with a alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-). During execution, always set as the  `CNI_CONTAINERID` parameter.
+- **Container ID:** A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-). During execution, always set as the  `CNI_CONTAINERID` parameter.
 - **Namespace**: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`). During execution, always set as the `CNI_NETNS` parameter.
 - **Container interface name**: Name of the interface to create inside the container. During execution, always set as the `CNI_IFNAME` parameter.
 - **Generic Arguments**: Extra arguments, in the form of key-value string pairs, that are relevant to a specific attachment.  During execution, always set as the `CNI_ARGS` parameter.
@@ -395,7 +395,7 @@ The execution configuration for a single plugin invocation is also JSON. It cons
 The following fields must be inserted into the execution configuration by the runtime:
 - `cniVersion`: taken from the `cniVersion` field of the network configuration
 - `name`: taken from the `name` field of the network configuration
-- `runtimeConfig`: A JSON object, consisting of the union of capabilities provided by the plugin and requested by the runtime (more detail below)
+- `runtimeConfig`: A JSON object, consisting of the union of capabilities provided by the plugin and requested by the runtime (more details below)
 - `prevResult`: A JSON object, consisting of the result type returned by the "previous" plugin. The meaning of "previous" is defined by the specific operation (_add_, _delete_, or _check_).
 
 The following fields must be **removed** by the runtime:
@@ -407,10 +407,10 @@ All other fields should be passed through unaltered.
 
 Whereas CNI_ARGS are provided to all plugins, with no indication if they are going to be consumed, _Capability arguments_ need to be declared explicitly in configuration. The runtime, thus, can determine if a given network configuration supports a specific _capability_. Capabilities are not defined by the specification - rather, they are documented [conventions](CONVENTIONS.md).
 
-As defined in section 1, the plugin configuration includes an optional key, `capabilities`. This example shows a that supports the `portMapping` capability:
+As defined in section 1, the plugin configuration includes an optional key, `capabilities`. This example shows a plugin that supports the `portMapping` capability:
 
 ```json
-{ 
+{
   "type": "myPlugin",
   "capabilities": {
     "portMappings": true
@@ -457,7 +457,7 @@ When a plugin executes a delegated plugin, it should:
 - Execute that plugin with the same environment and configuration that it received.
 - Ensure that the delegated plugin's stderr is output to the calling plugin's stderr.
 
-If a plugin is executed with `CNI_COMMAND=CHECK` or `DEL`, it must also execute any delegated plugins. If any of the delgated plugins return error, error should be returned by the upper plugin.
+If a plugin is executed with `CNI_COMMAND=CHECK` or `DEL`, it must also execute any delegated plugins. If any of the delegated plugins return error, error should be returned by the upper plugin.
 
 If, on `ADD`, a delegated plugin fails, the "upper" plugin should execute again with `DEL` before returning failure.
 
@@ -519,7 +519,7 @@ Example:
 }
 ```
 
-Error codes 0-99 are reserved for well-known errors. Values of 100+ can be freely used for plugin specific errors. 
+Error codes 0-99 are reserved for well-known errors. Values of 100+ can be freely used for plugin specific errors.
 
 
 Error Code|Error Description
@@ -553,6 +553,7 @@ Example:
 
 ## Appendix: Examples
 We assume the network configuration [shown above](#Example-configuration) in section 1. For this attachment, the runtime produces `portmap` and `mac` capability args, along with the generic argument "argA=foo".
+The examples uses `CNI_IFNAME=eth0`.
 
 ### Add example
 
@@ -602,7 +603,7 @@ The `host-local` plugin returns the following result:
 }
 ```
 
-The plugin returns the following result, configuring the interface according to the delegated IPAM configuration:
+The bridge plugin returns the following result, configuring the interface according to the delegated IPAM configuration:
 
 ```json
 {
@@ -776,9 +777,9 @@ The `portmap` plugin outputs the exact same result as that returned by `bridge`,
 
 ### Check example
 
-Given the previous _Add_, the container runtime would perform the following steps for the _Check_ action.:
+Given the previous _Add_, the container runtime would perform the following steps for the _Check_ action:
 
-1) first call the `bridge` plugin with the following request configuration, including the `prevResult` field containing the final JSON response from the _Add_ operation, **including the changed mac**. `CNI_COMMAND=CHECK`
+1) First call the `bridge` plugin with the following request configuration, including the `prevResult` field containing the final JSON response from the _Add_ operation, **including the changed mac**. `CNI_COMMAND=CHECK`
 
 ```json
 {
@@ -834,7 +835,7 @@ The `bridge` plugin, as it delegates IPAM, calls `host-local`, `CNI_COMMAND=CHEC
 
 Assuming the `bridge` plugin is satisfied, it produces no output on standard out and exits with a 0 return code.
 
-2) next call the `tuning` plugin with the following request configuration:
+2) Next call the `tuning` plugin with the following request configuration:
 
 ```json
 {
