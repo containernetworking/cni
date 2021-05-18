@@ -61,7 +61,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 | ip ranges | Dynamically configure the IP range(s) for address allocation. Runtimes that manage IP pools, but not individual IP addresses, can pass these to plugins. | `ipRanges` | The same as the `ranges` key for `host-local` - a list of lists of subnets. The outer list is the number of IPs to allocate, and the inner list is a pool of subnets for each allocation. <br/><pre>[<br/> [<br/>  { "subnet": "10.1.2.0/24", "rangeStart": "10.1.2.3", "rangeEnd": 10.1.2.99", "gateway": "10.1.2.254" } <br/>  ]<br/>]</pre> | none | CNI `host-local` plugin |
 | bandwidth limits | Dynamically configure interface bandwidth limits | `bandwidth` | Desired bandwidth limits. Rates are in bits per second, burst values are in bits. <pre> { "ingressRate": 2048, "ingressBurst": 1600, "egressRate": 4096, "egressBurst": 1600 } </pre> | none | CNI `bandwidth` plugin |
 | dns | Dynamically configure dns according to runtime | `dns` | Dictionary containing a list of `servers` (string entries), a list of `searches` (string entries), a list of `options` (string entries). <pre>{ <br> "searches" : [ "internal.yoyodyne.net", "corp.tyrell.net" ] <br> "servers": [ "8.8.8.8", "10.0.0.10" ] <br />} </pre> | kubernetes | CNI `win-bridge` plugin, CNI `win-overlay` plugin |
-| ips | Dynamically allocate IPs for container interface. Runtime which has the ability of address allocation can pass these to plugins.  | `ips` | A list of `IP` (string entries). <pre> [ "10.10.0.1/24", "3ffe:ffff:0:01ff::1/64" ] </pre> | none | CNI `static` plugin |
+| ips | Dynamically allocate IPs for container interface. Runtime which has the ability of address allocation can pass these to plugins.  | `ips` | A list of `IP` (\<ip\>\[/\<prefix\>\]). <pre> [ "192.168.0.1", 10.10.0.1/24", "3ffe:ffff:0:01ff::2", "3ffe:ffff:0:01ff::1/64" ] </pre> The plugin may require the IP address to include a prefix length. | none | CNI `static` plugin, CNI `host-local` plugin |
 | mac | Dynamically assign MAC. Runtime can pass this to plugins which need MAC as input. | `mac` | `MAC` (string entry). <pre> "c2:11:22:33:44:55" </pre> | none | CNI `tuning` plugin |
 | infiniband guid | Dynamically assign Infiniband GUID to network interface. Runtime can pass this to plugins which need Infiniband GUID as input. | `infinibandGUID` | `GUID` (string entry). <pre> "c2:11:22:33:44:55:66:77" </pre> | none | CNI [`ib-sriov-cni`](https://github.com/Mellanox/ib-sriov-cni) plugin |
 | device id | Provide device identifier which is associated with the network to allow the CNI plugin to perform device dependent network configurations. | `deviceID` | `deviceID` (string entry). <pre> "0000:04:00.5" </pre> | none | CNI `host-device` plugin |
@@ -99,7 +99,7 @@ For example:
 | Area  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ----- | ------ | ------------     | ----------------------- | ---------------------- |
 | labels | Pass`key=value` labels to plugins | <pre>"labels" : [<br />  { "key" : "app", "value" : "myapp" },<br />  { "key" : "env", "value" : "prod" }<br />] </pre> | none | none |
-| ips   | Request static IPs | Spec:<pre>"ips": ["\<ip\>[/\<prefix\>]", ...]</pre>Examples:<pre>"ips": ["10.2.2.42/24", "2001:db8::5"]</pre>The plugin may require the IP address to include a prefix length. | none | host-local |
+| ips   | Request specific IPs | Spec:<pre>"ips": ["\<ip\>[/\<prefix\>]", ...]</pre>Examples:<pre>"ips": ["10.2.2.42/24", "2001:db8::5"]</pre> The plugin may require the IP address to include a prefix length. | none | host-local, static |
 
 ## CNI_ARGS
 CNI_ARGS formed part of the original CNI spec and have been present since the initial release.
@@ -109,7 +109,7 @@ The use of `CNI_ARGS` is deprecated and "args" should be used instead. If a runt
 
 | Field  | Purpose| Spec and Example | Runtime implementations | Plugin Implementations |
 | ------ | ------ | ---------------- | ----------------------- | ---------------------- |
-| IP     | Request a specific IP from IPAM plugins | Spec:<pre>IP=\<ip\>[/\<prefix\>]</pre>Example: <pre>IP=192.168.10.4/24</pre>The plugin may require the IP addresses to include a prefix length. | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local (since version v0.2.0) supports the field for IPv4 only - [documentation](https://github.com/containernetworking/plugins/tree/master/plugins/ipam/host-local#supported-arguments).|
+| IP     | Request a specific IP from IPAM plugins | Spec:<pre>IP=\<ip\>[/\<prefix\>]</pre>Example: <pre>IP=192.168.10.4/24</pre> The plugin may require the IP addresses to include a prefix length. | *rkt* supports passing additional arguments to plugins and the [documentation](https://coreos.com/rkt/docs/latest/networking/overriding-defaults.html) suggests IP can be used. | host-local, static |
 
 ## Chained Plugins
 If plugins are agnostic about the type of interface created, they SHOULD work in a chained mode and configure existing interfaces. Plugins MAY also create the desired interface when not run in a chain.
