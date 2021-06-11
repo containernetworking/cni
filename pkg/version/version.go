@@ -64,7 +64,7 @@ func ParsePrevResult(conf *types.NetConf) error {
 	}
 
 	conf.RawPrevResult = nil
-	conf.PrevResult, err = NewResult(conf.CNIVersion, resultBytes)
+	conf.PrevResult, err = create.Create(conf.CNIVersion, resultBytes)
 	if err != nil {
 		return fmt.Errorf("could not parse prevResult: %v", err)
 	}

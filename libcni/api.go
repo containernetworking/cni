@@ -25,6 +25,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/create"
 	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
 )
@@ -304,15 +305,8 @@ func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *Runtim
 		return nil, nil
 	}
 
-	// Read the version of the cached result
-	decoder := version.ConfigDecoder{}
-	resultCniVersion, err := decoder.Decode(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure we can understand the result
-	result, err := version.NewResult(resultCniVersion, data)
+	// Load the cached result
+	result, err := create.CreateFromBytes(data)
 	if err != nil {
 		return nil, err
 	}
@@ -322,10 +316,10 @@ func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *Runtim
 	// should match the config version unless the config was changed
 	// while the container was running.
 	result, err = result.GetAsVersion(cniVersion)
-	if err != nil && resultCniVersion != cniVersion {
-		return nil, fmt.Errorf("failed to convert cached result version %q to config version %q: %v", resultCniVersion, cniVersion, err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert cached result to config version %q: %v", cniVersion, err)
 	}
-	return result, err
+	return result, nil
 }
 
 func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf) (types.Result, error) {
@@ -349,15 +343,8 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 		return nil, fmt.Errorf("failed to marshal cached network %q config: %v", netName, err)
 	}
 
-	// Read the version of the cached result
-	decoder := version.ConfigDecoder{}
-	resultCniVersion, err := decoder.Decode(newBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure we can understand the result
-	result, err := version.NewResult(resultCniVersion, newBytes)
+	// Load the cached result
+	result, err := create.CreateFromBytes(newBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -367,10 +354,10 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 	// should match the config version unless the config was changed
 	// while the container was running.
 	result, err = result.GetAsVersion(cniVersion)
-	if err != nil && resultCniVersion != cniVersion {
-		return nil, fmt.Errorf("failed to convert cached result version %q to config version %q: %v", resultCniVersion, cniVersion, err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert cached result to config version %q: %v", cniVersion, err)
 	}
-	return result, err
+	return result, nil
 }
 
 // GetNetworkListCachedResult returns the cached Result of the previous
