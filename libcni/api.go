@@ -14,6 +14,12 @@
 
 package libcni
 
+// Note this is the actual implementation of the CNI specification, which
+// is reflected in the https://github.com/containernetworking/cni/blob/master/SPEC.md file
+// it is typically bundled into runtime providers (i.e. containerd or cri-o would use this
+// before calling runc or hcsshim).  It is also bundled into CNI providers as well, for example,
+// to add an IP to a container, to parse the configuration of the CNI and so on.
+
 import (
 	"context"
 	"encoding/json"
