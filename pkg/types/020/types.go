@@ -49,6 +49,9 @@ func NewResult(data []byte) (types.Result, error) {
 	}
 	for _, v := range supportedVersions {
 		if result.CNIVersion == v {
+			if result.CNIVersion == "" {
+				result.CNIVersion = "0.1.0"
+			}
 			return result, nil
 		}
 	}
