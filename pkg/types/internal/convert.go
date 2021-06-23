@@ -53,6 +53,10 @@ func findConverter(fromVersion, toVersion string) *converter {
 // Convert converts a CNI Result to the requested CNI specification version,
 // or returns an error if the conversion could not be performed or failed
 func Convert(from types.Result, toVersion string) (types.Result, error) {
+	if toVersion == "" {
+		toVersion = "0.1.0"
+	}
+
 	fromVersion := from.Version()
 
 	// Shortcut for same version
