@@ -186,7 +186,12 @@ Plugins may define additional fields that they accept and may generate an error 
 
 The CNI protocol is based on execution of binaries invoked by the container runtime. CNI defines the protocol between the plugin binary and the runtime.
 
-Note that the CNI API is interpretted in widely different ways by plugins, by design.  That is, plugins *do not operate at the same layer of the networking stack* but they do all implement some portion of a CNI API calls underlying functionality.
+A CNI plugin is responsible for configuring a container's network interface in some manner. The meaning of this is left undefined by design.  That is, plugins *may provide very different functionality*, but they all speak the CNI protocol.
+
+Plugins fall in to three broad categories:
+- foo
+- bar
+* "Delegated" plugins, which provide "helper" functionality such as IPAM, but are executed by plugins, rather than runtimes.
 
 - Some CNI plugins, take responsibility for configuring a container's network interface in some manner.
 - Other plugins (like the IPAM plugin), take responsibility for supporting the attachment of a container to an interface (i.e. in the IPAM example, the IPAM plugin doesn't attach any networking devices, but it does the essential task of finding a IP address which *can* be attached by another CNI plugin).
