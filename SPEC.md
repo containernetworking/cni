@@ -189,9 +189,9 @@ The CNI protocol is based on execution of binaries invoked by the container runt
 A CNI plugin is responsible for configuring a container's network interface in some manner. The meaning of this is left undefined by design.  That is, plugins *may provide very different functionality*, but they all speak the CNI protocol.
 
 Plugins fall in to three broad categories:
-- foo
-- bar
-* "Delegated" plugins, which provide "helper" functionality such as IPAM, but are executed by plugins, rather than runtimes.
+- "CNI Provider plugins", tools which orchestrate the entire process of attaching a container to a network for a given application (i.e. Kubernetes), including calling other helper plugins, typically by integration into a special container network of some sort.  The most commonly known CNI options (such as calico, antrea, flannel, ovn-kubernetes, multus, azure-cni, eks-cni, gke-cni and so on) all fall into this category.
+- "Local" plugins, which might do one-off functionality, like adding container to the host's networking namespace. 
+- "Delegated" plugins, which provide "helper" functionality such as IPAM, but are executed by plugins, rather than runtimes.
 
 - Some CNI plugins, take responsibility for configuring a container's network interface in some manner.
 - Other plugins (like the IPAM plugin), take responsibility for supporting the attachment of a container to an interface (i.e. in the IPAM example, the IPAM plugin doesn't attach any networking devices, but it does the essential task of finding a IP address which *can* be attached by another CNI plugin).
