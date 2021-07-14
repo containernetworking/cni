@@ -189,16 +189,19 @@ The CNI protocol is based on execution of binaries invoked by the container runt
 A CNI plugin is responsible for configuring a container's network interface in some manner. The meaning of this is left undefined by design.  That is, plugins *may provide very different functionality*, but they all speak the CNI protocol.
 
 Plugins fall in to three broad categories:
-- "CNI Provider plugins", tools which orchestrate the entire process of attaching a container to a network for a given application (i.e. Kubernetes), including calling other helper plugins, typically by integration into a special container network of some sort.  The most commonly known CNI options (such as calico, antrea, flannel, ovn-kubernetes, multus, azure-cni, eks-cni, gke-cni and so on) all fall into this category.
-- "Local" plugins, which might do one-off functionality, like adding container to the host's networking namespace. 
-- "Delegated" plugins, which provide "helper" functionality such as IPAM, but are executed by plugins, rather than runtimes.
+- Runtime centric plugins.  These are called from a container runtime as a black-box for setting up a container network for a process.
+  - "CNI Provider plugins", tools which orchestrate the entire process of attaching a container to a network for a given application (i.e. Kubernetes), including calling other helper plugins, typically by integration into a special container network of some sort.  The most commonly known CNI options (such as calico, antrea, flannel, ovn-kubernetes, multus, azure-cni, eks-cni, gke-cni and so on) all fall into this category.
+  - "Local" plugins, which might do one-off functionality to implement a very specific, local container networking mode.  The most common example of this is the host-device plugin, which attaches a host device to the network namespace of a container. 
+- CNI helper plugins: these understand the semantics of the CNI api, and know how to play a specific role in the lifecycle of a CNI API call, but aren't directly relied on by a container runtime.
+  - For example, the `host-local` ipam plugin is used by well-known CNI providers to manage IP address ranges and picking of IP addresses for a given host in a cluster.  This plugin doesn't actually do anything related to attachment of containers to a IP, but it does the work of managing IPs for higher level plugins to coordinate this process.
 
-- Some CNI plugins, take responsibility for configuring a container's network interface in some manner.
-- Other plugins (like the IPAM plugin), take responsibility for supporting the attachment of a container to an interface (i.e. in the IPAM example, the IPAM plugin doesn't attach any networking devices, but it does the essential task of finding a IP address which *can* be attached by another CNI plugin).
+Thus, some CNI plugins, take responsibility for configuring a container's network interface in some manner, while other plugins (like the IPAM plugin), take responsibility for supporting the attachment of a container to an interface (i.e. in the IPAM example, the IPAM plugin doesn't attach any networking devices, but it does the essential task of finding a IP address which *can* be attached by another CNI plugin).
 
-Plugins fall in to two broad categories:
-* "Interface" plugins, which create a network interface inside the container and ensure it has connectivity.
-* "Chained" plugins, which adjust the configuration of an already-created interface (but may need to create more interfaces to do so).
+
+We also might categorize CNI plugins in terms of wether or not they create network interfaces, that is:
+
+* "Interface" plugins create a network interface inside the container and ensure it has connectivity.
+* "Chained" plugins which adjust the configuration of an already-created interface (but may need to create more interfaces to do so).
 
 The runtime passes parameters to the plugin via environment variables and configuration. It supplies configuration via stdin. The plugin returns
 a [result](#Section-5-Result-Types) on stdout on success, or an error on stderr if the operation fails. Configuration and results are encoded in JSON.
