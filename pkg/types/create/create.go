@@ -30,7 +30,7 @@ func DecodeVersion(jsonBytes []byte) (string, error) {
 	}
 	err := json.Unmarshal(jsonBytes, &conf)
 	if err != nil {
-		return "", fmt.Errorf("decoding version from network config: %s", err)
+		return "", fmt.Errorf("decoding version from network config: %w", err)
 	}
 	if conf.CNIVersion == "" {
 		return "0.1.0", nil
