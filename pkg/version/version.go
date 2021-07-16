@@ -60,13 +60,13 @@ func ParsePrevResult(conf *types.NetConf) error {
 
 	resultBytes, err := json.Marshal(conf.RawPrevResult)
 	if err != nil {
-		return fmt.Errorf("could not serialize prevResult: %v", err)
+		return fmt.Errorf("could not serialize prevResult: %w", err)
 	}
 
 	conf.RawPrevResult = nil
 	conf.PrevResult, err = create.Create(conf.CNIVersion, resultBytes)
 	if err != nil {
-		return fmt.Errorf("could not parse prevResult: %v", err)
+		return fmt.Errorf("could not parse prevResult: %w", err)
 	}
 
 	return nil

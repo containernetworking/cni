@@ -110,7 +110,7 @@ func LoadArgs(args string, container interface{}) error {
 		}
 		err := u.UnmarshalText([]byte(valueString))
 		if err != nil {
-			return fmt.Errorf("ARGS: error parsing value of pair %q: %v)", pair, err)
+			return fmt.Errorf("ARGS: error parsing value of pair %q: %w", pair, err)
 		}
 	}
 

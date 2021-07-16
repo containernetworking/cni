@@ -285,7 +285,7 @@ func (c *CNIConfig) getCachedConfig(netName string, rt *RuntimeConf) ([]byte, *R
 
 	unmarshaled := cachedInfo{}
 	if err := json.Unmarshal(bytes, &unmarshaled); err != nil {
-		return nil, nil, fmt.Errorf("failed to unmarshal cached network %q config: %v", netName, err)
+		return nil, nil, fmt.Errorf("failed to unmarshal cached network %q config: %w", netName, err)
 	}
 	if unmarshaled.Kind != CNICacheV1 {
 		return nil, nil, fmt.Errorf("read cached network %q config has wrong kind: %v", netName, unmarshaled.Kind)
@@ -323,7 +323,7 @@ func (c *CNIConfig) getLegacyCachedResult(netName, cniVersion string, rt *Runtim
 	// while the container was running.
 	result, err = result.GetAsVersion(cniVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert cached result to config version %q: %v", cniVersion, err)
+		return nil, fmt.Errorf("failed to convert cached result to config version %q: %w", cniVersion, err)
 	}
 	return result, nil
 }
@@ -346,7 +346,7 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 
 	newBytes, err := json.Marshal(&cachedInfo.RawResult)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal cached network %q config: %v", netName, err)
+		return nil, fmt.Errorf("failed to marshal cached network %q config: %w", netName, err)
 	}
 
 	// Load the cached result
@@ -361,7 +361,7 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 	// while the container was running.
 	result, err = result.GetAsVersion(cniVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert cached result to config version %q: %v", cniVersion, err)
+		return nil, fmt.Errorf("failed to convert cached result to config version %q: %w", cniVersion, err)
 	}
 	return result, nil
 }
@@ -426,7 +426,7 @@ func (c *CNIConfig) AddNetworkList(ctx context.Context, list *NetworkConfigList,
 	}
 
 	if err = c.cacheAdd(result, list.Bytes, list.Name, rt); err != nil {
-		return nil, fmt.Errorf("failed to set network %q cached result: %v", list.Name, err)
+		return nil, fmt.Errorf("failed to set network %q cached result: %w", list.Name, err)
 	}
 
 	return result, nil
@@ -462,7 +462,7 @@ func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigLis
 
 	cachedResult, err := c.getCachedResult(list.Name, list.CNIVersion, rt)
 	if err != nil {
-		return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
+		return fmt.Errorf("failed to get network %q cached result: %w", list.Name, err)
 	}
 
 	for _, net := range list.Plugins {
@@ -499,7 +499,7 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	} else if gtet {
 		cachedResult, err = c.getCachedResult(list.Name, list.CNIVersion, rt)
 		if err != nil {
-			return fmt.Errorf("failed to get network %q cached result: %v", list.Name, err)
+			return fmt.Errorf("failed to get network %q cached result: %w", list.Name, err)
 		}
 	}
 
@@ -535,7 +535,7 @@ func (c *CNIConfig) AddNetwork(ctx context.Context, net *NetworkConfig, rt *Runt
 	}
 
 	if err = c.cacheAdd(result, net.Bytes, net.Network.Name, rt); err != nil {
-		return nil, fmt.Errorf("failed to set network %q cached result: %v", net.Network.Name, err)
+		return nil, fmt.Errorf("failed to set network %q cached result: %w", net.Network.Name, err)
 	}
 
 	return result, nil
@@ -552,7 +552,7 @@ func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *Ru
 
 	cachedResult, err := c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
 	if err != nil {
-		return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
+		return fmt.Errorf("failed to get network %q cached result: %w", net.Network.Name, err)
 	}
 	return c.checkNetwork(ctx, net.Network.Name, net.Network.CNIVersion, net, cachedResult, rt)
 }
@@ -567,7 +567,7 @@ func (c *CNIConfig) DelNetwork(ctx context.Context, net *NetworkConfig, rt *Runt
 	} else if gtet {
 		cachedResult, err = c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
 		if err != nil {
-			return fmt.Errorf("failed to get network %q cached result: %v", net.Network.Name, err)
+			return fmt.Errorf("failed to get network %q cached result: %w", net.Network.Name, err)
 		}
 	}
 

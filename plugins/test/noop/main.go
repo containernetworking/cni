@@ -44,7 +44,7 @@ type NetConf struct {
 func loadConf(bytes []byte) (*NetConf, error) {
 	n := &NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		return nil, fmt.Errorf("failed to load netconf: %v %q", err, string(bytes))
+		return nil, fmt.Errorf("failed to load netconf: %w %q", err, string(bytes))
 	}
 	if err := version.ParsePrevResult(&n.NetConf); err != nil {
 		return nil, err
@@ -139,11 +139,11 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		// Must print the prevResult as the CNIVersion of the config
 		newResult, err := prevResult.GetAsVersion(netConf.CNIVersion)
 		if err != nil {
-			return fmt.Errorf("failed to convert result to config %q: %v", netConf.CNIVersion, err)
+			return fmt.Errorf("failed to convert result to config %q: %w", netConf.CNIVersion, err)
 		}
 		resultBytes, err := json.Marshal(newResult)
 		if err != nil {
-			return fmt.Errorf("failed to marshal new result: %v", err)
+			return fmt.Errorf("failed to marshal new result: %w", err)
 		}
 		_, err = os.Stdout.WriteString(string(resultBytes))
 		if err != nil {
