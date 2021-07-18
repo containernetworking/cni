@@ -8,7 +8,7 @@ add or remove an interface in an already-created network namespace.
 * `NETCONFPATH`: This environment variable needs to be set to a
   directory. It defaults to `/etc/cni/net.d`. The `cnitool` searches
   for CNI configuration files in this directory with the extension
-  `*.conf` or `*.json`. It loads all the CNI configuration files in
+  `.conflist`. It loads all the CNI configuration files in
   this directory and if it finds a CNI configuration with the `network
   name` given to the cnitool it returns the corresponding CNI
   configuration, else it returns `nil`.
