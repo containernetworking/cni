@@ -195,6 +195,12 @@ Plugins fall in to three broad categories:
 - CNI helper plugins: these understand the semantics of the CNI api, and know how to play a specific role in the lifecycle of a CNI API call, but aren't directly relied on by a container runtime.
   - For example, the `host-local` ipam plugin is used by well-known CNI providers to manage IP address ranges and picking of IP addresses for a given host in a cluster.  This plugin doesn't actually do anything related to attachment of containers to a IP, but it does the work of managing IPs for higher level plugins to coordinate this process.
 
+To exemplify this, we can envision a CNI call happening from a container runtime like so:
+- First, an end user (i.e. a container runtime) calls CNI ADD on a vendor plugin (such as calico, antrea, cillium, or flannel) 
+- Next, the vendor calls the CNI ADD function on an IPAM provider CNI in order to decide on an IP address for the said container
+- Next, the vendor completes whatever needs to be done to setup routing to and from this IP address using underlying dataplane technologies
+- Finally, the vendor CNI returns control to the calling container runtime
+
 Thus, some CNI plugins, take responsibility for configuring a container's network interface in some manner, while other plugins (like the IPAM plugin), take responsibility for supporting the attachment of a container to an interface (i.e. in the IPAM example, the IPAM plugin doesn't attach any networking devices, but it does the essential task of finding a IP address which *can* be attached by another CNI plugin).
 
 
