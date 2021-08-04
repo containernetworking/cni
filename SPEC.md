@@ -40,7 +40,7 @@
 
 ## Version
 
-This is CNI **spec** version **1.0.0 pre-release** and is still under active development.
+This is CNI **spec** version **1.0.0**.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
@@ -50,6 +50,7 @@ Released versions of the spec are available as Git tags.
 
 | tag                                                                                  | spec permalink                                                                        | major changes                     |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------- |
+| [`spec-v1.0.0`](https://github.com/containernetworking/cni/releases/tag/spec-v1.0.0) | [spec at v1.0.0](https://github.com/containernetworking/cni/blob/spec-v1.0.0/SPEC.md) | Removed non-list configurations; removed `version` field of `interfaces` array |
 | [`spec-v0.4.0`](https://github.com/containernetworking/cni/releases/tag/spec-v0.4.0) | [spec at v0.4.0](https://github.com/containernetworking/cni/blob/spec-v0.4.0/SPEC.md) | Introduce the CHECK command and passing prevResult on DEL |
 | [`spec-v0.3.1`](https://github.com/containernetworking/cni/releases/tag/spec-v0.3.1) | [spec at v0.3.1](https://github.com/containernetworking/cni/blob/spec-v0.3.1/SPEC.md) | none (typo fix only)              |
 | [`spec-v0.3.0`](https://github.com/containernetworking/cni/releases/tag/spec-v0.3.0) | [spec at v0.3.0](https://github.com/containernetworking/cni/blob/spec-v0.3.0/SPEC.md) | rich result type, plugin chaining |
