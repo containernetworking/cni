@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/100"
+	types100 "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/types/create"
 )
 
@@ -37,6 +37,22 @@ func Current() string {
 // this list.
 var Legacy = PluginSupports("0.1.0", "0.2.0")
 var All = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0")
+
+// VersionsFrom returns a list of versions starting from min, inclusive
+func VersionsStartingFrom(min string) PluginInfo {
+	out := []string{}
+	// cheat, just assume ordered
+	ok := false
+	for _, v := range All.SupportedVersions() {
+		if !ok && v == min {
+			ok = true
+		}
+		if ok {
+			out = append(out, v)
+		}
+	}
+	return PluginSupports(out...)
+}
 
 // Finds a Result object matching the requested version (if any) and asks
 // that object to parse the plugin result, returning an error if parsing failed.

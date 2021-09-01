@@ -28,6 +28,11 @@ import (
 )
 
 var _ = Describe("Version operations", func() {
+	It("computes a list of versions correctly", func() {
+		actual := version.VersionsStartingFrom("0.3.1")
+		Expect(actual.SupportedVersions()).To(Equal([]string{"0.3.1", "0.4.0", "1.0.0"}))
+	})
+
 	Context("when a prevResult is available", func() {
 		It("parses the prevResult", func() {
 			rawBytes := []byte(`{
