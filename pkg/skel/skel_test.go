@@ -69,7 +69,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		stdinData = `{ "name":"skel-test", "some": "config", "cniVersion": "9.8.7" }`
 		stdout = &bytes.Buffer{}
 		stderr = &bytes.Buffer{}
-		versionInfo = version.PluginSupports("9.8.7")
+		versionInfo = version.PluginSupports("9.8.7", "10.0.0")
 		dispatch = &dispatcher{
 			Getenv: func(key string) string { return environment[key] },
 			Stdin:  strings.NewReader(stdinData),
@@ -430,7 +430,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
 				"cniVersion": "%s",
-				"supportedVersions": ["9.8.7"]
+				"supportedVersions": ["9.8.7", "10.0.0"]
 			}`, current.ImplementedSpecVersion)))
 		})
 
@@ -461,7 +461,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(r.ReadCount).To(Equal(0))
 			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
 				"cniVersion": "%s",
-				"supportedVersions": ["9.8.7"]
+				"supportedVersions": ["9.8.7", "10.0.0"]
 			}`, current.ImplementedSpecVersion)))
 		})
 	})
@@ -503,7 +503,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(cmdAdd.CallCount).To(Equal(0))
 			Expect(cmdDel.CallCount).To(Equal(0))
 			log := stderr.String()
-			Expect(log).To(Equal("AWESOME PLUGIN\n"))
+			Expect(log).To(Equal("AWESOME PLUGIN\nCNI protocol versions supported: 9.8.7, 10.0.0\n"))
 		})
 
 		It("fails if there is no about string", func() {
