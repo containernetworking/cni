@@ -249,10 +249,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		return types.NewError(types.ErrInvalidEnvironmentVariables, fmt.Sprintf("unknown CNI_COMMAND: %v", cmd), "")
 	}
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 // PluginMainWithError is the core "main" for a plugin. It accepts
