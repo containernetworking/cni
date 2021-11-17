@@ -2,7 +2,36 @@
 
 if [[ ${DEBUG} -gt 0 ]]; then set -x; fi
 
-NETCONFPATH=${NETCONFPATH-/etc/cni/net.d}
+NETCONFPATH="${NETCONFPATH-/etc/cni/net.d}"
+
+function exec_list() {
+  plist="$1"
+  name="$2"
+  cniVersion="$3"
+  echo "$plist" | jq -c '.[]' | while read -r conf; do
+    plugin_bin="$(echo "$conf" | jq -r '.type')"
+    conf="$(echo "$conf" | jq -r ".name = \"$name\" | .cniVersion = \"$cniVersion\"")"
+    if [ -n "$res" ]; then
+      conf="$(echo "$conf" | jq -r ".prevResult=$res")"
+    fi
+    if ! res=$(echo "$conf" | $plugin_bin); then
+      error "$name" "$res"
+    elif [[ ${DEBUG} -gt 0 ]]; then
+      echo "${res}" | jq -r .
+    fi
+  done
+}
+
+function error () {
+  name="$1"
+  res="$2"
+  err_msg=$(echo "$res" | jq -r '.msg')
+  if [ -z "$errmsg" ]; then
+    err_msg=$res
+  fi
+  echo "${name} : error executing $CNI_COMMAND: $err_msg"
+  exit 1
+}
 
 function exec_plugins() {
 	i=0
@@ -13,25 +42,24 @@ function exec_plugins() {
 	export CNI_CONTAINERID=$contid
 	export CNI_NETNS=$netns
 
-	for netconf in $(echo $NETCONFPATH/*.conf | sort); do
-		name=$(jq -r '.name' <$netconf)
-		plugin=$(jq -r '.type' <$netconf)
-		export CNI_IFNAME=$(printf eth%d $i)
+	for netconf in $(echo "$NETCONFPATH"/*.conf | sort); do
+	  export CNI_IFNAME=$(printf eth%d $i)
+	  name=$(jq -r '.name' <"$netconf")
+	  cniVersion=$(jq -r '.cniVersion' <"$netconf")
+	  plist=$(jq '.plugins | select(.!=null)' <"$netconf")
+	  if [ -n "$plist" ]; then
+	    exec_list "$plist" "$name" "$cniVersion"
+	  else
+      plugin=$(jq -r '.type' <"$netconf")
 
-		res=$($plugin <$netconf)
-		if [ $? -ne 0 ]; then
-			errmsg=$(echo $res | jq -r '.msg')
-			if [ -z "$errmsg" ]; then
-				errmsg=$res
-			fi
+      if ! res=$($plugin <"$netconf"); then
+        error "$name" "$res"
+      elif [[ ${DEBUG} -gt 0 ]]; then
+        echo "${res}" | jq -r .
+      fi
+    fi
 
-			echo "${name} : error executing $CNI_COMMAND: $errmsg"
-			exit 1
-		elif [[ ${DEBUG} -gt 0 ]]; then
-			echo ${res} | jq -r .
-		fi
-
-		let "i=i+1"
+		(( i++ )) || true
 	done
 }
 
