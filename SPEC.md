@@ -337,6 +337,7 @@ The operation of a network configuration on a container is called an _attachment
 - _delete_ may be followed by additional _deletes_.
 - The network configuration should not change between _add_ and _delete_.
 - The network configuration should not change between _attachments_.
+- The container runtime is responsible for cleanup of the container's network namespace.
 
 ### Attachment Parameters
 While a network configuration should not change between _attachments_, there are certain parameters supplied by the container runtime that are per-attachment. They are:
