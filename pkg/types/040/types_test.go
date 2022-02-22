@@ -348,7 +348,7 @@ var _ = Describe("040 types operations", func() {
 }`))
 
 		recovered := &types040.IPConfig{}
-		Expect(json.Unmarshal(jsonBytes, &recovered)).To(Succeed())
+		Expect(json.Unmarshal(jsonBytes, recovered)).To(Succeed())
 		Expect(recovered).To(Equal(ipc))
 	})
 
@@ -363,7 +363,7 @@ var _ = Describe("040 types operations", func() {
 	Context("when unmarshalling json fails", func() {
 		It("returns an error", func() {
 			recovered := &types040.IPConfig{}
-			err := json.Unmarshal([]byte(`{"address": 5}`), &recovered)
+			err := json.Unmarshal([]byte(`{"address": 5}`), recovered)
 			Expect(err).To(MatchError(HavePrefix("json: cannot unmarshal")))
 		})
 	})
