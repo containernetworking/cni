@@ -25,8 +25,7 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/cni/pkg/version/testhelpers"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
