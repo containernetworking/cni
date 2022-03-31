@@ -165,6 +165,7 @@ const (
 	ErrIOFailure                               // 5
 	ErrDecodingFailure                         // 6
 	ErrInvalidNetworkConfig                    // 7
+	ErrInvalidNetNS                            // 8
 	ErrTryAgainLater               uint = 11
 	ErrInternal                    uint = 999
 )
