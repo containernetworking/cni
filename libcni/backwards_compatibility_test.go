@@ -66,6 +66,9 @@ var _ = Describe("Backwards compatibility", func() {
 
 		Expect(result).To(Equal(legacy_examples.ExpectedResult))
 
+		err = cniConfig.DelNetwork(context.TODO(), netConf, runtimeConf)
+		Expect(err).NotTo(HaveOccurred())
+
 		Expect(os.RemoveAll(pluginPath)).To(Succeed())
 	})
 
