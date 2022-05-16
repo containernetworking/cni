@@ -46,6 +46,9 @@ func testResult() *current.Result {
 	Expect(routev6).NotTo(BeNil())
 	Expect(routegwv6).NotTo(BeNil())
 
+	mtu4 := 1450
+	mtu6 := 1280
+
 	// Set every field of the struct to ensure source compatibility
 	return &current.Result{
 		CNIVersion: "1.0.0",
@@ -68,9 +71,9 @@ func testResult() *current.Result {
 				Gateway:   net.ParseIP("abcd:1234:ffff::1"),
 			},
 		},
-		Routes: []*types.Route{
-			{Dst: *routev4, GW: routegwv4},
-			{Dst: *routev6, GW: routegwv6},
+		Routes: []*current.Route{
+			{Dst: *routev4, GW: routegwv4, MTU: &mtu4},
+			{Dst: *routev6, GW: routegwv6, MTU: &mtu6},
 		},
 		DNS: types.DNS{
 			Nameservers: []string{"1.2.3.4", "1::cafe"},
@@ -124,11 +127,13 @@ var _ = Describe("Current types operations", func() {
     "routes": [
         {
             "dst": "15.5.6.0/24",
-            "gw": "15.5.6.8"
+            "gw": "15.5.6.8",
+            "mtu": 1450
         },
         {
             "dst": "1111:dddd::/80",
-            "gw": "1111:dddd::aaaa"
+            "gw": "1111:dddd::aaaa",
+            "mtu": 1280
         }
     ],
     "dns": {
@@ -320,5 +325,74 @@ var _ = Describe("Current types operations", func() {
 		Expect(json).To(MatchJSON(`{
     "address": "10.1.2.3/24"
 }`))
+	})
+
+	Context("when setting custom routes with mtu 1400", func() {
+		notzero := 1400
+
+		exampleWithMTU := current.Route{
+			Dst: net.IPNet{
+				IP:   net.ParseIP("1.2.3.0"),
+				Mask: net.CIDRMask(24, 32),
+			},
+			GW:  net.ParseIP("1.2.3.1"),
+			MTU: &notzero,
+		}
+
+		It("marshals to JSON equivalent with mtu set ", func() {
+			jsonBytes, err := json.Marshal(&exampleWithMTU)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1", "mtu": 1400 }`))
+		})
+	})
+
+	Context("when setting custom routes with mtu 0", func() {
+		zero := 0
+
+		exampleZeroMTU := current.Route{
+			Dst: net.IPNet{
+				IP:   net.ParseIP("1.2.3.0"),
+				Mask: net.CIDRMask(24, 32),
+			},
+			GW:  net.ParseIP("1.2.3.1"),
+			MTU: &zero,
+		}
+
+		It("marshals to JSON equivalent to an omitted mtu ", func() {
+			jsonBytes, err := json.Marshal(&exampleZeroMTU)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1" }`))
+		})
+	})
+	Context("when setting custom routes without mtu", func() {
+		exampleNilMTU := current.Route{
+			Dst: net.IPNet{
+				IP:   net.ParseIP("1.2.3.0"),
+				Mask: net.CIDRMask(24, 32),
+			},
+			GW: net.ParseIP("1.2.3.1"),
+		}
+
+		It("marshals and unmarshals to JSON", func() {
+			jsonBytes, err := json.Marshal(&exampleNilMTU)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1" }`))
+
+			var unmarshaled current.Route
+			Expect(json.Unmarshal(jsonBytes, &unmarshaled)).To(Succeed())
+			Expect(unmarshaled).To(Equal(exampleNilMTU))
+		})
+
+		Context("when the json data is not valid", func() {
+			Specify("UnmarshalJSON returns an error", func() {
+				route := new(current.Route)
+				err := route.UnmarshalJSON([]byte(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.x" }`))
+				Expect(err).To(MatchError("invalid IP address: 1.2.3.x"))
+			})
+		})
+
+		It("formats as a string with a hex mask", func() {
+			Expect(exampleNilMTU.String()).To(Equal(`{Dst:{IP:1.2.3.0 Mask:ffffff00} GW:1.2.3.1 MTU:<nil>}`))
+		})
 	})
 })

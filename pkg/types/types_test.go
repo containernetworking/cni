@@ -79,41 +79,6 @@ var _ = Describe("Types", func() {
 		})
 	})
 
-	Describe("custom Route type", func() {
-		var example types.Route
-		BeforeEach(func() {
-			example = types.Route{
-				Dst: net.IPNet{
-					IP:   net.ParseIP("1.2.3.0"),
-					Mask: net.CIDRMask(24, 32),
-				},
-				GW: net.ParseIP("1.2.3.1"),
-			}
-		})
-
-		It("marshals and unmarshals to JSON", func() {
-			jsonBytes, err := json.Marshal(example)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1" }`))
-
-			var unmarshaled types.Route
-			Expect(json.Unmarshal(jsonBytes, &unmarshaled)).To(Succeed())
-			Expect(unmarshaled).To(Equal(example))
-		})
-
-		Context("when the json data is not valid", func() {
-			Specify("UnmarshalJSON returns an error", func() {
-				route := new(types.Route)
-				err := route.UnmarshalJSON([]byte(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.x" }`))
-				Expect(err).To(MatchError("invalid IP address: 1.2.3.x"))
-			})
-		})
-
-		It("formats as a string with a hex mask", func() {
-			Expect(example.String()).To(Equal(`{Dst:{IP:1.2.3.0 Mask:ffffff00} GW:1.2.3.1}`))
-		})
-	})
-
 	Describe("Error type", func() {
 		var example *types.Error
 		BeforeEach(func() {

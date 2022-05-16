@@ -489,6 +489,7 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
 - `routes`: Routes created by this attachment:
     - `dst`: The destination of the route, in CIDR notation
     - `gw`: The next hop address. If unset, a value in `gateway` in the `ips` array may be used.
+    - `mtu`: The MTU to use for this route. If unset or zero, the MTU will be determined the traditional way; the MTU of the local interface will be used.
 - `dns`: a dictionary consisting of DNS configuration information
     - `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
     - `domain` (string): the local domain used for short hostname lookups.
