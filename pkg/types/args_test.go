@@ -15,12 +15,12 @@
 package types_test
 
 import (
+	"net"
 	"reflect"
 
 	. "github.com/containernetworking/cni/pkg/types"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -127,6 +127,37 @@ var _ = Describe("LoadArgs", func() {
 			err := LoadArgs("IP=10.0.0.0/24", &conf)
 			Expect(err).To(HaveOccurred())
 
+		})
+	})
+
+	Context("When loading known arguments", func() {
+		It("should succeed if argument is marshallable value type", func() {
+			conf := struct {
+				IP net.IP
+				CommonArgs
+			}{}
+			err := LoadArgs("IP=10.0.0.0", &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.IP.String()).To(Equal("10.0.0.0"))
+		})
+
+		It("should succeed if argument is marshallable pointer type", func() {
+			conf := struct {
+				IP *net.IP
+				CommonArgs
+			}{}
+			err := LoadArgs("IP=10.0.0.0", &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.IP.String()).To(Equal("10.0.0.0"))
+		})
+
+		It("should fail if argument is pointer of marshallable pointer type", func() {
+			conf := struct {
+				IP **net.IP
+				CommonArgs
+			}{}
+			err := LoadArgs("IP=10.0.0.0", &conf)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })

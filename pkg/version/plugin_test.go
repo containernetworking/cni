@@ -16,7 +16,7 @@ package version_test
 
 import (
 	"github.com/containernetworking/cni/pkg/version"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -91,8 +91,16 @@ var _ = Describe("Decoding versions reported by a plugin", func() {
 			Expect(micro).To(Equal(3))
 		})
 
+		It("parses an empty string as v0.1.0", func() {
+			major, minor, micro, err := version.ParseVersion("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(major).To(Equal(0))
+			Expect(minor).To(Equal(1))
+			Expect(micro).To(Equal(0))
+		})
+
 		It("returns an error for malformed versions", func() {
-			badVersions := []string{"asdfasdf", "asdf.", ".asdfas", "asdf.adsf.", "0.", "..", "1.2.3.4.5", ""}
+			badVersions := []string{"asdfasdf", "asdf.", ".asdfas", "asdf.adsf.", "0.", "..", "1.2.3.4.5"}
 			for _, v := range badVersions {
 				_, _, _, err := version.ParseVersion(v)
 				Expect(err).To(HaveOccurred())

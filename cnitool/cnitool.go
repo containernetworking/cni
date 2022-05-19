@@ -26,6 +26,7 @@ import (
 	"github.com/containernetworking/cni/libcni"
 )
 
+// Protocol parameters are passed to the plugins via OS environment variables.
 const (
 	EnvCNIPath        = "CNI_PATH"
 	EnvNetDir         = "NETCONFPATH"
@@ -59,7 +60,6 @@ func parseArgs(args string) ([][2]string, error) {
 func main() {
 	if len(os.Args) < 4 {
 		usage()
-		return
 	}
 
 	netdir := os.Getenv(EnvNetDir)

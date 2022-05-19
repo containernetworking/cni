@@ -50,7 +50,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
 - [Cilium - BPF & XDP for containers](https://github.com/cilium/cilium)
 - [Infoblox - enterprise IP address management for containers](https://github.com/infobloxopen/cni-infoblox)
-- [Multus - a Multi plugin](https://github.com/Intel-Corp/multus-cni)
+- [Multus - a Multi plugin](https://github.com/k8snetworkplumbingwg/multus-cni)
 - [Romana - Layer 3 CNI plugin supporting network policy for Kubernetes](https://github.com/romana/kube)
 - [CNI-Genie - generic CNI network plugin](https://github.com/Huawei-PaaS/CNI-Genie)
 - [Nuage CNI - Nuage Networks SDN plugin for network policy kubernetes support ](https://github.com/nuagenetworks/nuage-cni)
@@ -67,10 +67,12 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [cni-route-override - a meta CNI plugin that override route information](https://github.com/redhat-nfvpe/cni-route-override)
 - [Terway - a collection of CNI Plugins based on alibaba cloud VPC/ECS network product](https://github.com/AliyunContainerService/terway)
 - [Cisco ACI CNI - for on-prem and cloud container networking with consistent policy and security model.](https://github.com/noironetworks/aci-containers)
-- [Kube-OVN - a CNI plugin that bases on OVN/OVS and provides advanced features like subnet, static ip, ACL, QoS, etc.](https://github.com/alauda/kube-ovn)
+- [Kube-OVN - a CNI plugin that bases on OVN/OVS and provides advanced features like subnet, static ip, ACL, QoS, etc.](https://github.com/kubeovn/kube-ovn)
 - [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
 - [OVN4NFV-K8S-Plugin - a OVN based CNI controller plugin to provide cloud native based Service function chaining (SFC), Multiple OVN overlay networking](https://github.com/opnfv/ovn4nfv-k8s-plugin)
 - [Azure CNI - a CNI plugin that natively extends Azure Virtual Networks to containers](https://github.com/Azure/azure-container-networking)
+- [NetLOX Loxilight -  Loxilight CNI is based on TC eBPF. It works either as a pure eBPF mode or in a hybrid-mode with multi-vendor DPU support when DPU units are available](https://www.netlox.io/product)
+- [Hybridnet - a CNI plugin designed for hybrid clouds which provides both overlay and underlay networking for containers in one or more clusters. Overlay and underlay containers can run on the same node and have cluster-wide bidirectional network connectivity.](https://github.com/alibaba/hybridnet)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
@@ -216,5 +218,7 @@ For any questions about CNI, please reach out via:
 - Email: [cni-dev](https://groups.google.com/forum/#!forum/cni-dev)
 - IRC: #[containernetworking](irc://irc.freenode.net:6667/#containernetworking) channel on [freenode.net](https://freenode.net/)
 - Slack: #cni on the [CNCF slack](https://slack.cncf.io/).  NOTE: the previous CNI Slack (containernetworking.slack.com) has been sunsetted.
+
+## Security
 
 If you have a _security_ issue to report, please do so privately to the email addresses listed in the [MAINTAINERS](MAINTAINERS) file.

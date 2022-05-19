@@ -120,6 +120,7 @@ func main() { skel.PluginMain(c, c) }
 // As we change the CNI spec, the Result type and this value may change.
 // The text of the example plugins should not.
 var ExpectedResult = &types020.Result{
+	CNIVersion: "0.1.0",
 	IP4: &types020.IPConfig{
 		IP: net.IPNet{
 			IP:   net.ParseIP("10.1.2.3"),

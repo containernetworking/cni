@@ -3,6 +3,6 @@ module github.com/containernetworking/cni
 go 1.14
 
 require (
-	github.com/onsi/ginkgo v1.13.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo/v2 v2.1.3
+	github.com/onsi/gomega v1.17.0
 )

@@ -19,8 +19,8 @@ import (
 	"net"
 
 	"github.com/containernetworking/cni/pkg/types"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	current "github.com/containernetworking/cni/pkg/types/100"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -141,6 +141,54 @@ var _ = Describe("Types", func() {
 		It("NewError method", func() {
 			err := types.NewError(1234, "some message", "some details")
 			Expect(err).To(Equal(example))
+		})
+	})
+
+	Describe("Result conversion", func() {
+		var result *current.Result
+		BeforeEach(func() {
+			ipv4, err := types.ParseCIDR("1.2.3.30/24")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ipv4).NotTo(BeNil())
+
+			ipv6, err := types.ParseCIDR("abcd:1234:ffff::cdde/64")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ipv6).NotTo(BeNil())
+
+			result = &current.Result{
+				CNIVersion: "1.0.0",
+				Interfaces: []*current.Interface{
+					{
+						Name:    "eth0",
+						Mac:     "00:11:22:33:44:55",
+						Sandbox: "/proc/3553/ns/net",
+					},
+				},
+				IPs: []*current.IPConfig{
+					{
+						Interface: current.Int(0),
+						Address:   *ipv4,
+						Gateway:   net.ParseIP("1.2.3.1"),
+					},
+					{
+						Interface: current.Int(0),
+						Address:   *ipv6,
+						Gateway:   net.ParseIP("abcd:1234:ffff::1"),
+					},
+				},
+				DNS: types.DNS{
+					Nameservers: []string{"1.2.3.4", "1::cafe"},
+					Domain:      "acompany.com",
+					Search:      []string{"somedomain.com", "otherdomain.net"},
+					Options:     []string{"foo", "bar"},
+				},
+			}
+		})
+
+		It("can create a CNIVersion '' (0.1.0) result", func() {
+			newResult, err := result.GetAsVersion("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(newResult.Version()).To(Equal("0.1.0"))
 		})
 	})
 })

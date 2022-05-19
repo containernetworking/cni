@@ -21,8 +21,9 @@ import (
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/020"
+	"github.com/containernetworking/cni/pkg/types/create"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -143,5 +144,14 @@ var _ = Describe("Ensures compatibility with the 0.1.0/0.2.0 spec", func() {
 		out, err := json.Marshal(res020)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(out).To(MatchJSON(expectedJSON))
+	})
+
+	It("creates a 0.1.0 result passing CNIVersion ''", func() {
+		_, expectedJSON := testResult("", "")
+		resT, err := create.Create("", []byte(expectedJSON))
+		Expect(err).NotTo(HaveOccurred())
+		res010, ok := resT.(*types020.Result)
+		Expect(ok).To(BeTrue())
+		Expect(res010.CNIVersion).To(Equal("0.1.0"))
 	})
 })

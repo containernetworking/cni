@@ -1,12 +1,45 @@
-# How to upgrade to CNI Specification v0.3.1
+# How to Upgrade to CNI Specification v1.0
+
+CNI v1.0 has the following changes:
+
+- non-List configurations are removed
+- the `version` field in the `interfaces` array was redundant and is removed
+
+## libcni Changes in CNI v1.0
+
+**`/pkg/types/current` no longer exists**
+
+This means that runtimes need to explicitly select a version they support.
+This reduces code breakage when revendoring cni into other projects and
+returns the decision on which CNI Spec versions a plugin supports to the
+plugin's authors.
+
+For example, your Go imports might look like
+
+```go
+import (
+    cniv1 "github.com/containernetworking/cni/pkg/types/100"
+)
+```
+
+
+# Changes in CNI v0.4
+
+CNI v0.4 has the following important changes:
+
+- A new verb, "CHECK", was added. Runtimes can now ask plugins to verify the status of a container's attachment
+- A new configuration flag, `disableCheck`, which indicates to the runtime that configuration should not be CHECK'ed
+
+No changes were made to the result type.
+
+
+# How to upgrade to CNI Specification v0.3.0 and later
 
 The 0.3.0 specification contained a small error. The Result structure's `ip` field should have been renamed to `ips` to be consistent with the IPAM result structure definition; this rename was missed when updating the Result to accommodate multiple IP addresses and interfaces. All first-party CNI plugins (bridge, host-local, etc) were updated to use `ips` (and thus be inconsistent with the 0.3.0 specification) and most other plugins have not been updated to the 0.3.0 specification yet, so few (if any) users should be impacted by this change.
 
-The 0.3.1 specification corrects the Result structure to use the `ips` field name as originally intended.  This is the only change between 0.3.0 and 0.3.1.
+The 0.3.1 specification corrects the `Result` structure to use the `ips` field name as originally intended.  This is the only change between 0.3.0 and 0.3.1.
 
-# How to upgrade to CNI Specification v0.3.0
-
-Version 0.3.0 of the [CNI Specification](../SPEC.md) provides rich information
+Version 0.3.0 of the [CNI Specification](https://github.com/containernetworking/cni/blob/spec-v0.3.0/SPEC.md) provides rich information
 about container network configuration, including details of network interfaces
 and support for multiple IP addresses.
 
@@ -46,7 +79,7 @@ This section provides guidance for upgrading plugins to CNI Spec Version 0.3.0.
 ### General guidance for all plugins (language agnostic)
 To provide the smoothest upgrade path, **existing plugins should support
 multiple versions of the CNI spec**.  In particular, plugins with existing
-installed bases should add support for CNI spec version 0.3.0 while maintaining
+installed bases should add support for CNI spec version 1.0.0 while maintaining
 compatibility with older versions.
 
 To do this, two changes are required.  First, a plugin should advertise which
@@ -55,8 +88,8 @@ command with the following JSON data:
 
 ```json
 {
-  "cniVersion": "0.3.0",
-  "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0" ]
+  "cniVersion": "1.0.0",
+  "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0" ]
 }
 ```
 
@@ -88,15 +121,15 @@ require some changes now, but should more-easily handle spec changes and
 new features going forward.
 
 For plugin authors, the biggest change is that `types.Result` is now an
-interface implemented by concrete struct types in the `types/current` and
-`types/020` subpackages.
+interface implemented by concrete struct types in the `types/100`,
+`types/040`, and `types/020` subpackages.
 
-Internally, plugins should use the `types/current` structs, and convert
-to or from specific versions when required.  A typical plugin will only need
-to do a single conversion.  That is when it is about to complete and needs to
-print the result JSON in the correct format to stdout.  The library
-function `types.PrintResult()` simplifies this by converting and printing in
-a single call.
+Internally, plugins should use the latest spec version (eg `types/100`) structs,
+and convert to or from specific versions when required.  A typical plugin will
+only need to do a single conversion when it is about to complete and
+needs to print the result JSON in the requested `cniVersion` format to stdout.
+The library function `types.PrintResult()` simplifies this by converting and
+printing in a single call.
 
 Additionally, the plugin should advertise which CNI Spec versions it supports
 via the 3rd argument to `skel.PluginMain()`.
@@ -107,7 +140,7 @@ Here is some example code
 import (
 	 "github.com/containernetworking/cni/pkg/skel"
 	 "github.com/containernetworking/cni/pkg/types"
-	 "github.com/containernetworking/cni/pkg/types/current"
+	 current "github.com/containernetworking/cni/pkg/types/100"
 	 "github.com/containernetworking/cni/pkg/version"
 )
 
@@ -136,7 +169,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports("0.1.0", "0.2.0", "0.3.0"))
+	skel.PluginMain(cmdAdd, cmdDel, version.All)
 }
 ```
 
@@ -155,7 +188,7 @@ Other examples of spec v0.3.0-compatible plugins are the
 ## For Runtime Authors
 
 This section provides guidance for upgrading container runtimes to support
-CNI Spec Version 0.3.0.
+CNI Spec Version 0.3.0 and later.
 
 ### General guidance for all runtimes (language agnostic)
 
@@ -163,7 +196,7 @@ CNI Spec Version 0.3.0.
 To provide the smoothest upgrade path and support the broadest range of CNI
 plugins, **container runtimes should support multiple versions of the CNI spec**.
 In particular, runtimes with existing installed bases should add support for CNI
-spec version 0.3.0 while maintaining compatibility with older versions.
+spec version 0.3.0 and later while maintaining compatibility with older versions.
 
 To support multiple versions of the CNI spec, runtimes should be able to
 call both new and legacy plugins, and handle the results from either.
@@ -197,16 +230,17 @@ added in CNI spec v0.2.0, so older plugins may not respect it.  In the absence
 of a successful response to `VERSION`, assume that the plugin only supports
 CNI spec v0.1.0.
 
-#### Handle missing data in v0.3.0 results
-The Result for the `ADD` command in CNI spec version 0.3.0 includes a new field
-`interfaces`.  An IP address in the `ip` field may describe which interface
-it is assigned to, by placing a numeric index in the `interface` subfield.
+#### Handle missing data in v0.3.0 and later results
+The Result for the `ADD` command in CNI spec version 0.3.0 and later includes
+a new field `interfaces`.  An IP address in the `ip` field may describe which
+interface it is assigned to, by placing a numeric index in the `interface`
+subfield.
 
-However, some plugins which are v0.3.0 compatible may nonetheless omit the
-`interfaces` field and/or set the `interface` index value to `-1`.  Runtimes
-should gracefully handle this situation, unless they have good reason to rely
-on the existence of the interface data.  In that case, provide the user an
-error message that helps diagnose the issue.
+However, some plugins which are v0.3.0 and later compatible may nonetheless
+omit the `interfaces` field and/or set the `interface` index value to `-1`.
+Runtimes should gracefully handle this situation, unless they have good reason
+to rely on the existence of the interface data.  In that case, provide the user
+an error message that helps diagnose the issue.
 
 ### Specific guidance for container runtimes written in Go
 Container runtimes written in Go may leverage the Go language packages in this
@@ -223,17 +257,18 @@ other packages, such as the high-level `libcni` package, have been updated to us
 this interface.  Concrete types are now per-version subpackages. The `types/current`
 subpackage contains the latest (spec v0.3.0) types.
 
-When up-converting older result types to spec v0.3.0, fields new in
-spec v0.3.0 (like `interfaces`) may be empty.  Conversely, when
-down-converting v0.3.0 results to an older version, any data in those fields
-will be lost.
+When up-converting older result types to spec v0.3.0 and later, fields new in
+spec v0.3.0 and later (like `interfaces`) may be empty.  Conversely, when
+down-converting v0.3.0 and later results to an older version, any data in
+those fields will be lost.
 
-| From   | 0.1 | 0.2 | 0.3 |
-|--------|-----|-----|-----|
-| To 0.1 |  ✔  |  ✔  |  x  |
-| To 0.2 |  ✔  |  ✔  |  x  |
-| To 0.3 |  ✴  |  ✴  |  ✔  |
-
+| From   | 0.1 | 0.2 | 0.3 | 0.4 | 1.0 |
+|--------|-----|-----|-----|-----|-----|
+| To 0.1 |  ✔  |  ✔  |  x  |  x  |  x  |
+| To 0.2 |  ✔  |  ✔  |  x  |  x  |  x  |
+| To 0.3 |  ✴  |  ✴  |  ✔  |  ✔  |  ✔  |
+| To 0.4 |  ✴  |  ✴  |  ✔  |  ✔  |  ✔  |
+| To 1.0 |  ✴  |  ✴  |  ✔  |  ✔  |  ✔  |
 
 Key:
 > ✔ : lossless conversion <br>

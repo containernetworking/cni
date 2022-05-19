@@ -110,7 +110,7 @@ func (e *ExampleRuntime) GenerateNetConf(name string) (*ExampleNetConf, error) {
 
 	debugFile, err := ioutil.TempFile("", "cni_debug")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create noop plugin debug file: %v", err)
+		return nil, fmt.Errorf("failed to create noop plugin debug file: %w", err)
 	}
 	debugFilePath := debugFile.Name()
 
@@ -119,7 +119,7 @@ func (e *ExampleRuntime) GenerateNetConf(name string) (*ExampleNetConf, error) {
 	}
 	if err := debug.WriteDebug(debugFilePath); err != nil {
 		os.Remove(debugFilePath)
-		return nil, fmt.Errorf("failed to write noop plugin debug file %q: %v", debugFilePath, err)
+		return nil, fmt.Errorf("failed to write noop plugin debug file %q: %w", debugFilePath, err)
 	}
 	conf := &ExampleNetConf{
 		Config:        fmt.Sprintf(template.conf, debugFilePath),

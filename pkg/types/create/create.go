@@ -15,12 +15,42 @@
 package create
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/containernetworking/cni/pkg/types"
 	convert "github.com/containernetworking/cni/pkg/types/internal"
 )
 
-// Create creates a CNI Result using the given JSON, or an error if the creation
-// could not be performed
+// DecodeVersion returns the CNI version from CNI configuration or result JSON,
+// or an error if the operation could not be performed.
+func DecodeVersion(jsonBytes []byte) (string, error) {
+	var conf struct {
+		CNIVersion string `json:"cniVersion"`
+	}
+	err := json.Unmarshal(jsonBytes, &conf)
+	if err != nil {
+		return "", fmt.Errorf("decoding version from network config: %w", err)
+	}
+	if conf.CNIVersion == "" {
+		return "0.1.0", nil
+	}
+	return conf.CNIVersion, nil
+}
+
+// Create creates a CNI Result using the given JSON with the expected
+// version, or an error if the creation could not be performed
 func Create(version string, bytes []byte) (types.Result, error) {
+	return convert.Create(version, bytes)
+}
+
+// CreateFromBytes creates a CNI Result from the given JSON, automatically
+// detecting the CNI spec version of the result. An error is returned if the
+// operation could not be performed.
+func CreateFromBytes(bytes []byte) (types.Result, error) {
+	version, err := DecodeVersion(bytes)
+	if err != nil {
+		return nil, err
+	}
 	return convert.Create(version, bytes)
 }
