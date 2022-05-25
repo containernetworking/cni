@@ -96,6 +96,38 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 			_, err := invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, nil)
 			Expect(err).To(HaveOccurred())
 		})
+
+		It("assumes config version if result version is missing", func() {
+			rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "ips": [ { "version": "4", "address": "1.2.3.4/24" } ] }`)
+			r, err := invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r.Version()).To(Equal("0.3.1"))
+
+			result, err := current.GetResult(r)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(result.IPs)).To(Equal(1))
+			Expect(result.IPs[0].Address.IP.String()).To(Equal("1.2.3.4"))
+		})
+
+		It("assumes config version if result version is empty", func() {
+			rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "cniVersion": "", "ips": [ { "version": "4", "address": "1.2.3.4/24" } ] }`)
+			r, err := invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r.Version()).To(Equal("0.3.1"))
+
+			result, err := current.GetResult(r)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(result.IPs)).To(Equal(1))
+			Expect(result.IPs[0].Address.IP.String()).To(Equal("1.2.3.4"))
+		})
+
+		It("assumes 0.1.0 if config and result version are empty", func() {
+			netconf = []byte(`{ "some": "stdin" }`)
+			rawExec.ExecPluginCall.Returns.ResultBytes = []byte(`{ "some": "version-info" }`)
+			r, err := invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(r.Version()).To(Equal("0.1.0"))
+		})
 	})
 
 	Describe("without returning a result", func() {
