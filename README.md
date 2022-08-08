@@ -39,7 +39,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [OpenSVC - orchestrator for legacy and containerized application stacks](https://docs.opensvc.com/latest/fr/agent.configure.cni.html)
 
 ### 3rd party plugins
-- [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico-cni)
+- [Project Calico - a layer 3 virtual network](https://github.com/projectcalico/calico)
 - [Weave - a multi-host Docker network](https://github.com/weaveworks/weave)
 - [Contiv Networking - policy networking for various use cases](https://github.com/contiv/netplugin)
 - [SR-IOV](https://github.com/hustcat/sriov-cni)
