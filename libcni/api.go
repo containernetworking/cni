@@ -38,6 +38,8 @@ import (
 
 var (
 	CacheDir = "/var/lib/cni"
+	// slightly awkward wording to preserve anyone matching on error strings
+	ErrorCheckNotSupp = fmt.Errorf("does not support the CHECK command")
 )
 
 const (
@@ -453,7 +455,7 @@ func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigLis
 	if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
 		return err
 	} else if !gtet {
-		return fmt.Errorf("configuration version %q does not support the CHECK command", list.CNIVersion)
+		return fmt.Errorf("configuration version %q %w", list.CNIVersion, ErrorCheckNotSupp)
 	}
 
 	if list.DisableCheck {
@@ -547,7 +549,7 @@ func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *Ru
 	if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
 		return err
 	} else if !gtet {
-		return fmt.Errorf("configuration version %q does not support the CHECK command", net.Network.CNIVersion)
+		return fmt.Errorf("configuration version %q %w", net.Network.CNIVersion, ErrorCheckNotSupp)
 	}
 
 	cachedResult, err := c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
