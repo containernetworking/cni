@@ -1280,6 +1280,7 @@ var _ = Describe("Invoking plugins", func() {
 						Expect(err).NotTo(HaveOccurred())
 						err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
 						Expect(err).To(MatchError("configuration version \"0.3.1\" does not support the CHECK command"))
+						Expect(errors.Is(err, libcni.ErrorCheckNotSupp)).To(BeTrue())
 					})
 				})
 			})
