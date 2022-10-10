@@ -4,7 +4,7 @@ name: test
 on: ["push", "pull_request"]
 
 env:
-  GO_VERSION: "1.16"
+  GO_VERSION: "1.19"
   LINUX_ARCHES: "amd64 386 arm arm64 s390x mips64le ppc64le"
 
 jobs:
