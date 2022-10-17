@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/containernetworking/cni/pkg/types"
 )
@@ -89,7 +90,17 @@ func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 	if rawDisableCheck, ok := rawList["disableCheck"]; ok {
 		disableCheck, ok = rawDisableCheck.(bool)
 		if !ok {
-			return nil, fmt.Errorf("error parsing configuration list: invalid disableCheck type %T", rawDisableCheck)
+			disableCheckStr, ok := rawDisableCheck.(string)
+			if !ok {
+				return nil, fmt.Errorf("error parsing configuration list: invalid disableCheck type %T", rawDisableCheck)
+			}
+			if strings.ToLower(disableCheckStr) == "false" {
+				disableCheck = false
+			} else if strings.ToLower(disableCheckStr) == "true" {
+				disableCheck = true
+			} else {
+				return nil, fmt.Errorf("error parsing configuration list: invalid disableCheck value %q", disableCheckStr)
+			}
 		}
 	}
 

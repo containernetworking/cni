@@ -15,6 +15,7 @@
 package libcni_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -326,6 +327,65 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("will not find the config", func() {
 				_, err := libcni.LoadConfList(configDir, "deep")
 				Expect(err).To(MatchError(HavePrefix("no net configuration with name")))
+			})
+		})
+
+		Context("when disableCheck is a string not a boolean", func() {
+			It("will read a 'true' value and convert to boolean", func() {
+				configList = []byte(`{
+				  "name": "some-list",
+				  "cniVersion": "0.4.0",
+				  "disableCheck": "true",
+				  "plugins": [
+				    {
+				      "type": "host-local",
+				      "subnet": "10.0.0.1/24"
+				    }
+				  ]
+				}`)
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+
+				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(netConfigList.DisableCheck).To(BeTrue())
+			})
+
+			It("will read a 'false' value and convert to boolean", func() {
+				configList = []byte(`{
+				  "name": "some-list",
+				  "cniVersion": "0.4.0",
+				  "disableCheck": "false",
+				  "plugins": [
+				    {
+				      "type": "host-local",
+				      "subnet": "10.0.0.1/24"
+				    }
+				  ]
+				}`)
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+
+				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(netConfigList.DisableCheck).To(BeFalse())
+			})
+
+			It("will return an error on an unrecognized value", func() {
+				const badValue string = "adsfasdfasf"
+				configList = []byte(fmt.Sprintf(`{
+				  "name": "some-list",
+				  "cniVersion": "0.4.0",
+				  "disableCheck": "%s",
+				  "plugins": [
+				    {
+				      "type": "host-local",
+				      "subnet": "10.0.0.1/24"
+				    }
+				  ]
+				}`, badValue))
+				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+
+				_, err := libcni.LoadConfList(configDir, "some-list")
+				Expect(err).To(MatchError(fmt.Sprintf("error parsing configuration list: invalid disableCheck value \"%s\"", badValue)))
 			})
 		})
 	})
