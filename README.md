@@ -66,7 +66,6 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Project Antrea - an Open vSwitch k8s CNI](https://github.com/vmware-tanzu/antrea)
 - [OVN4NFV-K8S-Plugin - a OVN based CNI controller plugin to provide cloud native based Service function chaining (SFC), Multiple OVN overlay networking](https://github.com/opnfv/ovn4nfv-k8s-plugin)
 - [Azure CNI - a CNI plugin that natively extends Azure Virtual Networks to containers](https://github.com/Azure/azure-container-networking)
-- [NetLOX Loxilight -  Loxilight CNI is based on TC eBPF. It works either as a pure eBPF mode or in a hybrid-mode with multi-vendor DPU support when DPU units are available](https://www.netlox.io/product)
 - [Hybridnet - a CNI plugin designed for hybrid clouds which provides both overlay and underlay networking for containers in one or more clusters. Overlay and underlay containers can run on the same node and have cluster-wide bidirectional network connectivity.](https://github.com/alibaba/hybridnet)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
