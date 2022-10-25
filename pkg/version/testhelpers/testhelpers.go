@@ -64,8 +64,16 @@ func modInit(path, name string) error {
 	return run(cmd)
 }
 
+// addLibcni will execute `go mod edit -replace` to fix libcni at a specified version
 func addLibcni(path, gitRef string) error {
-	cmd := exec.Command("go", "get", "github.com/containernetworking/cni@"+gitRef)
+	cmd := exec.Command("go", "mod", "edit", "-replace=github.com/containernetworking/cni=github.com/containernetworking/cni@"+gitRef)
+	cmd.Dir = path
+	return run(cmd)
+}
+
+// modTidy will execute `go mod tidy` to ensure all necessary dependencies
+func modTidy(path string) error {
+	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = path
 	return run(cmd)
 }
@@ -85,12 +93,15 @@ func BuildAt(programSource []byte, gitRef string, outputFilePath string) error {
 		return err
 	}
 
-	// go get
 	if err := addLibcni(tempDir, gitRef); err != nil {
 		return err
 	}
 
 	if err := ioutil.WriteFile(filepath.Join(tempDir, "main.go"), programSource, 0600); err != nil {
+		return err
+	}
+
+	if err := modTidy(tempDir); err != nil {
 		return err
 	}
 
