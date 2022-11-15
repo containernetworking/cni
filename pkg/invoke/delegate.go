@@ -16,9 +16,8 @@ package invoke
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 
+	"github.com/containernetworking/cni/pkg/env"
 	"github.com/containernetworking/cni/pkg/types"
 )
 
@@ -27,7 +26,7 @@ func delegateCommon(delegatePlugin string, exec Exec) (string, Exec, error) {
 		exec = defaultExec
 	}
 
-	paths := filepath.SplitList(os.Getenv("CNI_PATH"))
+	paths := env.ParseCNIPath()
 	pluginPath, err := exec.FindInPath(delegatePlugin, paths)
 	if err != nil {
 		return "", nil, err

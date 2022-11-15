@@ -29,6 +29,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/containernetworking/cni/pkg/env"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
@@ -164,7 +165,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 
 func debugGetSupportedVersions(stdinData []byte) []string {
 	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0"}
-	cniArgs := os.Getenv("CNI_ARGS")
+	cniArgs := env.GetCNIArgs()
 	if cniArgs == "" {
 		return vers
 	}
@@ -185,15 +186,15 @@ func debugGetSupportedVersions(stdinData []byte) []string {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
-	return debugBehavior(args, "ADD")
+	return debugBehavior(args, env.CmdAdd)
 }
 
 func cmdCheck(args *skel.CmdArgs) error {
-	return debugBehavior(args, "CHECK")
+	return debugBehavior(args, env.CmdCheck)
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	return debugBehavior(args, "DEL")
+	return debugBehavior(args, env.CmdDel)
 }
 
 func saveStdin() ([]byte, error) {

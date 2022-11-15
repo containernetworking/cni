@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/containernetworking/cni/pkg/env"
 )
 
 type CNIArgs interface {
@@ -54,7 +56,7 @@ type Args struct {
 var _ CNIArgs = &Args{}
 
 func (args *Args) AsEnv() []string {
-	env := os.Environ()
+	environ := os.Environ()
 	pluginArgsStr := args.PluginArgsStr
 	if pluginArgsStr == "" {
 		pluginArgsStr = stringify(args.PluginArgs)
@@ -62,15 +64,15 @@ func (args *Args) AsEnv() []string {
 
 	// Duplicated values which come first will be overridden, so we must put the
 	// custom values in the end to avoid being overridden by the process environments.
-	env = append(env,
-		"CNI_COMMAND="+args.Command,
-		"CNI_CONTAINERID="+args.ContainerID,
-		"CNI_NETNS="+args.NetNS,
-		"CNI_ARGS="+pluginArgsStr,
-		"CNI_IFNAME="+args.IfName,
-		"CNI_PATH="+args.Path,
+	environ = append(environ,
+		env.VarCNICommand+"="+args.Command,
+		env.VarCNIContainerId+"="+args.ContainerID,
+		env.VarCNINetNs+"="+args.NetNS,
+		env.VarCNIArgs+"="+pluginArgsStr,
+		env.VarCNIIfname+"="+args.IfName,
+		env.VarCNIPath+"="+args.Path,
 	)
-	return dedupEnv(env)
+	return dedupEnv(environ)
 }
 
 // taken from rkt/networking/net_plugin.go
@@ -94,23 +96,23 @@ type DelegateArgs struct {
 }
 
 func (d *DelegateArgs) AsEnv() []string {
-	env := os.Environ()
+	environ := os.Environ()
 
 	// The custom values should come in the end to override the existing
 	// process environment of the same key.
-	env = append(env,
-		"CNI_COMMAND="+d.Command,
+	environ = append(environ,
+		env.VarCNICommand+"="+d.Command,
 	)
-	return dedupEnv(env)
+	return dedupEnv(environ)
 }
 
 // dedupEnv returns a copy of env with any duplicates removed, in favor of later values.
 // Items not of the normal environment "key=value" form are preserved unchanged.
-func dedupEnv(env []string) []string {
-	out := make([]string, 0, len(env))
+func dedupEnv(environ []string) []string {
+	out := make([]string, 0, len(environ))
 	envMap := map[string]string{}
 
-	for _, kv := range env {
+	for _, kv := range environ {
 		// find the first "=" in environment, if not, just keep it
 		eq := strings.Index(kv, "=")
 		if eq < 0 {
