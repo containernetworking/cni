@@ -14,7 +14,6 @@
 package testhelpers
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,7 +42,7 @@ func main() { skel.PluginMain(c, c) }
 		gitRef = "f4364185253"
 
 		var err error
-		outputDir, err = ioutil.TempDir("", "bin")
+		outputDir, err = os.MkdirTemp("", "bin")
 		Expect(err).NotTo(HaveOccurred())
 		outputFilePath = filepath.Join(outputDir, "some-binary")
 		if runtime.GOOS == "windows" {

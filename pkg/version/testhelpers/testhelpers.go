@@ -22,7 +22,6 @@ package testhelpers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -81,7 +80,7 @@ func modTidy(path string) error {
 // BuildAt builds the go programSource using the version of the CNI library
 // at gitRef, and saves the resulting binary file at outputFilePath
 func BuildAt(programSource []byte, gitRef string, outputFilePath string) error {
-	tempDir, err := ioutil.TempDir(os.Getenv("GOTMPDIR"), "cni-test-")
+	tempDir, err := os.MkdirTemp(os.Getenv("GOTMPDIR"), "cni-test-")
 	if err != nil {
 		return err
 	}
@@ -97,7 +96,7 @@ func BuildAt(programSource []byte, gitRef string, outputFilePath string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(tempDir, "main.go"), programSource, 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(tempDir, "main.go"), programSource, 0600); err != nil {
 		return err
 	}
 

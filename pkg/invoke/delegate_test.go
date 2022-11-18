@@ -17,7 +17,6 @@ package invoke_test
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -59,7 +58,7 @@ var _ = Describe("Delegate", func() {
 		}
 		expectedResultBytes, _ := json.Marshal(expectedResult)
 
-		debugFile, err := ioutil.TempFile("", "cni_debug")
+		debugFile, err := os.CreateTemp("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(debugFile.Close()).To(Succeed())
 		debugFileName = debugFile.Name()

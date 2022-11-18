@@ -16,7 +16,6 @@ package libcni_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -35,11 +34,11 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		BeforeEach(func() {
 			var err error
-			configDir, err = ioutil.TempDir("", "plugin-conf")
+			configDir, err = os.MkdirTemp("", "plugin-conf")
 			Expect(err).NotTo(HaveOccurred())
 
 			pluginConfig = []byte(`{ "name": "some-plugin", "type": "foobar", "some-key": "some-value" }`)
-			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -73,7 +72,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			BeforeEach(func() {
 				Expect(os.Remove(configDir + "/50-whatever.conf")).To(Succeed())
 				pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value", "type": "foobar" }`)
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.json"), pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.json"), pluginConfig, 0600)).To(Succeed())
 			})
 			It("finds the network config file for the plugin of the given type", func() {
 				netConfig, err := libcni.LoadConf(configDir, "some-plugin")
@@ -97,7 +96,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		Context("when a config file is malformed", func() {
 			BeforeEach(func() {
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "00-bad.conf"), []byte(`{`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conf"), []byte(`{`), 0600)).To(Succeed())
 			})
 
 			It("returns a useful error", func() {
@@ -112,7 +111,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(os.MkdirAll(subdir, 0700)).To(Succeed())
 
 				pluginConfig = []byte(`{ "name": "deep", "some-key": "some-value" }`)
-				Expect(ioutil.WriteFile(filepath.Join(subdir, "90-deep.conf"), pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conf"), pluginConfig, 0600)).To(Succeed())
 			})
 
 			It("will not find the config", func() {
@@ -127,11 +126,11 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		BeforeEach(func() {
 			var err error
-			configDir, err = ioutil.TempDir("", "plugin-conf")
+			configDir, err = os.MkdirTemp("", "plugin-conf")
 			Expect(err).NotTo(HaveOccurred())
 
 			pluginConfig := []byte(`{ "name": "some-plugin", "type": "noop", "cniVersion": "0.3.1", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
-			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -161,12 +160,12 @@ var _ = Describe("Loading configuration from disk", func() {
 			var fileName, configDir string
 			BeforeEach(func() {
 				var err error
-				configDir, err = ioutil.TempDir("", "plugin-conf")
+				configDir, err = os.MkdirTemp("", "plugin-conf")
 				Expect(err).NotTo(HaveOccurred())
 
 				fileName = filepath.Join(configDir, "50-whatever.conf")
 				pluginConfig := []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
-				Expect(ioutil.WriteFile(fileName, pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(fileName, pluginConfig, 0600)).To(Succeed())
 			})
 
 			AfterEach(func() {
@@ -197,7 +196,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		BeforeEach(func() {
 			var err error
-			configDir, err = ioutil.TempDir("", "plugin-conf")
+			configDir, err = os.MkdirTemp("", "plugin-conf")
 			Expect(err).NotTo(HaveOccurred())
 
 			configList = []byte(`{
@@ -219,7 +218,7 @@ var _ = Describe("Loading configuration from disk", func() {
     }
   ]
 }`)
-			Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -258,7 +257,7 @@ var _ = Describe("Loading configuration from disk", func() {
 					"cniVersion": "0.2.0",
 					"type": "bridge"
 				}`)
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "49-whatever.conf"), configFile, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "49-whatever.conf"), configFile, 0600)).To(Succeed())
 			})
 
 			It("Loads the config list first", func() {
@@ -297,7 +296,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		Context("when a config file is malformed", func() {
 			BeforeEach(func() {
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "00-bad.conflist"), []byte(`{`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conflist"), []byte(`{`), 0600)).To(Succeed())
 			})
 
 			It("returns a useful error", func() {
@@ -321,7 +320,7 @@ var _ = Describe("Loading configuration from disk", func() {
     },
   ]
 }`)
-				Expect(ioutil.WriteFile(filepath.Join(subdir, "90-deep.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conflist"), configList, 0600)).To(Succeed())
 			})
 
 			It("will not find the config", func() {
@@ -343,7 +342,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`)
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
 
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
@@ -362,7 +361,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`)
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
 
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
@@ -382,7 +381,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`, badValue))
-				Expect(ioutil.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
 
 				_, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).To(MatchError(fmt.Sprintf("error parsing configuration list: invalid disableCheck value \"%s\"", badValue)))

@@ -16,7 +16,6 @@ package main_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -46,7 +45,7 @@ var _ = Describe("No-op plugin", func() {
 			ReportVersionSupport: []string{"0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0"},
 		}
 
-		debugFile, err := ioutil.TempFile("", "cni_debug")
+		debugFile, err := os.CreateTemp("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(debugFile.Close()).To(Succeed())
 		debugFileName = debugFile.Name()

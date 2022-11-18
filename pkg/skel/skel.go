@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -148,7 +147,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		t.Stdin = bytes.NewReader(nil)
 	}
 
-	stdinData, err := ioutil.ReadAll(t.Stdin)
+	stdinData, err := io.ReadAll(t.Stdin)
 	if err != nil {
 		return "", nil, types.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}

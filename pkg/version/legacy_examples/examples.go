@@ -17,8 +17,8 @@
 package legacy_examples
 
 import (
-	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -51,7 +51,7 @@ func ensureBuildDirExists() error {
 	}
 
 	var err error
-	buildDir, err = ioutil.TempDir("", "cni-example-plugins")
+	buildDir, err = os.MkdirTemp("", "cni-example-plugins")
 	return err
 }
 

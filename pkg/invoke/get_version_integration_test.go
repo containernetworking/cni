@@ -16,7 +16,6 @@ package invoke_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,7 +35,7 @@ var _ = Describe("GetVersion, integration tests", func() {
 	)
 
 	BeforeEach(func() {
-		pluginDir, err := ioutil.TempDir("", "plugins")
+		pluginDir, err := os.MkdirTemp("", "plugins")
 		Expect(err).NotTo(HaveOccurred())
 		pluginPath = filepath.Join(pluginDir, "test-plugin")
 		if runtime.GOOS == "windows" {
