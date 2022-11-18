@@ -17,7 +17,7 @@ package debug
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 
 	"github.com/containernetworking/cni/pkg/skel"
 )
@@ -42,7 +42,7 @@ type Debug struct {
 
 // ReadDebug will return a debug file recorded by the noop plugin
 func ReadDebug(debugFilePath string) (*Debug, error) {
-	debugBytes, err := ioutil.ReadFile(debugFilePath)
+	debugBytes, err := os.ReadFile(debugFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (debug *Debug) WriteDebug(debugFilePath string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(debugFilePath, debugBytes, 0600)
+	err = os.WriteFile(debugFilePath, debugBytes, 0600)
 	if err != nil {
 		return err
 	}

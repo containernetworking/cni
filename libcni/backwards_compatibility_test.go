@@ -17,7 +17,6 @@ package libcni_test
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,7 +35,7 @@ var _ = Describe("Backwards compatibility", func() {
 
 	BeforeEach(func() {
 		var err error
-		cacheDirPath, err = ioutil.TempDir("", "cni_cachedir")
+		cacheDirPath, err = os.MkdirTemp("", "cni_cachedir")
 		Expect(err).NotTo(HaveOccurred())
 	})
 

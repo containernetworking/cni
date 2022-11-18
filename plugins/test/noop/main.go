@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -198,7 +198,7 @@ func cmdDel(args *skel.CmdArgs) error {
 
 func saveStdin() ([]byte, error) {
 	// Read original stdin
-	stdinData, err := ioutil.ReadAll(os.Stdin)
+	stdinData, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,6 @@ package invoke_test
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/containernetworking/cni/pkg/invoke"
@@ -41,7 +40,7 @@ var _ = Describe("RawExec", func() {
 	const reportResult = `{ "some": "result" }`
 
 	BeforeEach(func() {
-		debugFile, err := ioutil.TempFile("", "cni_debug")
+		debugFile, err := os.CreateTemp("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(debugFile.Close()).To(Succeed())
 		debugFileName = debugFile.Name()

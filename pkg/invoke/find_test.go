@@ -16,7 +16,6 @@ package invoke_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,17 +36,17 @@ var _ = Describe("FindInPath", func() {
 	)
 
 	BeforeEach(func() {
-		tempDir, err := ioutil.TempDir("", "cni-find")
+		tempDir, err := os.MkdirTemp("", "cni-find")
 		Expect(err).NotTo(HaveOccurred())
 
-		plugin, err := ioutil.TempFile(tempDir, "a-cni-plugin")
+		plugin, err := os.CreateTemp(tempDir, "a-cni-plugin")
 		Expect(err).NotTo(HaveOccurred())
 
 		plugin2Name := "a-plugin-with-extension" + invoke.ExecutableFileExtensions[0]
 		plugin2, err := os.Create(filepath.Join(tempDir, plugin2Name))
 		Expect(err).NotTo(HaveOccurred())
 
-		anotherTempDir, err = ioutil.TempDir("", "nothing-here")
+		anotherTempDir, err = os.MkdirTemp("", "nothing-here")
 		Expect(err).NotTo(HaveOccurred())
 
 		multiplePaths = []string{anotherTempDir, tempDir}

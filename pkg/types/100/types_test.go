@@ -16,7 +16,7 @@ package types100_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 
@@ -96,7 +96,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// parse the result
-		out, err := ioutil.ReadAll(r)
+		out, err := io.ReadAll(r)
 		os.Stdout = oldStdout
 		Expect(err).NotTo(HaveOccurred())
 
@@ -164,7 +164,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// parse the result
-		out, err := ioutil.ReadAll(r)
+		out, err := io.ReadAll(r)
 		os.Stdout = oldStdout
 		Expect(err).NotTo(HaveOccurred())
 
@@ -223,7 +223,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// parse the result
-		out, err := ioutil.ReadAll(r)
+		out, err := io.ReadAll(r)
 		os.Stdout = oldStdout
 		Expect(err).NotTo(HaveOccurred())
 
