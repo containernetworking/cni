@@ -103,7 +103,7 @@ require this.
 A network configuration consists of a JSON object with the following keys:
 
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.0.0"
-- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
+- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (\_), dot (.) or hyphen (-).
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
 
@@ -203,7 +203,7 @@ The runtime must execute the plugin in the runtime's networking domain. (For mos
 Protocol parameters are passed to the plugins via OS environment variables.
 
 - `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, or `VERSION`.
-- `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-).
+- `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (\_), dot (.) or hyphen (-).
 - `CNI_NETNS`: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`)
 - `CNI_IFNAME`: Name of the interface to create inside the container; if the plugin is unable to use this interface name it must return an error.
 - `CNI_ARGS`: Extra arguments passed in by the user at invocation time. Alphanumeric key-value pairs separated by semicolons; for example, "FOO=BAR;ABC=123"
@@ -342,7 +342,7 @@ The operation of a network configuration on a container is called an _attachment
 ### Attachment Parameters
 While a network configuration should not change between _attachments_, there are certain parameters supplied by the container runtime that are per-attachment. They are:
 
-- **Container ID:** A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-). During execution, always set as the  `CNI_CONTAINERID` parameter.
+- **Container ID:** A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (\_), dot (.) or hyphen (-). During execution, always set as the  `CNI_CONTAINERID` parameter.
 - **Namespace**: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`). During execution, always set as the `CNI_NETNS` parameter.
 - **Container interface name**: Name of the interface to create inside the container. During execution, always set as the `CNI_IFNAME` parameter.
 - **Generic Arguments**: Extra arguments, in the form of key-value string pairs, that are relevant to a specific attachment.  During execution, always set as the `CNI_ARGS` parameter.
