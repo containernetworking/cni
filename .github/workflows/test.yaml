@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Build on all supported architectures
         run: |
@@ -31,10 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install test binaries
         env:
@@ -59,9 +59,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: test
         run: bash ./test.sh
