@@ -18,7 +18,7 @@
       - [`CHECK`: Check container's networking is as expected](#check-check-containers-networking-is-as-expected)
       - [`VERSION`: probe plugin version support](#version-probe-plugin-version-support)
   - [Section 3: Execution of Network Configurations](#section-3-execution-of-network-configurations)
-    - [Lifecycle & Ordering](#lifecycle--ordering)
+    - [Lifecycle \& Ordering](#lifecycle--ordering)
     - [Attachment Parameters](#attachment-parameters)
     - [Adding an attachment](#adding-an-attachment)
     - [Deleting an attachment](#deleting-an-attachment)
@@ -40,7 +40,7 @@
 
 ## Version
 
-This is CNI **spec** version **1.0.0**.
+This is CNI **spec** version **1.1.0-dev**.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
@@ -102,7 +102,7 @@ require this.
 
 A network configuration consists of a JSON object with the following keys:
 
-- `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.0.0"
+- `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.1.0"
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
@@ -142,7 +142,7 @@ Plugins may define additional fields that they accept and may generate an error 
 #### Example configuration
 ```jsonc
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "plugins": [
     {
@@ -477,7 +477,7 @@ Plugins provided a `prevResult` key as part of their request configuration must 
 
 Plugins must output a JSON object with the following keys upon a successful `ADD` operation:
 
-- `cniVersion`: The same version supplied on input - the string "1.0.0"
+- `cniVersion`: The same version supplied on input - the string "1.1.0"
 - `interfaces`: An array of all interfaces created by the attachment, including any host-level interfaces:
     - `name`: The name of the interface.
     - `mac`: The hardware address of the interface (if applicable).
@@ -514,7 +514,7 @@ Example:
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "code": 7,
   "msg": "Invalid Configuration",
   "details": "Network 192.168.0.0/31 too small to allocate from."
@@ -547,8 +547,8 @@ Plugins must output a JSON object with the following keys upon a `VERSION` opera
 Example:
 ```json
 {
-    "cniVersion": "1.0.0",
-    "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0" ]
+    "cniVersion": "1.1.0",
+    "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0", "1.1.0" ]
 }
 ```
 
@@ -566,7 +566,7 @@ The container runtime would perform the following steps for the `add` operation.
 
 ```json
 {
-    "cniVersion": "1.0.0",
+    "cniVersion": "1.1.0",
     "name": "dbnet",
     "type": "bridge",
     "bridge": "cni0",
@@ -646,7 +646,7 @@ The bridge plugin returns the following result, configuring the interface accord
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -731,7 +731,7 @@ The plugin returns the following result. Note that the **mac** has changed.
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "portmap",
   "runtimeConfig": {
@@ -785,7 +785,7 @@ Given the previous _Add_, the container runtime would perform the following step
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
@@ -841,7 +841,7 @@ Assuming the `bridge` plugin is satisfied, it produces no output on standard out
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -891,7 +891,7 @@ Likewise, the `tuning` plugin exits indicating success.
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "portmap",
   "runtimeConfig": {
@@ -944,7 +944,7 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "portmap",
   "runtimeConfig": {
@@ -992,7 +992,7 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "tuning",
   "sysctl": {
@@ -1040,7 +1040,7 @@ Note that plugins are executed in reverse order from the _Add_ and _Check_ actio
 
 ```json
 {
-  "cniVersion": "1.0.0",
+  "cniVersion": "1.1.0",
   "name": "dbnet",
   "type": "bridge",
   "bridge": "cni0",
