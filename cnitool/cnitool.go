@@ -34,8 +34,6 @@ const (
 	EnvCNIArgs        = "CNI_ARGS"
 	EnvCNIIfname      = "CNI_IFNAME"
 
-	DefaultNetDir = "/etc/cni/net.d"
-
 	CmdAdd    = "add"
 	CmdCheck  = "check"
 	CmdDel    = "del"
