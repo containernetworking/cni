@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
-	github.com/vishvananda/netns v0.0.2
+	github.com/vishvananda/netns v0.0.3
 )
 
 require (
