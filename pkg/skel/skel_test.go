@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 type fakeCmd struct {
@@ -88,7 +88,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 		}
 	})
 
-	var envVarChecker = func(envVar string, isRequired bool) {
+	envVarChecker := func(envVar string, isRequired bool) {
 		delete(environment, envVar)
 
 		err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
@@ -245,7 +245,6 @@ var _ = Describe("dispatching to the correct callback", func() {
 				})
 
 				It("infers the config is 0.1.0 and calls the cmdAdd callback", func() {
-
 					err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
 					Expect(err).NotTo(HaveOccurred())
 
@@ -267,7 +266,8 @@ var _ = Describe("dispatching to the correct callback", func() {
 				})
 
 				It("does not call either callback", func() {
-					dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+					err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+					Expect(err).To(HaveOccurred())
 					Expect(cmdAdd.CallCount).To(Equal(0))
 					Expect(cmdCheck.CallCount).To(Equal(0))
 					Expect(cmdDel.CallCount).To(Equal(0))
@@ -471,8 +471,8 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call any cmd callback", func() {
-			dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
-
+			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+			Expect(err).To(HaveOccurred())
 			Expect(cmdAdd.CallCount).To(Equal(0))
 			Expect(cmdDel.CallCount).To(Equal(0))
 		})
@@ -488,7 +488,8 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 		It("prints the about string when the command is blank", func() {
 			environment["CNI_COMMAND"] = ""
-			dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "test framework v42")
+			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "test framework v42")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(stderr.String()).To(ContainSubstring("test framework v42"))
 		})
 	})
@@ -525,8 +526,8 @@ var _ = Describe("dispatching to the correct callback", func() {
 		})
 
 		It("does not call any cmd callback", func() {
-			dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
-
+			err := dispatch.pluginMain(cmdAdd.Func, cmdCheck.Func, cmdDel.Func, versionInfo, "")
+			Expect(err).To(HaveOccurred())
 			Expect(cmdAdd.CallCount).To(Equal(0))
 			Expect(cmdDel.CallCount).To(Equal(0))
 		})

@@ -5,19 +5,19 @@
 
 version: 2
 updates:
-  - package-ecosystem: "docker" # See documentation for possible values
-    directory: "/.github/actions/retest-action" # Location of package manifests
+  - package-ecosystem: "docker"
+    directory: "/.github/actions/retest-action"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "gomod" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "gomod" # See documentation for possible values
-    directory: "/plugins/debug" # Location of package manifests
+  - package-ecosystem: "gomod"
+    directory: "/plugins/debug"
     schedule:
       interval: "weekly"

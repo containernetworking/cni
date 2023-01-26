@@ -39,8 +39,10 @@ type Example struct {
 	PluginSource  string
 }
 
-var buildDir = ""
-var buildDirLock sync.Mutex
+var (
+	buildDir     = ""
+	buildDirLock sync.Mutex
+)
 
 func ensureBuildDirExists() error {
 	buildDirLock.Lock()

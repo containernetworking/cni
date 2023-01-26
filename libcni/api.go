@@ -255,11 +255,11 @@ func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string,
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fname), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fname), 0o700); err != nil {
 		return err
 	}
 
-	return os.WriteFile(fname, newBytes, 0600)
+	return os.WriteFile(fname, newBytes, 0o600)
 }
 
 func (c *CNIConfig) cacheDel(netName string, rt *RuntimeConf) error {

@@ -23,11 +23,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/containernetworking/cni/libcni"
-	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+
+	"github.com/containernetworking/cni/libcni"
+	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 )
 
 var _ = Describe("Backwards compatibility", func() {

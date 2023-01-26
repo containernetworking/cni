@@ -63,7 +63,7 @@ func (debug *Debug) WriteDebug(debugFilePath string) error {
 		return err
 	}
 
-	err = os.WriteFile(debugFilePath, debugBytes, 0600)
+	err = os.WriteFile(debugFilePath, debugBytes, 0o600)
 	if err != nil {
 		return err
 	}

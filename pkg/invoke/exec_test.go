@@ -19,13 +19,13 @@ import (
 	"encoding/json"
 	"errors"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/invoke/fakes"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Executing a plugin, unit tests", func() {
@@ -73,7 +73,8 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 		})
 
 		It("passes its arguments through to the rawExec", func() {
-			invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			_, err := invoke.ExecPluginWithResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
 			Expect(rawExec.ExecPluginCall.Received.StdinData).To(Equal(netconf))
 			Expect(rawExec.ExecPluginCall.Received.Environ).To(Equal([]string{"SOME=ENV"}))
@@ -132,7 +133,8 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 	Describe("without returning a result", func() {
 		It("passes its arguments through to the rawExec", func() {
-			invoke.ExecPluginWithoutResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			err := invoke.ExecPluginWithoutResult(ctx, pluginPath, netconf, cniargs, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
 			Expect(rawExec.ExecPluginCall.Received.StdinData).To(Equal(netconf))
 			Expect(rawExec.ExecPluginCall.Received.Environ).To(Equal([]string{"SOME=ENV"}))
@@ -163,7 +165,8 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 		})
 
 		It("execs the plugin with the command VERSION", func() {
-			invoke.GetVersionInfo(ctx, pluginPath, pluginExec)
+			_, err := invoke.GetVersionInfo(ctx, pluginPath, pluginExec)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(rawExec.ExecPluginCall.Received.PluginPath).To(Equal(pluginPath))
 			Expect(rawExec.ExecPluginCall.Received.Environ).To(ContainElement("CNI_COMMAND=VERSION"))
 			expectedStdin, _ := json.Marshal(map[string]string{"cniVersion": version.Current()})
@@ -199,7 +202,8 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 			})
 
 			It("sets dummy values for env vars required by very old plugins", func() {
-				invoke.GetVersionInfo(ctx, pluginPath, pluginExec)
+				_, err := invoke.GetVersionInfo(ctx, pluginPath, pluginExec)
+				Expect(err).NotTo(HaveOccurred())
 
 				env := rawExec.ExecPluginCall.Received.Environ
 				Expect(env).To(ContainElement("CNI_NETNS=dummy"))

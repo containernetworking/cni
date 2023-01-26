@@ -20,12 +20,12 @@ import (
 	"path/filepath"
 	"runtime"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/cni/pkg/version/testhelpers"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("GetVersion, integration tests", func() {
@@ -127,5 +127,7 @@ func c(_ *skel.CmdArgs) error { fmt.Println("{}"); return nil }
 func main() { skel.PluginMain(c, c) }
 `
 
-const git_ref_v010 = "2c482f4"
-const git_ref_v020_no_custom_versions = "349d66d"
+const (
+	git_ref_v010                    = "2c482f4"
+	git_ref_v020_no_custom_versions = "349d66d"
+)

@@ -21,12 +21,12 @@ import (
 	"os"
 	"path/filepath"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/pkg/invoke"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/plugins/test/noop/debug"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Delegate", func() {

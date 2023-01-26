@@ -20,11 +20,11 @@ import (
 	"net"
 	"os"
 
-	"github.com/containernetworking/cni/pkg/types"
-	current "github.com/containernetworking/cni/pkg/types/100"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/types"
+	current "github.com/containernetworking/cni/pkg/types/100"
 )
 
 func testResult() *current.Result {

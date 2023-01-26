@@ -17,10 +17,10 @@ package invoke_test
 import (
 	"os"
 
-	"github.com/containernetworking/cni/pkg/invoke"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/invoke"
 )
 
 var _ = Describe("CNIArgs AsEnv", func() {

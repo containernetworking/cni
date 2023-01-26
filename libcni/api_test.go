@@ -27,14 +27,14 @@ import (
 	"strings"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 type pluginInfo struct {
@@ -278,7 +278,6 @@ var _ = Describe("Invoking plugins", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(caps).To(ConsistOf("portMappings", "somethingElse"))
 		})
-
 	})
 
 	Describe("Invoking a single plugin", func() {
@@ -440,7 +439,7 @@ var _ = Describe("Invoking plugins", func() {
 					// Make the results directory inaccessible by making it a
 					// file instead of a directory
 					tmpPath := filepath.Join(cacheDirPath, "results")
-					err := os.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0600)
+					err := os.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					result, err := cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)
@@ -453,14 +452,14 @@ var _ = Describe("Invoking plugins", func() {
 		Describe("CheckNetwork", func() {
 			It("executes the plugin with command CHECK", func() {
 				cacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-				err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+				err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
 					"cniVersion": "1.0.0",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`
-				err = os.WriteFile(cacheFile, []byte(cachedJson), 0600)
+				err = os.WriteFile(cacheFile, []byte(cachedJson), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
@@ -515,7 +514,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -544,7 +543,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "1.0.0",
 							"ips": [{"address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
@@ -578,7 +577,7 @@ var _ = Describe("Invoking plugins", func() {
 						}`))
 						Expect(err).NotTo(HaveOccurred())
 
-						err = os.WriteFile(cacheFile, []byte(ipResult), 0600)
+						err = os.WriteFile(cacheFile, []byte(ipResult), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						debug.ReportResult = ipResult
@@ -598,13 +597,13 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				Context("is invalid JSON", func() {
 					It("returns an error", func() {
-						err := os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
+						err := os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
@@ -618,7 +617,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.3.1",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
@@ -630,7 +629,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.4567.0",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.CheckNetwork(ctx, netConfig, runtimeConfig)
@@ -643,14 +642,14 @@ var _ = Describe("Invoking plugins", func() {
 		Describe("DelNetwork", func() {
 			It("executes the plugin with command DEL", func() {
 				cacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-				err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+				err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
 					"cniVersion": "1.0.0",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`
-				err = os.WriteFile(cacheFile, []byte(cachedJson), 0600)
+				err = os.WriteFile(cacheFile, []byte(cachedJson), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -716,7 +715,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					resultCacheFile = resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -725,7 +724,7 @@ var _ = Describe("Invoking plugins", func() {
 						"cniVersion": "0.4.0",
 						"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 						"dns": {}
-					}`), 0600)
+					}`), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -743,7 +742,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -753,7 +752,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.3.1",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate plugin config with older version
@@ -779,7 +778,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.4.0",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -798,13 +797,13 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
 				Context("result is invalid JSON", func() {
 					It("returns an error", func() {
-						err := os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
+						err := os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -818,7 +817,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.3.1",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -830,7 +829,7 @@ var _ = Describe("Invoking plugins", func() {
 							"cniVersion": "0.4567.0",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
-						}`), 0600)
+						}`), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
@@ -1172,7 +1171,7 @@ var _ = Describe("Invoking plugins", func() {
 					// Make the results directory inaccessible by making it a
 					// file instead of a directory
 					tmpPath := filepath.Join(cacheDirPath, "results")
-					err := os.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0600)
+					err := os.WriteFile(tmpPath, []byte("afdsasdfasdf"), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					result, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
@@ -1185,9 +1184,9 @@ var _ = Describe("Invoking plugins", func() {
 		Describe("CheckNetworkList", func() {
 			It("executes all plugins with command CHECK", func() {
 				cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
-				err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+				err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 				Expect(err).NotTo(HaveOccurred())
-				err = os.WriteFile(cacheFile, []byte(ipResult), 0600)
+				err = os.WriteFile(cacheFile, []byte(ipResult), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
@@ -1229,7 +1228,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -1240,7 +1239,7 @@ var _ = Describe("Invoking plugins", func() {
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
 						}`
-						err := os.WriteFile(cacheFile, []byte(ipResult), 0600)
+						err := os.WriteFile(cacheFile, []byte(ipResult), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						netConfigList, plugins = makePluginList("0.4.0", ipResult, rcMap)
@@ -1309,9 +1308,9 @@ var _ = Describe("Invoking plugins", func() {
 			Context("when the cached result is invalid", func() {
 				It("returns an error", func() {
 					cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
-					err = os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
+					err = os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = cniConfig.CheckNetworkList(ctx, netConfigList, runtimeConfig)
@@ -1353,7 +1352,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				BeforeEach(func() {
 					cacheFile = resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -1364,7 +1363,7 @@ var _ = Describe("Invoking plugins", func() {
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
 						}`
-						err := os.WriteFile(cacheFile, []byte(ipResult), 0600)
+						err := os.WriteFile(cacheFile, []byte(ipResult), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						netConfigList, plugins = makePluginList("0.4.0", ipResult, rcMap)
@@ -1396,7 +1395,7 @@ var _ = Describe("Invoking plugins", func() {
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
 							"dns": {}
 						}`
-						err := os.WriteFile(cacheFile, []byte(ipResult), 0600)
+						err := os.WriteFile(cacheFile, []byte(ipResult), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						netConfigList, plugins = makePluginList("0.3.1", ipResult, rcMap)
@@ -1442,9 +1441,9 @@ var _ = Describe("Invoking plugins", func() {
 			Context("when the cached result is invalid", func() {
 				It("returns an error", func() {
 					cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(cacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
-					err = os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
+					err = os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
@@ -1537,7 +1536,6 @@ var _ = Describe("Invoking plugins", func() {
 
 			netConfigList, err = libcni.ConfListFromBytes(configList)
 			Expect(err).NotTo(HaveOccurred())
-
 		})
 
 		AfterEach(func() {
@@ -1553,7 +1551,6 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1565,7 +1562,6 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1577,7 +1573,6 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1590,7 +1585,6 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1602,7 +1596,6 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1615,7 +1608,6 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(result).To(BeNil())
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1627,7 +1619,6 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1639,7 +1630,6 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
 
@@ -1651,10 +1641,8 @@ var _ = Describe("Invoking plugins", func() {
 					cancel()
 					Expect(err).To(MatchError(ContainSubstring("netplugin failed with no error message")))
 				})
-
 			})
 		})
-
 	})
 
 	Describe("Cache operations", func() {
@@ -1849,10 +1837,10 @@ var _ = Describe("Invoking plugins", func() {
 			Context("is invalid JSON", func() {
 				It("returns an error", func() {
 					resultCacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 
-					err = os.WriteFile(resultCacheFile, []byte("adfadsfasdfasfdsafaf"), 0600)
+					err = os.WriteFile(resultCacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 					Expect(err).NotTo(HaveOccurred())
 
 					cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(netConfig, runtimeConfig)
@@ -1864,7 +1852,7 @@ var _ = Describe("Invoking plugins", func() {
 			Context("is missing", func() {
 				It("returns no error", func() {
 					resultCacheFile := resultCacheFilePath(cacheDirPath, netConfig.Network.Name, runtimeConfig)
-					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0700)
+					err := os.MkdirAll(filepath.Dir(resultCacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
 
 					cachedConfig, newRt, err := cniConfig.GetNetworkCachedConfig(netConfig, runtimeConfig)
@@ -1874,6 +1862,5 @@ var _ = Describe("Invoking plugins", func() {
 				})
 			})
 		})
-
 	})
 })

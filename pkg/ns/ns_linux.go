@@ -17,8 +17,9 @@ package ns
 import (
 	"runtime"
 
-	"github.com/containernetworking/cni/pkg/types"
 	"github.com/vishvananda/netns"
+
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 // Returns an object representing the current OS thread's network namespace

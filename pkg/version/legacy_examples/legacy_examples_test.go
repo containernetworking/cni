@@ -19,9 +19,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/version/legacy_examples"
 )
 
 var _ = Describe("The v0.1.0 Example", func() {
