@@ -18,10 +18,10 @@ import (
 	"net"
 	"reflect"
 
-	. "github.com/containernetworking/cni/pkg/types"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/containernetworking/cni/pkg/types"
 )
 
 var _ = Describe("UnmarshallableBool UnmarshalText", func() {
@@ -126,7 +126,6 @@ var _ = Describe("LoadArgs", func() {
 			}{}
 			err := LoadArgs("IP=10.0.0.0/24", &conf)
 			Expect(err).To(HaveOccurred())
-
 		})
 	})
 

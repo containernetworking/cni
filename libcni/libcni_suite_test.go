@@ -17,12 +17,11 @@ package libcni_test
 import (
 	"encoding/json"
 	"path/filepath"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-
-	"testing"
 )
 
 func TestLibcni(t *testing.T) {
@@ -35,11 +34,12 @@ var pluginPackages = map[string]string{
 	"sleep": "github.com/containernetworking/cni/plugins/test/sleep",
 }
 
-var pluginPaths map[string]string
-var pluginDirs []string // array of plugin dirs
+var (
+	pluginPaths map[string]string
+	pluginDirs  []string // array of plugin dirs
+)
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-
 	paths := map[string]string{}
 	for name, packagePath := range pluginPackages {
 		execPath, err := gexec.Build(packagePath)

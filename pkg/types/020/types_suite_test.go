@@ -15,10 +15,10 @@
 package types020_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 func TestTypes010(t *testing.T) {

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"net"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/020"
 	"github.com/containernetworking/cni/pkg/types/create"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 func testResult(resultCNIVersion, jsonCNIVersion string) (*types020.Result, string) {

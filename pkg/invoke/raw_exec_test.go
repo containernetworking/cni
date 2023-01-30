@@ -19,12 +19,11 @@ import (
 	"context"
 	"os"
 
-	"github.com/containernetworking/cni/pkg/invoke"
-
-	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/invoke"
+	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
 var _ = Describe("RawExec", func() {

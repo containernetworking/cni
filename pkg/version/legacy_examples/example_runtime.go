@@ -143,7 +143,7 @@ var V010_Runtime = ExampleRuntime{
 	NetConfs: []string{"unversioned", "0.1.0"},
 	Example: Example{
 		Name:          "example_invoker_v010",
-		CNIRepoGitRef: "c0d34c69", //version with ns.Do
+		CNIRepoGitRef: "c0d34c69", // version with ns.Do
 		PluginSource: `package main
 
 import (

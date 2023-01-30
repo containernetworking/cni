@@ -20,13 +20,14 @@ import (
 	"os/exec"
 	"strings"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
+
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("No-op plugin", func() {
@@ -229,7 +230,7 @@ var _ = Describe("No-op plugin", func() {
 	})
 
 	Context("when the ReportResult debug field is set", func() {
-		var expectedResultString = fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
+		expectedResultString := fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
 
 		BeforeEach(func() {
 			debug.ReportResult = expectedResultString

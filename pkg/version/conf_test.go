@@ -15,10 +15,10 @@
 package version_test
 
 import (
-	"github.com/containernetworking/cni/pkg/version"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/version"
 )
 
 var _ = Describe("Decoding the version of network config", func() {

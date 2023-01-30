@@ -19,10 +19,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containernetworking/cni/libcni"
-	"github.com/containernetworking/cni/pkg/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/libcni"
+	"github.com/containernetworking/cni/pkg/types"
 )
 
 var _ = Describe("Loading configuration from disk", func() {
@@ -38,7 +39,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			pluginConfig = []byte(`{ "name": "some-plugin", "type": "foobar", "some-key": "some-value" }`)
-			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0o600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -72,7 +73,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			BeforeEach(func() {
 				Expect(os.Remove(configDir + "/50-whatever.conf")).To(Succeed())
 				pluginConfig = []byte(`{ "name": "some-plugin", "some-key": "some-value", "type": "foobar" }`)
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.json"), pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.json"), pluginConfig, 0o600)).To(Succeed())
 			})
 			It("finds the network config file for the plugin of the given type", func() {
 				netConfig, err := libcni.LoadConf(configDir, "some-plugin")
@@ -96,7 +97,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		Context("when a config file is malformed", func() {
 			BeforeEach(func() {
-				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conf"), []byte(`{`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conf"), []byte(`{`), 0o600)).To(Succeed())
 			})
 
 			It("returns a useful error", func() {
@@ -108,10 +109,10 @@ var _ = Describe("Loading configuration from disk", func() {
 		Context("when the config is in a nested subdir", func() {
 			BeforeEach(func() {
 				subdir := filepath.Join(configDir, "subdir1", "subdir2")
-				Expect(os.MkdirAll(subdir, 0700)).To(Succeed())
+				Expect(os.MkdirAll(subdir, 0o700)).To(Succeed())
 
 				pluginConfig = []byte(`{ "name": "deep", "some-key": "some-value" }`)
-				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conf"), pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conf"), pluginConfig, 0o600)).To(Succeed())
 			})
 
 			It("will not find the config", func() {
@@ -130,7 +131,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			pluginConfig := []byte(`{ "name": "some-plugin", "type": "noop", "cniVersion": "0.3.1", "capabilities": { "portMappings": true, "somethingElse": true, "noCapability": false } }`)
-			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conf"), pluginConfig, 0o600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -165,7 +166,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				fileName = filepath.Join(configDir, "50-whatever.conf")
 				pluginConfig := []byte(`{ "name": "some-plugin", "some-key": "some-value" }`)
-				Expect(os.WriteFile(fileName, pluginConfig, 0600)).To(Succeed())
+				Expect(os.WriteFile(fileName, pluginConfig, 0o600)).To(Succeed())
 			})
 
 			AfterEach(func() {
@@ -218,7 +219,7 @@ var _ = Describe("Loading configuration from disk", func() {
     }
   ]
 }`)
-			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -257,7 +258,7 @@ var _ = Describe("Loading configuration from disk", func() {
 					"cniVersion": "0.2.0",
 					"type": "bridge"
 				}`)
-				Expect(os.WriteFile(filepath.Join(configDir, "49-whatever.conf"), configFile, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "49-whatever.conf"), configFile, 0o600)).To(Succeed())
 			})
 
 			It("Loads the config list first", func() {
@@ -296,7 +297,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 		Context("when a config file is malformed", func() {
 			BeforeEach(func() {
-				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conflist"), []byte(`{`), 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "00-bad.conflist"), []byte(`{`), 0o600)).To(Succeed())
 			})
 
 			It("returns a useful error", func() {
@@ -308,7 +309,7 @@ var _ = Describe("Loading configuration from disk", func() {
 		Context("when the config is in a nested subdir", func() {
 			BeforeEach(func() {
 				subdir := filepath.Join(configDir, "subdir1", "subdir2")
-				Expect(os.MkdirAll(subdir, 0700)).To(Succeed())
+				Expect(os.MkdirAll(subdir, 0o700)).To(Succeed())
 
 				configList = []byte(`{
   "name": "deep",
@@ -320,7 +321,7 @@ var _ = Describe("Loading configuration from disk", func() {
     },
   ]
 }`)
-				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(subdir, "90-deep.conflist"), configList, 0o600)).To(Succeed())
 			})
 
 			It("will not find the config", func() {
@@ -342,7 +343,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`)
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
@@ -361,7 +362,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`)
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
@@ -381,7 +382,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				    }
 				  ]
 				}`, badValue))
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				_, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).To(MatchError(fmt.Sprintf("error parsing configuration list: invalid disableCheck value \"%s\"", badValue)))
@@ -402,14 +403,18 @@ var _ = Describe("Loading configuration from disk", func() {
 		var testNetConfig *libcni.NetworkConfig
 
 		BeforeEach(func() {
-			testNetConfig = &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin", Type: "foobar"},
-				Bytes: []byte(`{ "name": "some-plugin", "type": "foobar" }`)}
+			testNetConfig = &libcni.NetworkConfig{
+				Network: &types.NetConf{Name: "some-plugin", Type: "foobar"},
+				Bytes:   []byte(`{ "name": "some-plugin", "type": "foobar" }`),
+			}
 		})
 
 		Context("when function parameters are incorrect", func() {
 			It("returns unmarshal error", func() {
-				conf := &libcni.NetworkConfig{Network: &types.NetConf{Name: "some-plugin"},
-					Bytes: []byte(`{ cc cc cc}`)}
+				conf := &libcni.NetworkConfig{
+					Network: &types.NetConf{Name: "some-plugin"},
+					Bytes:   []byte(`{ cc cc cc}`),
+				}
 
 				_, err := libcni.InjectConf(conf, map[string]interface{}{"": nil})
 				Expect(err).To(MatchError(HavePrefix(`unmarshal existing network bytes`)))
@@ -478,7 +483,6 @@ var _ = Describe("Loading configuration from disk", func() {
 			})
 
 			It("adds sub-fields of NetworkConfig.Network to the config", func() {
-
 				expectedPluginConfig := []byte(`{"dns":{"domain":"local","nameservers":["server1","server2"]},"name":"some-plugin","type":"bridge"}`)
 				servers := []string{"server1", "server2"}
 				newDNS := &types.DNS{Nameservers: servers, Domain: "local"}
@@ -526,7 +530,7 @@ var _ = Describe("ConfListFromConf", func() {
 			Plugins:    []*libcni.NetworkConfig{testNetConfig},
 		}))
 
-		//Test that the json unmarshals to the same data
+		// Test that the json unmarshals to the same data
 		ncl2, err := libcni.ConfListFromBytes(bytes)
 		Expect(err).NotTo(HaveOccurred())
 		ncl2.Bytes = nil
@@ -534,5 +538,4 @@ var _ = Describe("ConfListFromConf", func() {
 
 		Expect(ncl2).To(Equal(ncl))
 	})
-
 })

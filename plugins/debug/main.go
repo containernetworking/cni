@@ -17,15 +17,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+
+	"github.com/containernetworking/plugins/pkg/ns"
+	bv "github.com/containernetworking/plugins/pkg/utils/buildversion"
+
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	type100 "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
-	"github.com/containernetworking/plugins/pkg/ns"
-	bv "github.com/containernetworking/plugins/pkg/utils/buildversion"
-	"io"
-	"os"
-	"os/exec"
 )
 
 type NetConf struct {
@@ -101,7 +103,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	netConf, _ := parseConf(args.StdinData)
 	// Output CNI
 	if netConf.CNIOutput != "" {
-		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		defer fp.Close()
 		fmt.Fprintf(fp, "CmdAdd\n")
 		outputCmdArgs(fp, args)
@@ -117,7 +119,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	netConf, _ := parseConf(args.StdinData)
 	// Output CNI
 	if netConf.CNIOutput != "" {
-		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		defer fp.Close()
 		fmt.Fprintf(fp, "CmdDel\n")
 		outputCmdArgs(fp, args)
@@ -133,7 +135,7 @@ func cmdCheck(args *skel.CmdArgs) error {
 	netConf, _ := parseConf(args.StdinData)
 	// Output CNI
 	if netConf.CNIOutput != "" {
-		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+		fp, _ := os.OpenFile(netConf.CNIOutput, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		defer fp.Close()
 		fmt.Fprintf(fp, "CmdCheck\n")
 		outputCmdArgs(fp, args)

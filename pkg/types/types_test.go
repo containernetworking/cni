@@ -18,14 +18,14 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/containernetworking/cni/pkg/types"
-	current "github.com/containernetworking/cni/pkg/types/100"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/containernetworking/cni/pkg/types"
+	current "github.com/containernetworking/cni/pkg/types/100"
 )
 
 var _ = Describe("Types", func() {
-
 	Describe("ParseCIDR", func() {
 		DescribeTable("Parse and stringify",
 			func(input, expectedIP string, expectedMask int) {
