@@ -33,6 +33,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types/create"
 	"github.com/containernetworking/cni/pkg/utils"
 	"github.com/containernetworking/cni/pkg/version"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 var (
@@ -104,6 +105,16 @@ type CNIConfig struct {
 // CNIConfig implements the CNI interface
 var _ CNI = &CNIConfig{}
 
+// isNotExist returnst true if the error is from iptables indicating
+// that the target does not exist.
+func isNotExist(err error) bool {
+	e, ok := err.(*iptables.Error)
+	if !ok {
+		return false
+	}
+	return e.IsNotExist()
+}
+
 // NewCNIConfig returns a new CNIConfig object that will search for plugins
 // in the given paths and use the given exec interface to run those plugins,
 // or if the exec interface is not given, will use a default exec handler.
@@ -116,6 +127,22 @@ func NewCNIConfig(path []string, exec invoke.Exec) *CNIConfig {
 // or if the exec interface is not given, will use a default exec handler.
 // The given cache directory will be used for temporary data storage when needed.
 func NewCNIConfigWithCacheDir(path []string, cacheDir string, exec invoke.Exec) *CNIConfig {
+	ip4t, err := iptables.NewWithProtocol(iptables.ProtocolIPv4)
+	if err != nil {
+		err := ip4t.AppendUnique("filter", "FORWARD", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP", "-m", "comment", "--comment", "cniAPI rule")
+		if err != nil && !isNotExist(err) {
+			return nil
+		}
+	}
+
+	ip6t, err := iptables.NewWithProtocol(iptables.ProtocolIPv6)
+	if err != nil {
+		err := ip6t.AppendUnique("filter", "FORWARD", "-m", "conntrack", "--ctstate", "INVALID", "-j", "DROP", "-m", "comment", "--comment", "cniAPI rule")
+		if err != nil && !isNotExist(err) {
+			return nil
+		}
+	}
+
 	return &CNIConfig{
 		Path:     path,
 		cacheDir: cacheDir,
