@@ -56,11 +56,11 @@ func ValidateNetworkName(networkName string) *types.Error {
 	return nil
 }
 
-// ValidateInterfaceName will validate the interface name based on the three rules below
+// ValidateInterfaceName will validate the interface name based on the four rules below
 // 1. The name must not be empty
 // 2. The name must be less than 16 characters
 // 3. The name must not be "." or ".."
-// 3. The name must not contain / or : or any whitespace characters
+// 4. The name must not contain / or : or any whitespace characters
 // ref to https://github.com/torvalds/linux/blob/master/net/core/dev.c#L1024
 func ValidateInterfaceName(ifName string) *types.Error {
 	if len(ifName) == 0 {
