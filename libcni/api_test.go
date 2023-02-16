@@ -409,6 +409,27 @@ var _ = Describe("Invoking plugins", func() {
 				returnedJson, err := json.Marshal(result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cachedJson).To(MatchJSON(returnedJson))
+
+				// Ensure the cached attachments matches requested one
+				for _, containerID := range []string{"", runtimeConfig.ContainerID} {
+					expected, err := json.Marshal(libcni.NetworkAttachment{
+						ContainerID:    runtimeConfig.ContainerID,
+						Network:        netConfig.Network.Name,
+						NetNS:          runtimeConfig.NetNS,
+						IfName:         runtimeConfig.IfName,
+						Config:         netConfig.Bytes,
+						CniArgs:        runtimeConfig.Args,
+						CapabilityArgs: runtimeConfig.CapabilityArgs,
+					})
+					Expect(err).NotTo(HaveOccurred())
+					attachments, err := cniConfig.GetCachedAttachments(containerID)
+					Expect(err).NotTo(HaveOccurred())
+					if Expect(len(attachments)).To(Equal(1)) {
+						json, err := json.Marshal(attachments[0])
+						Expect(err).NotTo(HaveOccurred())
+						Expect(json).To(MatchJSON(expected))
+					}
+				}
 			})
 
 			Context("when finding the plugin fails", func() {
@@ -686,6 +707,13 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cachedConfig).To(BeNil())
 				Expect(newRt).To(BeNil())
+
+				// Ensure the cached attachments no longer exist
+				for _, containerID := range []string{"", runtimeConfig.ContainerID} {
+					attachments, err := cniConfig.GetCachedAttachments(containerID)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(len(attachments)).To(Equal(0))
+				}
 			})
 
 			Context("when finding the plugin fails", func() {
