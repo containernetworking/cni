@@ -16,6 +16,7 @@ package libcni
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -216,7 +217,8 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	singleConf, err := LoadConf(dir, name)
 	if err != nil {
 		// A little extra logic so the error makes sense
-		if _, ok := err.(NoConfigsFoundError); len(files) != 0 && ok {
+		var ncfErr NoConfigsFoundError
+		if len(files) != 0 && errors.As(err, &ncfErr) {
 			// Config lists found but no config files found
 			return nil, NotFoundError{dir, name}
 		}

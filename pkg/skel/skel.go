@@ -19,6 +19,7 @@ package skel
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -175,7 +176,8 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 	}
 
 	if err = toCall(cmdArgs); err != nil {
-		if e, ok := err.(*types.Error); ok {
+		var e *types.Error
+		if errors.As(err, &e) {
 			// don't wrap Error in Error
 			return e
 		}
