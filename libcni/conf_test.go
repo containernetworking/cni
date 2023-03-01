@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -500,6 +501,53 @@ var _ = Describe("Loading configuration from disk", func() {
 					Bytes:   expectedPluginConfig,
 				}))
 			})
+		})
+	})
+})
+
+var _ = Describe("ConfListFromBytes", func() {
+	Describe("Version selection", func() {
+		makeConfig := func(versions ...string) []byte {
+			// ugly fake json encoding, but whatever
+			vs := []string{}
+			for _, v := range versions {
+				vs = append(vs, fmt.Sprintf(`"%s"`, v))
+			}
+			return []byte(fmt.Sprintf(`{"name": "test", "cniVersions": [%s], "plugins": [{"type": "foo"}]}`, strings.Join(vs, ",")))
+		}
+		It("correctly selects the maximum version", func() {
+			conf, err := libcni.ConfListFromBytes(makeConfig("1.1.0", "0.4.0", "1.0.0"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal("1.1.0"))
+		})
+
+		It("selects the highest version supported by libcni", func() {
+			conf, err := libcni.ConfListFromBytes(makeConfig("99.0.0", "1.1.0", "0.4.0", "1.0.0"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal("1.1.0"))
+		})
+
+		It("fails when invalid versions are specified", func() {
+			_, err := libcni.ConfListFromBytes(makeConfig("1.1.0", "0.4.0", "1.0.f"))
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("falls back to cniVersion", func() {
+			conf, err := libcni.ConfListFromBytes([]byte(`{"name": "test", "cniVersion": "1.2.3", "plugins": [{"type": "foo"}]}`))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal("1.2.3"))
+		})
+
+		It("merges cniVersions and cniVersion", func() {
+			conf, err := libcni.ConfListFromBytes([]byte(`{"name": "test", "cniVersion": "1.0.0", "cniVersions": ["0.1.0", "0.4.0"], "plugins": [{"type": "foo"}]}`))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal("1.0.0"))
+		})
+
+		It("handles an empty cniVersions array", func() {
+			conf, err := libcni.ConfListFromBytes([]byte(`{"name": "test", "cniVersions": [], "plugins": [{"type": "foo"}]}`))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal(""))
 		})
 	})
 })
