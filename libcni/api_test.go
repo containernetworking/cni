@@ -34,6 +34,7 @@ import (
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
@@ -179,7 +180,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			debug = &noop_debug.Debug{
 				ReportResult: `{
-					"cniVersion": "1.0.0",
+					"cniVersion": "` + version.Current() + `",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`,
@@ -195,7 +196,7 @@ var _ = Describe("Invoking plugins", func() {
 					"somethingElse": true,
 					"noCapability": false
 				}
-			}`, current.ImplementedSpecVersion))
+			}`, version.Current()))
 			netConfig, err = libcni.ConfFromBytes(pluginConfig)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -301,7 +302,7 @@ var _ = Describe("Invoking plugins", func() {
 
 			debug = &noop_debug.Debug{
 				ReportResult: `{
-					"cniVersion": "1.0.0",
+					"cniVersion": "` + version.Current() + `",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`,
@@ -319,7 +320,7 @@ var _ = Describe("Invoking plugins", func() {
 				"some-key": "some-value",
 				"cniVersion": "%s",
 				"capabilities": { "portMappings": true }
-			}`, current.ImplementedSpecVersion)
+			}`, version.Current())
 			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
@@ -476,7 +477,7 @@ var _ = Describe("Invoking plugins", func() {
 				err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
-					"cniVersion": "1.0.0",
+					"cniVersion": "` + version.Current() + `",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`
@@ -561,7 +562,7 @@ var _ = Describe("Invoking plugins", func() {
 				Context("containing only a cached result", func() {
 					It("only passes a prevResult to the plugin", func() {
 						err := os.WriteFile(cacheFile, []byte(`{
-							"cniVersion": "1.0.0",
+							"cniVersion": "`+version.Current()+`",
 							"ips": [{"address": "10.1.2.3/24"}],
 							"dns": {}
 						}`), 0o600)
@@ -666,7 +667,7 @@ var _ = Describe("Invoking plugins", func() {
 				err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
-					"cniVersion": "1.0.0",
+					"cniVersion": "` + version.Current() + `",
 					"ips": [{"address": "10.1.2.3/24"}],
 					"dns": {}
 				}`
@@ -874,7 +875,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				Expect(versionInfo).NotTo(BeNil())
 				Expect(versionInfo.SupportedVersions()).To(Equal([]string{
-					"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0",
+					"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0", "1.1.0",
 				}))
 			})
 
@@ -962,8 +963,8 @@ var _ = Describe("Invoking plugins", func() {
 				"otherCapability": capabilityArgs["otherCapability"],
 			}
 
-			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"address": "10.1.2.3/24"}]}`, current.ImplementedSpecVersion)
-			netConfigList, plugins = makePluginList(current.ImplementedSpecVersion, ipResult, rcMap)
+			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"address": "10.1.2.3/24"}]}`, version.Current())
+			netConfigList, plugins = makePluginList(version.Current(), ipResult, rcMap)
 
 			ctx = context.TODO()
 		})
@@ -1533,7 +1534,7 @@ var _ = Describe("Invoking plugins", func() {
 				"some-key": "some-value",
 				"cniVersion": "%s",
 				"capabilities": { "portMappings": true }
-			}`, current.ImplementedSpecVersion)
+			}`, version.Current())
 
 			cniBinPath = filepath.Dir(pluginPaths["sleep"])
 			cniConfig = libcni.NewCNIConfig([]string{cniBinPath}, nil)
@@ -1560,7 +1561,7 @@ var _ = Describe("Invoking plugins", func() {
   "plugins": [
     %s
   ]
-}`, current.ImplementedSpecVersion, pluginConfig))
+}`, version.Current(), pluginConfig))
 
 			netConfigList, err = libcni.ConfListFromBytes(configList)
 			Expect(err).NotTo(HaveOccurred())
@@ -1703,7 +1704,7 @@ var _ = Describe("Invoking plugins", func() {
 				ReportResult: fmt.Sprintf(`{
 					"cniVersion": "%s",
 					"ips": [{"version": "4", "address": "%s"}]
-				}`, current.ImplementedSpecVersion, firstIP),
+				}`, version.Current(), firstIP),
 			}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 
@@ -1712,7 +1713,7 @@ var _ = Describe("Invoking plugins", func() {
 				"type": "noop",
 				"name": "%s",
 				"cniVersion": "%s"
-			}`, netName, current.ImplementedSpecVersion)
+			}`, netName, version.Current())
 			cniConfig = libcni.NewCNIConfigWithCacheDir([]string{cniBinPath}, cacheDirPath, nil)
 			netConfig, err = libcni.ConfFromBytes([]byte(pluginConfig))
 			Expect(err).NotTo(HaveOccurred())
@@ -1736,7 +1737,7 @@ var _ = Describe("Invoking plugins", func() {
 			debug.ReportResult = fmt.Sprintf(`{
 				"cniVersion": "%s",
 				"ips": [{"version": "4", "address": "%s"}]
-			}`, current.ImplementedSpecVersion, secondIP)
+			}`, version.Current(), secondIP)
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
 			runtimeConfig.IfName = secondIfname
 			_, err = cniConfig.AddNetwork(ctx, netConfig, runtimeConfig)

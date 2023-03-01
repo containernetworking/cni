@@ -24,7 +24,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/containernetworking/cni/pkg/types"
-	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
 )
 
@@ -430,7 +429,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
 				"cniVersion": "%s",
 				"supportedVersions": ["9.8.7", "10.0.0"]
-			}`, current.ImplementedSpecVersion)))
+			}`, version.Current())))
 		})
 
 		It("does not call cmdAdd or cmdDel", func() {
@@ -461,7 +460,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 			Expect(stdout).To(MatchJSON(fmt.Sprintf(`{
 				"cniVersion": "%s",
 				"supportedVersions": ["9.8.7", "10.0.0"]
-			}`, current.ImplementedSpecVersion)))
+			}`, version.Current())))
 		})
 	})
 
