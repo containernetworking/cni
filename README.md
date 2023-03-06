@@ -20,6 +20,14 @@ Here are the recordings of two sessions that the CNI maintainers hosted at KubeC
 - [Introduction to CNI](https://youtu.be/YjjrQiJOyME)
 - [CNI deep dive](https://youtu.be/zChkx-AB5Xc)
 
+
+## Contributing to CNI
+
+We welcome contributions, including [bug reports](https://github.com/containernetworking/cni/issues), and code and documentation improvements.
+If you intend to contribute to code or documentation, please read [CONTRIBUTING.md](CONTRIBUTING.md). Also see the [contact section](#contact) in this README.
+
+The CNI project has a [weekly meeting](https://meet.jit.si/CNIMaintainersMeeting). It takes place Mondays at 11:00 US/Eastern. All are welcome to join.
+
 ## Why develop CNI?
 
 Application containers on Linux are a rapidly evolving area, and within this area networking is not well addressed as it is highly environment-specific.
@@ -70,11 +78,6 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
-
-## Contributing to CNI
-
-We welcome contributions, including [bug reports](https://github.com/containernetworking/cni/issues), and code and documentation improvements.
-If you intend to contribute to code or documentation, please read [CONTRIBUTING.md](CONTRIBUTING.md). Also see the [contact section](#contact) in this README.
 
 ## How do I use CNI?
 
