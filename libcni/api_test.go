@@ -237,12 +237,12 @@ var _ = Describe("Invoking plugins", func() {
 			// We expect runtimeConfig keys only for portMappings and somethingElse
 			rawRc := conf["runtimeConfig"]
 			rc, ok := rawRc.(map[string]interface{})
-			Expect(ok).To(Equal(true))
+			Expect(ok).To(BeTrue())
 			expectedKeys := []string{"portMappings", "somethingElse"}
-			Expect(len(rc)).To(Equal(len(expectedKeys)))
+			Expect(rc).To(HaveLen(len(expectedKeys)))
 			for _, key := range expectedKeys {
 				_, ok := rc[key]
-				Expect(ok).To(Equal(true))
+				Expect(ok).To(BeTrue())
 			}
 		})
 
@@ -712,7 +712,7 @@ var _ = Describe("Invoking plugins", func() {
 				for _, containerID := range []string{"", runtimeConfig.ContainerID} {
 					attachments, err := cniConfig.GetCachedAttachments(containerID)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(len(attachments)).To(Equal(0))
+					Expect(attachments).To(BeEmpty())
 				}
 			})
 
@@ -1745,7 +1745,7 @@ var _ = Describe("Invoking plugins", func() {
 			resultsDir := filepath.Join(cacheDirPath, "results")
 			files, err := os.ReadDir(resultsDir)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(files)).To(Equal(2))
+			Expect(files).To(HaveLen(2))
 			var foundFirst, foundSecond bool
 			for _, f := range files {
 				type cachedConfig struct {

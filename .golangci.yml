@@ -1,16 +1,29 @@
 linters:
   enable:
+    - contextcheck
+    - errcheck
     - errorlint
     - gci
-    - gofmt
+    - ginkgolinter
     - gofumpt
     - govet
+    - ineffassign
     - misspell
     - nolintlint
+    - nonamedreturns
+    - predeclared
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
 
 linters-settings:
   gci:
     sections:
       - standard
       - default
-      - prefix(github.com/containernetworking/cni)
+      - prefix(github.com/containernetworking)
+
+run:
+  timeout: 5m

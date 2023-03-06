@@ -68,7 +68,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 			result, err := current.GetResult(r)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(result.IPs)).To(Equal(1))
+			Expect(result.IPs).To(HaveLen(1))
 			Expect(result.IPs[0].Address.IP.String()).To(Equal("1.2.3.4"))
 		})
 
@@ -106,7 +106,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 			result, err := current.GetResult(r)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(result.IPs)).To(Equal(1))
+			Expect(result.IPs).To(HaveLen(1))
 			Expect(result.IPs[0].Address.IP.String()).To(Equal("1.2.3.4"))
 		})
 
@@ -118,7 +118,7 @@ var _ = Describe("Executing a plugin, unit tests", func() {
 
 			result, err := current.GetResult(r)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(result.IPs)).To(Equal(1))
+			Expect(result.IPs).To(HaveLen(1))
 			Expect(result.IPs[0].Address.IP.String()).To(Equal("1.2.3.4"))
 		})
 
