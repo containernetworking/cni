@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/containernetworking/cni/pkg/invoke"
@@ -78,6 +79,16 @@ type NetworkConfigList struct {
 	Bytes        []byte
 }
 
+type NetworkAttachment struct {
+	ContainerID    string
+	Network        string
+	IfName         string
+	Config         []byte
+	NetNS          string
+	CniArgs        [][2]string
+	CapabilityArgs map[string]interface{}
+}
+
 type CNI interface {
 	AddNetworkList(ctx context.Context, net *NetworkConfigList, rt *RuntimeConf) (types.Result, error)
 	CheckNetworkList(ctx context.Context, net *NetworkConfigList, rt *RuntimeConf) error
@@ -93,6 +104,8 @@ type CNI interface {
 
 	ValidateNetworkList(ctx context.Context, net *NetworkConfigList) ([]string, error)
 	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
+
+	GetCachedAttachments(containerID string) ([]*NetworkAttachment, error)
 }
 
 type CNIConfig struct {
@@ -196,6 +209,7 @@ type cachedInfo struct {
 	Config         []byte                 `json:"config"`
 	IfName         string                 `json:"ifName"`
 	NetworkName    string                 `json:"networkName"`
+	NetNS          string                 `json:"netns,omitempty"`
 	CniArgs        [][2]string            `json:"cniArgs,omitempty"`
 	CapabilityArgs map[string]interface{} `json:"capabilityArgs,omitempty"`
 	RawResult      map[string]interface{} `json:"result,omitempty"`
@@ -230,6 +244,7 @@ func (c *CNIConfig) cacheAdd(result types.Result, config []byte, netName string,
 		Config:         config,
 		IfName:         rt.IfName,
 		NetworkName:    netName,
+		NetNS:          rt.NetNS,
 		CniArgs:        rt.Args,
 		CapabilityArgs: rt.CapabilityArgs,
 	}
@@ -389,6 +404,65 @@ func (c *CNIConfig) GetNetworkListCachedConfig(list *NetworkConfigList, rt *Runt
 // RuntimeConf with fields updated with info from the cached Config.
 func (c *CNIConfig) GetNetworkCachedConfig(net *NetworkConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
 	return c.getCachedConfig(net.Network.Name, rt)
+}
+
+// GetCachedAttachments returns a list of network attachments from the cache.
+// The returned list will be filtered by the containerID if the value is not empty.
+func (c *CNIConfig) GetCachedAttachments(containerID string) ([]*NetworkAttachment, error) {
+	dirPath := filepath.Join(c.getCacheDir(&RuntimeConf{}), "results")
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNames := make([]string, 0, len(entries))
+	for _, e := range entries {
+		fileNames = append(fileNames, e.Name())
+	}
+	sort.Strings(fileNames)
+
+	attachments := []*NetworkAttachment{}
+	for _, fname := range fileNames {
+		if len(containerID) > 0 {
+			part := fmt.Sprintf("-%s-", containerID)
+			pos := strings.Index(fname, part)
+			if pos <= 0 || pos+len(part) >= len(fname) {
+				continue
+			}
+		}
+
+		cacheFile := filepath.Join(dirPath, fname)
+		bytes, err := os.ReadFile(cacheFile)
+		if err != nil {
+			continue
+		}
+
+		cachedInfo := cachedInfo{}
+
+		if err := json.Unmarshal(bytes, &cachedInfo); err != nil {
+			continue
+		}
+		if cachedInfo.Kind != CNICacheV1 {
+			continue
+		}
+		if len(containerID) > 0 && cachedInfo.ContainerID != containerID {
+			continue
+		}
+		if cachedInfo.IfName == "" || cachedInfo.NetworkName == "" {
+			continue
+		}
+
+		attachments = append(attachments, &NetworkAttachment{
+			ContainerID:    cachedInfo.ContainerID,
+			Network:        cachedInfo.NetworkName,
+			IfName:         cachedInfo.IfName,
+			Config:         cachedInfo.Config,
+			NetNS:          cachedInfo.NetNS,
+			CniArgs:        cachedInfo.CniArgs,
+			CapabilityArgs: cachedInfo.CapabilityArgs,
+		})
+	}
+	return attachments, nil
 }
 
 func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {
