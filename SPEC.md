@@ -17,20 +17,23 @@
       - [`DEL`: Remove container from network, or un-apply modifications](#del-remove-container-from-network-or-un-apply-modifications)
       - [`CHECK`: Check container's networking is as expected](#check-check-containers-networking-is-as-expected)
       - [`VERSION`: probe plugin version support](#version-probe-plugin-version-support)
+      - [`GC`: Clean up any stale resources](#gc-clean-up-any-stale-resources)
   - [Section 3: Execution of Network Configurations](#section-3-execution-of-network-configurations)
     - [Lifecycle \& Ordering](#lifecycle--ordering)
     - [Attachment Parameters](#attachment-parameters)
     - [Adding an attachment](#adding-an-attachment)
     - [Deleting an attachment](#deleting-an-attachment)
     - [Checking an attachment](#checking-an-attachment)
-    - [Deriving execution configuration from plugin configuration](#deriving-execution-configuration-from-plugin-configuration)
+    - [Garbage-collecting a network](#garbage-collecting-a-network)
+    - [Deriving request configuration from plugin configuration](#deriving-request-configuration-from-plugin-configuration)
       - [Deriving `runtimeConfig`](#deriving-runtimeconfig)
   - [Section 4: Plugin Delegation](#section-4-plugin-delegation)
     - [Delegated Plugin protocol](#delegated-plugin-protocol)
     - [Delegated plugin execution procedure](#delegated-plugin-execution-procedure)
   - [Section 5: Result Types](#section-5-result-types)
-    - [Success](#success)
+    - [ADD Success](#add-success)
       - [Delegated plugins (IPAM)](#delegated-plugins-ipam)
+    - [VERSION Success](#version-success)
     - [Error](#error)
     - [Version](#version-1)
   - [Appendix: Examples](#appendix-examples)
@@ -202,7 +205,7 @@ The runtime must execute the plugin in the runtime's networking domain. (For mos
 
 Protocol parameters are passed to the plugins via OS environment variables.
 
-- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, or `VERSION`.
+- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, `GC`, or `VERSION`.
 - `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-).
 - `CNI_NETNS`: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`)
 - `CNI_IFNAME`: Name of the interface to create inside the container; if the plugin is unable to use this interface name it must return an error.
@@ -214,7 +217,7 @@ A plugin must exit with a return code of 0 on success, and non-zero on failure. 
 
 ### CNI operations
 
-CNI defines 4 operations: `ADD`, `DEL`, `CHECK`, and `VERSION`. These are passed to the plugin via the `CNI_COMMAND` environment variable.
+CNI defines 5 operations: `ADD`, `DEL`, `CHECK`, `GC`, and `VERSION`. These are passed to the plugin via the `CNI_COMMAND` environment variable.
 
 #### `ADD`: Add container to network, or apply modifications
 
@@ -321,6 +324,38 @@ A json-serialized object, with the following key:
 Required environment parameters:
 - `CNI_COMMAND`
 
+#### `GC`: Clean up any stale resources
+
+The GC comand provides a way for runtimes to specify the expected set of attachments to a network.
+The network plugin may then remove any resources related to attachments that do not exist in this set.
+
+Resources may, for example, include:
+- IPAM reservations
+- Firewall rules
+
+A plugin SHOULD remove as many stale resources as possible. For example, a plugin should remove any IPAM reservations associated with attachments not in the provided list. The plugin MAY assume that the isolation domain (e.g. network namespace) has been deleted, and thus any resources (e.g. network interfaces) therein have been removed.
+
+Plugins should generally complete a `GC` action without error. If an error is encountered, a plugin should continue; removing as many resources as possible, and report the errors back to the runtime.
+
+Plugins MUST, additionally, forward any GC calls to delegated plugins they are configured to use (see section 4).
+
+The runtime MUST NOT use GC as a substitute for DEL. Plugins may be unable to clean up some resources from GC that they would have been able to clean up from DEL.
+
+**Input:**
+
+The runtime must provide a JSON-serialized plugin configuration object (defined below) on standard in. It contains an additional key;
+
+- `cni.dev/attachments` (array of objects): The list of **still valid** attachments to this network:
+    - `containerID` (string): the value of CNI_CONTAINERID as provided during the CNI ADD operation
+    - `ifname` (string): the value of CNI_IFNAME as provided during the CNI ADD operation
+
+Required environment parameters:
+- `CNI_COMMAND`
+- `CNI_PATH`
+
+**Output:**
+No output on success, ["error" result structure](#Error) on error.
+
 
 ## Section 3: Execution of Network Configurations
 
@@ -332,6 +367,7 @@ The operation of a network configuration on a container is called an _attachment
 
 - The container runtime must create a new network namespace for the container before invoking any plugins.
 - The container runtime must not invoke parallel operations for the same container, but is allowed to invoke parallel operations for different containers. This includes across multiple attachments.
+  - **Exception**: The runtime must exclusively execute either _gc_ or _add_ and _delete_. The runtime must ensure that no _add_ or _delete_ operations are in progress before executing _gc_, and must wait for _gc_ to complete before issuing new _add_ or _delete_ commands.
 - Plugins must handle being executed concurrently across different containers. If necessary, they must implement locking on shared resources (e.g. IPAM databases).
 - The container runtime must ensure that _add_ is eventually followed by a corresponding _delete_. The only exception is in the event of catastrophic failure, such as node loss. A _delete_ must still be executed even if the _add_ fails.
 - _delete_ may be followed by additional _deletes_.
@@ -389,21 +425,38 @@ For every plugin defined in the `plugins` key of the network configuration,
 
 If all plugins return success, return success to the caller.
 
-### Deriving execution configuration from plugin configuration
+### Garbage-collecting a network
+The runtime may also ask every plugin in a network configuration to clean up any stale resources via the _GC_ command.
+
+When garbage-collecting a configuration, there are no [Attachment Parameters](#attachment-parameters).
+
+For every plugin defined in the `plugins` key of the network configuration,
+1. Look up the executable specified in the `type` field. If this does not exist, then this is an error.
+2. Derive request configuration from the plugin configuration.
+3. Execute the plugin binary, with `CNI_COMMAND=GC`. Supply the derived configuration via standard in.
+4. If the plugin returns an error, **continue** with execution, returning all errors to the caller.
+
+If all plugins return success, return success to the caller.
+
+### Deriving request configuration from plugin configuration
 The network configuration format (which is a list of plugin configurations to execute) must be transformed to a format understood by the plugin (which is a single plugin configuration). This section describes that transformation.
 
-The execution configuration for a single plugin invocation is also JSON. It consists of the plugin configuration, primarily unchanged except for the specified additions and removals.
+The request configuration for a single plugin invocation is also JSON. It consists of the plugin configuration, primarily unchanged except for the specified additions and removals.
 
-The following fields must be inserted into the execution configuration by the runtime:
+The following fields are always to be inserted into the request configuration by the runtime:
 - `cniVersion`: taken from the `cniVersion` field of the network configuration
 - `name`: taken from the `name` field of the network configuration
-- `runtimeConfig`: A JSON object, consisting of the union of capabilities provided by the plugin and requested by the runtime (more details below)
-- `prevResult`: A JSON object, consisting of the result type returned by the "previous" plugin. The meaning of "previous" is defined by the specific operation (_add_, _delete_, or _check_).
 
-The following fields must be **removed** by the runtime:
-- `capabilities`
 
-All other fields should be passed through unaltered.
+For attachment-specific operations (ADD, DEL, CHECK), additional field requirements apply:
+- `runtimeConfig`: the runtime must insert an object consisting of the union of capabilities provided by the plugin and requested by the runtime (more details below). 
+- `prevResult`: the runtime must insert consisting of the result type returned by the "previous" plugin. The meaning of "previous" is defined by the specific operation (_add_, _delete_, or _check_). This field must not be set for the first _add_ in a chain.
+- `capabilities`: must not be set
+
+For GC operations:
+- `cni.dev/attachments`: as specified in section 2.
+
+All other fields not prefixed with `cni.dev/` should be passed through unaltered.
 
 #### Deriving `runtimeConfig`
 
@@ -459,21 +512,15 @@ When a plugin executes a delegated plugin, it should:
 - Execute that plugin with the same environment and configuration that it received.
 - Ensure that the delegated plugin's stderr is output to the calling plugin's stderr.
 
-If a plugin is executed with `CNI_COMMAND=CHECK` or `DEL`, it must also execute any delegated plugins. If any of the delegated plugins return error, error should be returned by the upper plugin.
+If a plugin is executed with `CNI_COMMAND=CHECK`, `DEL`, or `GC`, it must also execute any delegated plugins. If any of the delegated plugins return error, error should be returned by the upper plugin.
 
 If, on `ADD`, a delegated plugin fails, the "upper" plugin should execute again with `DEL` before returning failure.
 
 ## Section 5: Result Types
 
-Plugins can return one of three result types:
+For certain operations, plugins must output result information. The output should be serialized as JSON on standard out.
 
-- _Success_ (or _Abbreviated Success_)
-- _Error_
-- _Version_
-
-### Success
-
-Plugins provided a `prevResult` key as part of their request configuration must output it as their result, with any possible modifications made by that plugin included. If a plugin makes no changes that would be reflected in the _Success result_ type, then it must output a result equivalent to the provided `prevResult`.
+### ADD Success
 
 Plugins must output a JSON object with the following keys upon a successful `ADD` operation:
 
@@ -495,11 +542,28 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
     - `search` (list of strings): list of priority ordered search domains for short hostname lookups. Will be preferred over `domain` by most resolvers.
     - `options` (list of strings): list of options that can be passed to the resolver.
 
+Plugins provided a `prevResult` key as part of their request configuration must output it as their result, with any possible modifications made by that plugin included. If a plugin makes no changes that would be reflected in the _Success result_ type, then it must output a result equivalent to the provided `prevResult`.
+
 #### Delegated plugins (IPAM)
 Delegated plugins may omit irrelevant sections.
 
 Delegated IPAM plugins must return an abbreviated _Success_ object. Specifically, it is missing the `interfaces` array, as well as the `interface` entry in `ips`.
 
+
+### VERSION Success
+
+Plugins must output a JSON object with the following keys upon a `VERSION` operation:
+
+- `cniVersion`: The value of `cniVersion` specified on input
+- `supportedVersions`: A list of supported specification versions
+
+Example:
+```json
+{
+    "cniVersion": "1.0.0",
+    "supportedVersions": [ "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0" ]
+}
+```
 
 ### Error
 
@@ -522,7 +586,6 @@ Example:
 ```
 
 Error codes 0-99 are reserved for well-known errors. Values of 100+ can be freely used for plugin specific errors.
-
 
 Error Code|Error Description
 ---|---
