@@ -51,21 +51,21 @@ var _ = Describe("CNIArgs AsEnv", func() {
 			numLatentEnvs := len(latentEnvs)
 
 			cniEnvs := args.AsEnv()
-			Expect(len(cniEnvs)).To(Equal(numLatentEnvs))
+			Expect(cniEnvs).To(HaveLen(numLatentEnvs))
 
-			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_IFNAME=eth7", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_CONTAINERID=some-container-id", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_NETNS=/some/netns/path", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_ARGS=KEY1=VALUE1;KEY2=VALUE2", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_PATH=/some/cni/path", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_IFNAME=eth7", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_CONTAINERID=some-container-id", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_NETNS=/some/netns/path", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_ARGS=KEY1=VALUE1;KEY2=VALUE2", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_PATH=/some/cni/path", cniEnvs)).To(BeTrue())
 
-			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(Equal(false))
-			Expect(inStringSlice("CNI_IFNAME=eth0", cniEnvs)).To(Equal(false))
-			Expect(inStringSlice("CNI_CONTAINERID=id", cniEnvs)).To(Equal(false))
-			Expect(inStringSlice("CNI_NETNS=testns", cniEnvs)).To(Equal(false))
-			Expect(inStringSlice("CNI_ARGS=args", cniEnvs)).To(Equal(false))
-			Expect(inStringSlice("CNI_PATH=testpath", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(BeFalse())
+			Expect(inStringSlice("CNI_IFNAME=eth0", cniEnvs)).To(BeFalse())
+			Expect(inStringSlice("CNI_CONTAINERID=id", cniEnvs)).To(BeFalse())
+			Expect(inStringSlice("CNI_NETNS=testns", cniEnvs)).To(BeFalse())
+			Expect(inStringSlice("CNI_ARGS=args", cniEnvs)).To(BeFalse())
+			Expect(inStringSlice("CNI_PATH=testpath", cniEnvs)).To(BeFalse())
 		})
 
 		AfterEach(func() {
@@ -94,10 +94,10 @@ var _ = Describe("CNIArgs AsEnv", func() {
 			numLatentEnvs := len(latentEnvs)
 
 			cniEnvs := delegateArgs.AsEnv()
-			Expect(len(cniEnvs)).To(Equal(numLatentEnvs))
+			Expect(cniEnvs).To(HaveLen(numLatentEnvs))
 
-			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
-			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(Equal(false))
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(BeTrue())
+			Expect(inStringSlice("CNI_COMMAND=DEL", cniEnvs)).To(BeFalse())
 		})
 
 		It("append CNI_COMMAND if it does not exist in environment variables", func() {
@@ -109,9 +109,9 @@ var _ = Describe("CNIArgs AsEnv", func() {
 			numLatentEnvs := len(latentEnvs)
 
 			cniEnvs := delegateArgs.AsEnv()
-			Expect(len(cniEnvs)).To(Equal(numLatentEnvs + 1))
+			Expect(cniEnvs).To(HaveLen(numLatentEnvs + 1))
 
-			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(Equal(true))
+			Expect(inStringSlice("CNI_COMMAND=ADD", cniEnvs)).To(BeTrue())
 		})
 
 		AfterEach(func() {

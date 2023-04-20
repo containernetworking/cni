@@ -264,7 +264,7 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("Loads the config list first", func() {
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(netConfigList.Plugins)).To(Equal(3))
+				Expect(netConfigList.Plugins).To(HaveLen(3))
 			})
 
 			It("falls back to the config file", func() {
@@ -272,7 +272,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				netConfigList, err := libcni.LoadConfList(configDir, "some-list")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(netConfigList.Plugins)).To(Equal(1))
+				Expect(netConfigList.Plugins).To(HaveLen(1))
 				Expect(netConfigList.Plugins[0].Network.Type).To(Equal("bridge"))
 			})
 		})

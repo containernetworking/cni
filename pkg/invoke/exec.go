@@ -81,7 +81,7 @@ func fixupResultVersion(netconf, result []byte) (string, []byte, error) {
 // object to ExecPluginWithResult() to verify the incoming stdin and environment
 // and provide a tailored response:
 //
-//import (
+// import (
 //	"encoding/json"
 //	"path"
 //	"strings"

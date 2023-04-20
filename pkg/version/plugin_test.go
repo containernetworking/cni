@@ -121,19 +121,19 @@ var _ = Describe("Decoding versions reported by a plugin", func() {
 				// Make sure the first is greater than the second
 				gt, err := version.GreaterThanOrEqualTo(v[0], v[1])
 				Expect(err).NotTo(HaveOccurred())
-				Expect(gt).To(Equal(true))
+				Expect(gt).To(BeTrue())
 
 				// And the opposite
 				gt, err = version.GreaterThanOrEqualTo(v[1], v[0])
 				Expect(err).NotTo(HaveOccurred())
-				Expect(gt).To(Equal(false))
+				Expect(gt).To(BeFalse())
 			}
 		})
 
 		It("returns true when versions are the same", func() {
 			gt, err := version.GreaterThanOrEqualTo("1.2.3", "1.2.3")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(gt).To(Equal(true))
+			Expect(gt).To(BeTrue())
 		})
 
 		It("returns an error for malformed versions", func() {
