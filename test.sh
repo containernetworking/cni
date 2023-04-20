@@ -20,22 +20,6 @@ else
     go test ${PKGS}
 fi
 
-GO_FILES=$(find . -name '*.go' -type f -print)
-
-echo "Checking gofmt..."
-fmtRes=$(gofmt -d -e -s ${GO_FILES})
-if [ -n "${fmtRes}" ]; then
-	echo -e "go fmt checking failed:\n${fmtRes}"
-	exit 255
-fi
-
-echo "Checking govet..."
-vetRes=$(go vet ${PKGS})
-if [ -n "${vetRes}" ]; then
-	echo -e "go vet checking failed:\n${vetRes}"
-	exit 255
-fi
-
 echo "Checking license header..."
 licRes=$(
        for file in $(find . -type f -iname '*.go'); do
