@@ -134,10 +134,10 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 			return err
 		}
 	}
-
-	if debug.ReportError != "" {
+	switch {
+	case debug.ReportError != "":
 		return errors.New(debug.ReportError)
-	} else if debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS" {
+	case debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS":
 		prevResult := netConf.PrevResult
 		if debug.ReportResult == "INJECT-DNS" {
 			newResult, err := current.NewResultFromResult(netConf.PrevResult)
@@ -161,7 +161,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		if err != nil {
 			return err
 		}
-	} else if debug.ReportResult != "" {
+	case debug.ReportResult != "":
 		_, err = os.Stdout.WriteString(debug.ReportResult)
 		if err != nil {
 			return err

@@ -5,6 +5,7 @@ linters:
     - errorlint
     - gci
     - ginkgolinter
+    - gocritic
     - gofumpt
     - govet
     - ineffassign
