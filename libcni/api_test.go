@@ -39,10 +39,11 @@ import (
 )
 
 type pluginInfo struct {
-	debugFilePath string
-	debug         *noop_debug.Debug
-	config        string
-	stdinData     []byte
+	debugFilePath   string
+	commandFilePath string
+	debug           *noop_debug.Debug
+	config          string
+	stdinData       []byte
 }
 
 type portMapping struct {
@@ -66,6 +67,11 @@ func newPluginInfo(cniVersion, configValue, prevResult string, injectDebugFilePa
 	Expect(debugFile.Close()).To(Succeed())
 	debugFilePath := debugFile.Name()
 
+	commandLog, err := os.CreateTemp("", "cni_debug")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(commandLog.Close()).To(Succeed())
+	commandFilePath := commandLog.Name()
+
 	debug := &noop_debug.Debug{
 		ReportResult: result,
 	}
@@ -79,6 +85,7 @@ func newPluginInfo(cniVersion, configValue, prevResult string, injectDebugFilePa
 	}
 	if injectDebugFilePath {
 		config += fmt.Sprintf(`, "debugFile": %q`, debugFilePath)
+		config += fmt.Sprintf(`, "commandLog": %q`, commandFilePath)
 	}
 	if len(capabilities) > 0 {
 		config += `, "capabilities": {`
@@ -115,10 +122,11 @@ func newPluginInfo(cniVersion, configValue, prevResult string, injectDebugFilePa
 	Expect(err).NotTo(HaveOccurred())
 
 	return pluginInfo{
-		debugFilePath: debugFilePath,
-		debug:         debug,
-		config:        config,
-		stdinData:     stdinData,
+		debugFilePath:   debugFilePath,
+		commandFilePath: commandFilePath,
+		debug:           debug,
+		config:          config,
+		stdinData:       stdinData,
 	}
 }
 
@@ -1497,6 +1505,24 @@ var _ = Describe("Invoking plugins", func() {
 
 				// The config list is just noop 3 times, so we get 3 errors
 				Expect(err).To(MatchError("[plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\" plugin noop does not support config version \"broken\"]"))
+			})
+		})
+		Describe("GCNetworkList", func() {
+			It("issues a DEL and GC as necessary", func() {
+				By("doing a CNI ADD")
+				_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Issuing a GC with no valid networks")
+				err = cniConfig.GCNetworkList(ctx, netConfigList, libcni.GCArgs{
+					ValidAttachments: []libcni.GCAttachment{},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				commands, err := noop_debug.ReadCommandLog(plugins[0].commandFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(commands).To(Equal([]string{"ADD", "DEL", "GC"}))
+
 			})
 		})
 	})
