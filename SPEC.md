@@ -16,6 +16,7 @@
       - [`ADD`: Add container to network, or apply modifications](#add-add-container-to-network-or-apply-modifications)
       - [`DEL`: Remove container from network, or un-apply modifications](#del-remove-container-from-network-or-un-apply-modifications)
       - [`CHECK`: Check container's networking is as expected](#check-check-containers-networking-is-as-expected)
+      - [`STATUS`: Check plugin status](#status-check-plugin-status)
       - [`VERSION`: probe plugin version support](#version-probe-plugin-version-support)
       - [`GC`: Clean up any stale resources](#gc-clean-up-any-stale-resources)
   - [Section 3: Execution of Network Configurations](#section-3-execution-of-network-configurations)
@@ -312,6 +313,32 @@ Optional environment parameters:
 - `CNI_PATH`
 
 All parameters, with the exception of `CNI_PATH`, must be the same as the corresponding `ADD` for this container.
+
+
+#### `STATUS`: Check plugin status
+`STATUS` is a way for a runtime to determine the readiness of a network plugin.
+
+A plugin must exit with a zero (success) return code if the plugin is ready to service ADD requests. If the plugin knows that it is not able to service ADD requests, it must exit with a non-zero return code and output an error on standard out (see below).
+
+For example, if a plugin relies on an external service or daemon, it should return an error to `STATUS` if that service is unavailable. Likewise, if a plugin has a limited number of resources (e.g. IP addresses, hardware queues), it should return an error if those resources are exhausted and no new `ADD` requests can be serviced.
+
+The following error codes are defined in the context of `STATUS`:
+
+- 50: The plugin is not available (i.e. cannot service `ADD` requests)
+- 51: The plugin is not available, and existing containers in the network may have limited connectivity.
+
+Plugin considerations:
+- Status is purely informational. A plugin MUST NOT rely on `STATUS` being called.
+- Plugins should always expect other CNI operations (like `ADD`, `DEL`, etc) even if `STATUS` returns an error. `STATUS` does not prevent other runtime requests.
+- If a plugin relies on a delegated plugin (e.g. IPAM) to service `ADD` requests, it must also execute a `STATUS` request to that plugin when it receives a `STATUS` request for itself. If the delegated plugin return an error result, the executing plugin should return an error result.
+
+**Input:**
+
+The runtime will provide a json-serialized plugin configuration object (defined below) on standard in.
+
+Optional environment parameters:
+- `CNI_PATH`
+
 
 #### `VERSION`: probe plugin version support
 The plugin should output via standard-out a json-serialized version result object (see below).
