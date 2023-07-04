@@ -174,11 +174,13 @@ func convertTo02x(from types.Result, toVersion string) (types.Result, error) {
 			toResult.IP4.Routes = append(toResult.IP4.Routes, types.Route{
 				Dst: fromRoute.Dst,
 				GW:  fromRoute.GW,
+				MTU: fromRoute.MTU,
 			})
 		} else if !is4 && toResult.IP6 != nil {
 			toResult.IP6.Routes = append(toResult.IP6.Routes, types.Route{
 				Dst: fromRoute.Dst,
 				GW:  fromRoute.GW,
+				MTU: fromRoute.MTU,
 			})
 		}
 	}

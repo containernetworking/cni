@@ -69,8 +69,8 @@ func testResult() *current.Result {
 			},
 		},
 		Routes: []*types.Route{
-			{Dst: *routev4, GW: routegwv4},
-			{Dst: *routev6, GW: routegwv6},
+			{Dst: *routev4, GW: routegwv4, MTU: 1024},
+			{Dst: *routev6, GW: routegwv6, MTU: 1024},
 		},
 		DNS: types.DNS{
 			Nameservers: []string{"1.2.3.4", "1::cafe"},
@@ -124,11 +124,13 @@ var _ = Describe("Current types operations", func() {
     "routes": [
         {
             "dst": "15.5.6.0/24",
-            "gw": "15.5.6.8"
+            "gw": "15.5.6.8",
+			"mtu": 1024
         },
         {
             "dst": "1111:dddd::/80",
-            "gw": "1111:dddd::aaaa"
+            "gw": "1111:dddd::aaaa",
+			"mtu": 1024
         }
     ],
     "dns": {
@@ -176,7 +178,8 @@ var _ = Describe("Current types operations", func() {
         "routes": [
             {
                 "dst": "15.5.6.0/24",
-                "gw": "15.5.6.8"
+                "gw": "15.5.6.8",
+				"mtu": 1024
             }
         ]
     },
@@ -186,7 +189,8 @@ var _ = Describe("Current types operations", func() {
         "routes": [
             {
                 "dst": "1111:dddd::/80",
-                "gw": "1111:dddd::aaaa"
+                "gw": "1111:dddd::aaaa",
+				"mtu": 1024
             }
         ]
     },
@@ -253,11 +257,13 @@ var _ = Describe("Current types operations", func() {
     "routes": [
         {
             "dst": "15.5.6.0/24",
-            "gw": "15.5.6.8"
+            "gw": "15.5.6.8",
+			"mtu": 1024
         },
         {
             "dst": "1111:dddd::/80",
-            "gw": "1111:dddd::aaaa"
+            "gw": "1111:dddd::aaaa",
+			"mtu": 1024
         }
     ],
     "dns": {
