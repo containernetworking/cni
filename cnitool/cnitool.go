@@ -24,75 +24,44 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
+	"github.com/containernetworking/cni/pkg/env"
 )
 
 // Protocol parameters are passed to the plugins via OS environment variables.
 const (
-	EnvCNIPath        = "CNI_PATH"
 	EnvNetDir         = "NETCONFPATH"
 	EnvCapabilityArgs = "CAP_ARGS"
-	EnvCNIArgs        = "CNI_ARGS"
-	EnvCNIIfname      = "CNI_IFNAME"
 
-	DefaultNetDir = "/etc/cni/net.d"
-
-	CmdAdd   = "add"
-	CmdCheck = "check"
-	CmdDel   = "del"
+	DefaultIfname       = "eth0"
+	DefaultNetDir       = "/etc/cni/net.d"
+	DefaultCapabilities = ""
 )
-
-func parseArgs(args string) ([][2]string, error) {
-	var result [][2]string
-
-	pairs := strings.Split(args, ";")
-	for _, pair := range pairs {
-		kv := strings.Split(pair, "=")
-		if len(kv) != 2 || kv[0] == "" || kv[1] == "" {
-			return nil, fmt.Errorf("invalid CNI_ARGS pair %q", pair)
-		}
-
-		result = append(result, [2]string{kv[0], kv[1]})
-	}
-
-	return result, nil
-}
 
 func main() {
 	if len(os.Args) < 4 {
 		usage()
 	}
 
-	netdir := os.Getenv(EnvNetDir)
-	if netdir == "" {
-		netdir = DefaultNetDir
-	}
+	netdir := env.GetValue(EnvNetDir, DefaultNetDir)
 	netconf, err := libcni.LoadConfList(netdir, os.Args[2])
 	if err != nil {
 		exit(err)
 	}
 
 	var capabilityArgs map[string]interface{}
-	capabilityArgsValue := os.Getenv(EnvCapabilityArgs)
+	capabilityArgsValue := env.GetValue(EnvCapabilityArgs, DefaultCapabilities)
 	if len(capabilityArgsValue) > 0 {
 		if err = json.Unmarshal([]byte(capabilityArgsValue), &capabilityArgs); err != nil {
 			exit(err)
 		}
 	}
 
-	var cniArgs [][2]string
-	args := os.Getenv(EnvCNIArgs)
-	if len(args) > 0 {
-		cniArgs, err = parseArgs(args)
-		if err != nil {
-			exit(err)
-		}
+	cniArgs, err := env.ParseCNIArgs()
+	if err != nil {
+		exit(err)
 	}
 
-	ifName, ok := os.LookupEnv(EnvCNIIfname)
-	if !ok {
-		ifName = "eth0"
-	}
-
+	ifName := env.GetValue(env.VarCNIIfname, DefaultIfname)
 	netns := os.Args[3]
 	netns, err = filepath.Abs(netns)
 	if err != nil {
@@ -103,7 +72,7 @@ func main() {
 	s := sha512.Sum512([]byte(netns))
 	containerID := fmt.Sprintf("cnitool-%x", s[:10])
 
-	cninet := libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
+	cninet := libcni.NewCNIConfig(env.ParseCNIPath(), nil)
 
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,
@@ -113,17 +82,17 @@ func main() {
 		CapabilityArgs: capabilityArgs,
 	}
 
-	switch os.Args[1] {
-	case CmdAdd:
+	switch strings.ToUpper(os.Args[1]) {
+	case env.CmdAdd:
 		result, err := cninet.AddNetworkList(context.TODO(), netconf, rt)
 		if result != nil {
 			_ = result.Print()
 		}
 		exit(err)
-	case CmdCheck:
+	case env.CmdCheck:
 		err := cninet.CheckNetworkList(context.TODO(), netconf, rt)
 		exit(err)
-	case CmdDel:
+	case env.CmdDel:
 		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
 	}
 }

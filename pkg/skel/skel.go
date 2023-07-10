@@ -26,6 +26,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/containernetworking/cni/pkg/env"
 	"github.com/containernetworking/cni/pkg/ns"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/utils"
@@ -65,77 +66,82 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		reqForCmd reqForCmdEntry
 	}{
 		{
-			"CNI_COMMAND",
+			env.VarCNICommand,
 			&cmd,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
+				env.CmdAdd:   true,
+				env.CmdCheck: true,
+				env.CmdDel:   true,
 			},
 		},
 		{
-			"CNI_CONTAINERID",
+			env.VarCNIContainerId,
 			&contID,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
+				env.CmdAdd:   true,
+				env.CmdCheck: true,
+				env.CmdDel:   true,
 			},
 		},
 		{
-			"CNI_NETNS",
+			env.VarCNINetNs,
 			&netns,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   false,
+				env.CmdAdd:   true,
+				env.CmdCheck: true,
+				env.CmdDel:   false,
 			},
 		},
 		{
-			"CNI_IFNAME",
+			env.VarCNIIfname,
 			&ifName,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
+				env.CmdAdd:   true,
+				env.CmdCheck: true,
+				env.CmdDel:   true,
 			},
 		},
 		{
-			"CNI_ARGS",
+			env.VarCNIArgs,
 			&args,
 			reqForCmdEntry{
-				"ADD":   false,
-				"CHECK": false,
-				"DEL":   false,
+				env.CmdAdd:   false,
+				env.CmdCheck: false,
+				env.CmdDel:   false,
 			},
 		},
 		{
-			"CNI_PATH",
+			env.VarCNIPath,
 			&path,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
+				env.CmdAdd:   true,
+				env.CmdCheck: true,
+				env.CmdDel:   true,
 			},
 		},
 		{
-			"CNI_NETNS_OVERRIDE",
+			env.VarCNINetNsOverride,
 			&netnsOverride,
 			reqForCmdEntry{
-				"ADD":   false,
-				"CHECK": false,
-				"DEL":   false,
+				env.CmdAdd:   false,
+				env.CmdCheck: false,
+				env.CmdDel:   false,
 			},
 		},
 	}
 
 	argsMissing := make([]string, 0)
 	for _, v := range vars {
-		*v.val = t.Getenv(v.name)
-		if *v.val == "" {
-			if v.reqForCmd[cmd] || v.name == "CNI_COMMAND" {
+		val := t.Getenv(v.name)
+		if v.name == env.VarCNICommand {
+			val = strings.ToUpper(val)
+		}
+		if val == "" {
+			if v.reqForCmd[cmd] || v.name == env.VarCNICommand {
 				argsMissing = append(argsMissing, v.name)
 			}
+		} else {
+			*v.val = val
 		}
 	}
 
@@ -144,7 +150,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		return "", nil, types.NewError(types.ErrInvalidEnvironmentVariables, fmt.Sprintf("required env variables [%s] missing", joined), "")
 	}
 
-	if cmd == "VERSION" {
+	if cmd == env.CmdVersion {
 		t.Stdin = bytes.NewReader(nil)
 	}
 
@@ -207,7 +213,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
-		if err.Code == types.ErrInvalidEnvironmentVariables && t.Getenv("CNI_COMMAND") == "" && about != "" {
+		if err.Code == types.ErrInvalidEnvironmentVariables && t.Getenv(env.VarCNICommand) == "" && about != "" {
 			_, _ = fmt.Fprintln(t.Stderr, about)
 			_, _ = fmt.Fprintf(t.Stderr, "CNI protocol versions supported: %s\n", strings.Join(versionInfo.SupportedVersions(), ", "))
 			return nil
@@ -215,7 +221,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		return err
 	}
 
-	if cmd != "VERSION" {
+	if cmd != env.CmdVersion {
 		if err = validateConfig(cmdArgs.StdinData); err != nil {
 			return err
 		}
@@ -228,7 +234,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 	}
 
 	switch cmd {
-	case "ADD":
+	case env.CmdAdd:
 		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdAdd)
 		if err != nil {
 			return err
@@ -238,10 +244,11 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 			if checkErr != nil {
 				return checkErr
 			} else if isPluginNetNS {
-				return types.NewError(types.ErrInvalidNetNS, "plugin's netns and netns from CNI_NETNS should not be the same", "")
+				errMsg := fmt.Sprintf("plugin's netns and netns from %s should not be the same", env.VarCNINetNs)
+				return types.NewError(types.ErrInvalidNetNS, errMsg, "")
 			}
 		}
-	case "CHECK":
+	case env.CmdCheck:
 		configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
 		if err != nil {
 			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
@@ -263,7 +270,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 			}
 		}
 		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow CHECK", "")
-	case "DEL":
+	case env.CmdDel:
 		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdDel)
 		if err != nil {
 			return err
@@ -273,15 +280,17 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 			if checkErr != nil {
 				return checkErr
 			} else if isPluginNetNS {
-				return types.NewError(types.ErrInvalidNetNS, "plugin's netns and netns from CNI_NETNS should not be the same", "")
+				errMsg := fmt.Sprintf("plugin's netns and netns from %s should not be the same", env.VarCNINetNs)
+				return types.NewError(types.ErrInvalidNetNS, errMsg, "")
 			}
 		}
-	case "VERSION":
+	case env.CmdVersion:
 		if err := versionInfo.Encode(t.Stdout); err != nil {
 			return types.NewError(types.ErrIOFailure, err.Error(), "")
 		}
 	default:
-		return types.NewError(types.ErrInvalidEnvironmentVariables, fmt.Sprintf("unknown CNI_COMMAND: %v", cmd), "")
+		errMsg := fmt.Sprintf("unknown %s: %v", env.VarCNICommand, cmd)
+		return types.NewError(types.ErrInvalidEnvironmentVariables, errMsg, "")
 	}
 
 	return err
