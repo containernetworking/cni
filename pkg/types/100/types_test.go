@@ -48,7 +48,7 @@ func testResult() *current.Result {
 
 	// Set every field of the struct to ensure source compatibility
 	return &current.Result{
-		CNIVersion: "1.0.0",
+		CNIVersion: current.ImplementedSpecVersion,
 		Interfaces: []*current.Interface{
 			{
 				Name:    "eth0",
@@ -82,7 +82,7 @@ func testResult() *current.Result {
 }
 
 var _ = Describe("Current types operations", func() {
-	It("correctly encodes a 1.0.0 Result", func() {
+	It("correctly encodes a 1.1.0 Result", func() {
 		res := testResult()
 
 		// Redirect stdout to capture JSON result
@@ -101,7 +101,7 @@ var _ = Describe("Current types operations", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(string(out)).To(MatchJSON(`{
-    "cniVersion": "1.0.0",
+    "cniVersion": "` + current.ImplementedSpecVersion + `",
     "interfaces": [
         {
             "name": "eth0",
@@ -147,6 +147,22 @@ var _ = Describe("Current types operations", func() {
         ]
     }
 }`))
+	})
+
+	It("correctly converts a 1.0.0 Result to 1.1.0", func() {
+		tr, err := testResult().GetAsVersion("1.0.0")
+		Expect(err).NotTo(HaveOccurred())
+
+		trv1, ok := tr.(*current.Result)
+		Expect(ok).To(BeTrue())
+
+		// 1.0.0 and 1.1.0 should be the same except for CNI version
+		Expect(trv1.CNIVersion).To(Equal("1.0.0"))
+
+		// If we convert 1.0.0 back to 1.1.0 it should be identical
+		trv11, err := trv1.GetAsVersion("1.1.0")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(trv11).To(Equal(testResult()))
 	})
 
 	It("correctly encodes a 0.1.0 Result", func() {

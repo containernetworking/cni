@@ -26,6 +26,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/invoke"
 	current "github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
@@ -42,7 +43,7 @@ var _ = Describe("Delegate", func() {
 	BeforeEach(func() {
 		netConf, _ = json.Marshal(map[string]string{
 			"name":       "delegate-test",
-			"cniVersion": current.ImplementedSpecVersion,
+			"cniVersion": version.Current(),
 		})
 
 		expectedResult = &current.Result{

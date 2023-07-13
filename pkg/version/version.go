@@ -19,13 +19,12 @@ import (
 	"fmt"
 
 	"github.com/containernetworking/cni/pkg/types"
-	types100 "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/types/create"
 )
 
 // Current reports the version of the CNI spec implemented by this library
 func Current() string {
-	return types100.ImplementedSpecVersion
+	return "1.1.0"
 }
 
 // Legacy PluginInfo describes a plugin that is backwards compatible with the
@@ -37,7 +36,7 @@ func Current() string {
 // this list.
 var (
 	Legacy = PluginSupports("0.1.0", "0.2.0")
-	All    = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0")
+	All    = PluginSupports("0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0", "1.1.0")
 )
 
 // VersionsFrom returns a list of versions starting from min, inclusive

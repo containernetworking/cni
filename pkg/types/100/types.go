@@ -26,9 +26,10 @@ import (
 	convert "github.com/containernetworking/cni/pkg/types/internal"
 )
 
-const ImplementedSpecVersion string = "1.0.0"
+// The types did not change between v1.0 and v1.1
+const ImplementedSpecVersion string = "1.1.0"
 
-var supportedVersions = []string{ImplementedSpecVersion}
+var supportedVersions = []string{"1.0.0", "1.1.0"}
 
 // Register converters for all versions less than the implemented spec version
 func init() {
@@ -38,10 +39,14 @@ func init() {
 	convert.RegisterConverter("0.3.0", supportedVersions, convertFrom04x)
 	convert.RegisterConverter("0.3.1", supportedVersions, convertFrom04x)
 	convert.RegisterConverter("0.4.0", supportedVersions, convertFrom04x)
+	convert.RegisterConverter("1.0.0", []string{"1.1.0"}, convertFrom100)
 
 	// Down-converters
 	convert.RegisterConverter("1.0.0", []string{"0.3.0", "0.3.1", "0.4.0"}, convertTo04x)
 	convert.RegisterConverter("1.0.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("1.1.0", []string{"0.3.0", "0.3.1", "0.4.0"}, convertTo04x)
+	convert.RegisterConverter("1.1.0", []string{"0.1.0", "0.2.0"}, convertTo02x)
+	convert.RegisterConverter("1.1.0", []string{"1.0.0"}, convertFrom100)
 
 	// Creator
 	convert.RegisterCreator(supportedVersions, NewResult)
@@ -90,12 +95,26 @@ type Result struct {
 	DNS        types.DNS      `json:"dns,omitempty"`
 }
 
+// convertFrom100 does nothing except set the version; the types are the same
+func convertFrom100(from types.Result, toVersion string) (types.Result, error) {
+	fromResult := from.(*Result)
+
+	result := &Result{
+		CNIVersion: toVersion,
+		Interfaces: fromResult.Interfaces,
+		IPs:        fromResult.IPs,
+		Routes:     fromResult.Routes,
+		DNS:        fromResult.DNS,
+	}
+	return result, nil
+}
+
 func convertFrom02x(from types.Result, toVersion string) (types.Result, error) {
 	result040, err := convert.Convert(from, "0.4.0")
 	if err != nil {
 		return nil, err
 	}
-	result100, err := convertFrom04x(result040, ImplementedSpecVersion)
+	result100, err := convertFrom04x(result040, toVersion)
 	if err != nil {
 		return nil, err
 	}
