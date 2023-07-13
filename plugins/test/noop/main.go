@@ -38,7 +38,8 @@ import (
 
 type NetConf struct {
 	types.NetConf
-	DebugFile string `json:"debugFile"`
+	DebugFile  string `json:"debugFile"`
+	CommandLog string `json:"commandLog"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
@@ -115,6 +116,10 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	err = debug.WriteDebug(debugFilePath)
 	if err != nil {
 		return err
+	}
+
+	if netConf.CommandLog != "" {
+		noop_debug.WriteCommandLog(netConf.CommandLog, command)
 	}
 
 	if debug.ReportStderr != "" {

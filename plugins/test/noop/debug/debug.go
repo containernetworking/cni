@@ -17,7 +17,9 @@ package debug
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
 )
@@ -69,4 +71,25 @@ func (debug *Debug) WriteDebug(debugFilePath string) error {
 	}
 
 	return nil
+}
+
+// WriteCommandLog appends the executed cni command to the record file
+func WriteCommandLog(path string, cmd string) error {
+	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0655)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	_, err = fmt.Fprintln(fp, cmd)
+	return err
+}
+
+func ReadCommandLog(path string) (commands []string, err error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	commands = strings.Split(strings.TrimSpace(string(b)), "\n")
+	return
 }
