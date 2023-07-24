@@ -175,6 +175,10 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 		return types.NewError(types.ErrIncompatibleCNIVersion, "incompatible CNI versions", verErr.Details())
 	}
 
+	if toCall == nil {
+		return nil
+	}
+
 	if err = toCall(cmdArgs); err != nil {
 		var e *types.Error
 		if errors.As(err, &e) {
@@ -203,7 +207,7 @@ func validateConfig(jsonBytes []byte) *types.Error {
 	return nil
 }
 
-func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
+func (t *dispatcher) pluginMain(funcs CNIFuncs, versionInfo version.PluginInfo, about string) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
@@ -229,7 +233,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 
 	switch cmd {
 	case "ADD":
-		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdAdd)
+		err = t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Add)
 		if err != nil {
 			return err
 		}
@@ -256,7 +260,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 			if err != nil {
 				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 			} else if gtet {
-				if err := t.checkVersionAndCall(cmdArgs, versionInfo, cmdCheck); err != nil {
+				if err := t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Check); err != nil {
 					return err
 				}
 				return nil
@@ -264,7 +268,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		}
 		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow CHECK", "")
 	case "DEL":
-		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdDel)
+		err = t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Del)
 		if err != nil {
 			return err
 		}
@@ -276,6 +280,28 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 				return types.NewError(types.ErrInvalidNetNS, "plugin's netns and netns from CNI_NETNS should not be the same", "")
 			}
 		}
+	case "GC":
+		configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
+		if err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		}
+		if gtet, err := version.GreaterThanOrEqualTo(configVersion, "1.1.0"); err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		} else if !gtet {
+			return types.NewError(types.ErrIncompatibleCNIVersion, "config version does not allow GC", "")
+		}
+		for _, pluginVersion := range versionInfo.SupportedVersions() {
+			gtet, err := version.GreaterThanOrEqualTo(pluginVersion, configVersion)
+			if err != nil {
+				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+			} else if gtet {
+				if err := t.checkVersionAndCall(cmdArgs, versionInfo, funcs.GC); err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow CHECK", "")
 	case "VERSION":
 		if err := versionInfo.Encode(t.Stdout); err != nil {
 			return types.NewError(types.ErrIOFailure, err.Error(), "")
@@ -300,12 +326,23 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 // To let this package automatically handle errors and call os.Exit(1) for you,
 // use PluginMain() instead.
 func PluginMainWithError(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
+	return PluginMainFuncs(CNIFuncs{Add: cmdAdd, Check: cmdCheck, Del: cmdDel}, versionInfo, about)
+}
+
+type CNIFuncs struct {
+	Add   func(_ *CmdArgs) error
+	Del   func(_ *CmdArgs) error
+	Check func(_ *CmdArgs) error
+	GC    func(_ *CmdArgs) error
+}
+
+func PluginMainFuncs(funcs CNIFuncs, versionInfo version.PluginInfo, about string) *types.Error {
 	return (&dispatcher{
 		Getenv: os.Getenv,
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-	}).pluginMain(cmdAdd, cmdCheck, cmdDel, versionInfo, about)
+	}).pluginMain(funcs, versionInfo, about)
 }
 
 // PluginMain is the core "main" for a plugin which includes automatic error handling.
