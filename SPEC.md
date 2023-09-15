@@ -326,7 +326,7 @@ Required environment parameters:
 
 #### `GC`: Clean up any stale resources
 
-The GC comand provides a way for runtimes to specify the expected set of attachments to a network.
+The GC command provides a way for runtimes to specify the expected set of attachments to a network.
 The network plugin may then remove any resources related to attachments that do not exist in this set.
 
 Resources may, for example, include:
