@@ -17,9 +17,7 @@ package debug
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/containernetworking/cni/pkg/skel"
 )
@@ -41,6 +39,15 @@ type Debug struct {
 	// CmdArgs stores the CNI Args and Env Vars that the plugin received
 	CmdArgs skel.CmdArgs
 }
+
+// CmdLogEntry records a single CNI command as well as its args
+type CmdLogEntry struct {
+	Command string
+	CmdArgs skel.CmdArgs
+}
+
+// CmdLog records a list of CmdLogEntry received by the noop plugin
+type CmdLog []CmdLogEntry
 
 // ReadDebug will return a debug file recorded by the noop plugin
 func ReadDebug(debugFilePath string) (*Debug, error) {
@@ -74,22 +81,32 @@ func (debug *Debug) WriteDebug(debugFilePath string) error {
 }
 
 // WriteCommandLog appends the executed cni command to the record file
-func WriteCommandLog(path string, cmd string) error {
-	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0655)
+func WriteCommandLog(path string, entry CmdLogEntry) error {
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	defer fp.Close()
-
-	_, err = fmt.Fprintln(fp, cmd)
-	return err
+	var cmds CmdLog
+	if len(buf) > 0 {
+		if err = json.Unmarshal(buf, &cmds); err != nil {
+			return err
+		}
+	}
+	cmds = append(cmds, entry)
+	if buf, err = json.Marshal(&cmds); err != nil {
+		return nil
+	}
+	return os.WriteFile(path, buf, 0o644)
 }
 
-func ReadCommandLog(path string) (commands []string, err error) {
-	b, err := os.ReadFile(path)
+func ReadCommandLog(path string) (CmdLog, error) {
+	buf, err := os.ReadFile(path)
 	if err != nil {
-		return
+		return nil, err
 	}
-	commands = strings.Split(strings.TrimSpace(string(b)), "\n")
-	return
+	var cmds CmdLog
+	if err = json.Unmarshal(buf, &cmds); err != nil {
+		return nil, err
+	}
+	return cmds, nil
 }

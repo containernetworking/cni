@@ -1513,16 +1513,71 @@ var _ = Describe("Invoking plugins", func() {
 				_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
+				By("Issuing a GC with valid networks")
+				gcargs := &libcni.GCArgs{
+					ValidAttachments: []libcni.GCAttachment{{
+						ContainerID: runtimeConfig.ContainerID,
+						IfName:      runtimeConfig.IfName,
+					}},
+				}
+				err = cniConfig.GCNetworkList(ctx, netConfigList, gcargs)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Issuing a GC with no valid networks")
-				err = cniConfig.GCNetworkList(ctx, netConfigList, libcni.GCArgs{
-					ValidAttachments: []libcni.GCAttachment{},
-				})
+				gcargs.ValidAttachments = nil
+				err = cniConfig.GCNetworkList(ctx, netConfigList, gcargs)
 				Expect(err).NotTo(HaveOccurred())
 
 				commands, err := noop_debug.ReadCommandLog(plugins[0].commandFilePath)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(commands).To(Equal([]string{"ADD", "DEL", "GC"}))
+				Expect(commands).To(HaveLen(4))
 
+				validations := []struct {
+					name string
+					fn   func(entry noop_debug.CmdLogEntry)
+				}{
+					{
+						name: "ADD",
+						fn: func(entry noop_debug.CmdLogEntry) {
+							Expect(entry.CmdArgs.ContainerID).To(Equal(runtimeConfig.ContainerID))
+							Expect(entry.CmdArgs.IfName).To(Equal(runtimeConfig.IfName))
+						},
+					},
+					{
+						name: "GC",
+						fn: func(entry noop_debug.CmdLogEntry) {
+							var conf struct {
+								Attachments []map[string]string `json:"cni.dev/valid-attachments"`
+							}
+							err = json.Unmarshal(entry.CmdArgs.StdinData, &conf)
+							Expect(err).NotTo(HaveOccurred())
+							Expect(conf.Attachments).To(HaveLen(1))
+							Expect(conf.Attachments[0]).To(Equal(map[string]string{"containerID": runtimeConfig.ContainerID, "ifname": runtimeConfig.IfName}))
+						},
+					},
+					{
+						name: "DEL",
+						fn: func(entry noop_debug.CmdLogEntry) {
+							Expect(entry.CmdArgs.ContainerID).To(Equal(runtimeConfig.ContainerID))
+							Expect(entry.CmdArgs.IfName).To(Equal(runtimeConfig.IfName))
+						},
+					},
+					{
+						name: "GC",
+						fn: func(entry noop_debug.CmdLogEntry) {
+							var conf struct {
+								Attachments []map[string]string `json:"cni.dev/valid-attachments"`
+							}
+							err = json.Unmarshal(entry.CmdArgs.StdinData, &conf)
+							Expect(err).NotTo(HaveOccurred())
+							Expect(conf.Attachments).To(BeEmpty())
+						},
+					},
+				}
+				for i, c := range validations {
+					Expect(commands[i].Command).To(Equal(c.name))
+					c.fn(commands[i])
+				}
 			})
 		})
 	})

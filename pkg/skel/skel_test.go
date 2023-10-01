@@ -408,6 +408,10 @@ var _ = Describe("dispatching to the correct callback", func() {
 	Context("when the CNI_COMMAND is GC", func() {
 		BeforeEach(func() {
 			environment["CNI_COMMAND"] = "GC"
+			delete(environment, "CNI_NETNS")
+			delete(environment, "CNI_IFNAME")
+			delete(environment, "CNI_CONTAINERID")
+			delete(environment, "CNI_ARGS")
 
 			expectedCmdArgs = &CmdArgs{
 				Path:      "/some/cni/path",
@@ -415,7 +419,9 @@ var _ = Describe("dispatching to the correct callback", func() {
 			}
 
 			dispatch = &dispatcher{
-				Getenv: func(key string) string { return environment[key] },
+				Getenv: func(key string) string {
+					return environment[key]
+				},
 				Stdin:  strings.NewReader(stdinData),
 				Stdout: stdout,
 				Stderr: stderr,
@@ -461,7 +467,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 				Expect(err).To(Equal(&types.Error{
 					Code: types.ErrInvalidEnvironmentVariables,
-					Msg:  "required env variables [CNI_NETNS,CNI_IFNAME,CNI_PATH] missing",
+					Msg:  "required env variables [CNI_PATH] missing",
 				}))
 			})
 		})
@@ -509,7 +515,7 @@ var _ = Describe("dispatching to the correct callback", func() {
 
 		Context("when the plugin has a bad version", func() {
 			It("immediately returns a useful error", func() {
-				dispatch.Stdin = strings.NewReader(`{ "cniVersion": "0.4.0", "some": "config", "name": "test" }`)
+				dispatch.Stdin = strings.NewReader(`{ "cniVersion": "1.1.0", "some": "config", "name": "test" }`)
 				versionInfo = version.PluginSupports("0.1.0", "0.2.0", "adsfasdf")
 				err := dispatch.pluginMain(funcs, versionInfo, "")
 				Expect(err.Code).To(Equal(types.ErrDecodingFailure))

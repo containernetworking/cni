@@ -23,7 +23,6 @@ package libcni
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -114,7 +113,7 @@ type CNI interface {
 	ValidateNetworkList(ctx context.Context, net *NetworkConfigList) ([]string, error)
 	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
 
-	GCNetworkList(ctx context.Context, net *NetworkConfigList, args GCArgs) error
+	GCNetworkList(ctx context.Context, net *NetworkConfigList, args *GCArgs) error
 
 	GetCachedAttachments(containerID string) ([]*NetworkAttachment, error)
 }
@@ -758,7 +757,7 @@ func (c *CNIConfig) GetVersionInfo(ctx context.Context, pluginType string) (vers
 // GCNetworkList will do two things
 // - dump the list of cached attachments, and issue deletes as necessary
 // - issue a GC to the underlying plugins (if the version is high enough)
-func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, args GCArgs) error {
+func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, args *GCArgs) error {
 	// First, get the list of cached attachments
 	cachedAttachments, err := c.GetCachedAttachments("")
 	if err != nil {
@@ -770,19 +769,21 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 		validAttachments[a] = nil
 	}
 
-	errs := []error{}
+	var errs []error
 
 	for _, cachedAttachment := range cachedAttachments {
 		if cachedAttachment.Network != list.Name {
 			continue
 		}
 		// we found this attachment
-		if _, ok := validAttachments[GCAttachment{ContainerID: cachedAttachment.ContainerID, IfName: cachedAttachment.IfName}]; ok {
+		gca := GCAttachment{
+			ContainerID: cachedAttachment.ContainerID,
+			IfName:      cachedAttachment.IfName,
+		}
+		if _, ok := validAttachments[gca]; ok {
 			continue
 		}
-
-		// otherwise, this attachment wasn't valid
-		// and we should issue a CNI DEL
+		// otherwise, this attachment wasn't valid and we should issue a CNI DEL
 		rt := RuntimeConf{
 			ContainerID:    cachedAttachment.ContainerID,
 			NetNS:          cachedAttachment.NetNS,
@@ -790,8 +791,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 			Args:           cachedAttachment.CniArgs,
 			CapabilityArgs: cachedAttachment.CapabilityArgs,
 		}
-		err := c.DelNetworkList(ctx, list, &rt)
-		if err != nil {
+		if err := c.DelNetworkList(ctx, list, &rt); err != nil {
 			errs = append(errs, fmt.Errorf("failed to delete stale attachment %s %s: %w", rt.ContainerID, rt.IfName, err))
 		}
 	}
@@ -807,20 +807,15 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 			// build config here
 			pluginConfig, err := InjectConf(plugin, inject)
 			if err != nil {
-				errs = append(errs, fmt.Errorf(
-					"failed to generate configuration to GC plugin %s: %w",
-					plugin.Network.Type, err))
+				errs = append(errs, fmt.Errorf("failed to generate configuration to GC plugin %s: %w", plugin.Network.Type, err))
 			}
 			if err := c.gcNetwork(ctx, pluginConfig); err != nil {
-				errs = append(errs, fmt.Errorf(
-					"failed to GC plugin %s: %w",
-					plugin.Network.Type, err))
+				errs = append(errs, fmt.Errorf("failed to GC plugin %s: %w", plugin.Network.Type, err))
 			}
 		}
-
 	}
 
-	return errors.Join(errs...)
+	return joinErrors(errs...)
 }
 
 func (c *CNIConfig) gcNetwork(ctx context.Context, net *NetworkConfig) error {
