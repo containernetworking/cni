@@ -17,13 +17,13 @@ package types020_test
 import (
 	"encoding/json"
 	"fmt"
+	types020 "github.com/containernetworking/cni/pkg/types/020"
 	"net"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/020"
 	"github.com/containernetworking/cni/pkg/types/create"
 )
 
@@ -53,14 +53,14 @@ func testResult(resultCNIVersion, jsonCNIVersion string) (*types020.Result, stri
 			IP:      *ipv4,
 			Gateway: net.ParseIP("1.2.3.1"),
 			Routes: []types.Route{
-				{Dst: *routev4, GW: routegwv4, MTU: 1024},
+				{Dst: *routev4, GW: routegwv4},
 			},
 		},
 		IP6: &types020.IPConfig{
 			IP:      *ipv6,
 			Gateway: net.ParseIP("abcd:1234:ffff::1"),
 			Routes: []types.Route{
-				{Dst: *routev6, GW: routegwv6, MTU: 1024},
+				{Dst: *routev6, GW: routegwv6},
 			},
 		},
 		DNS: types.DNS{
@@ -79,8 +79,7 @@ func testResult(resultCNIVersion, jsonCNIVersion string) (*types020.Result, stri
         "routes": [
             {
                 "dst": "15.5.6.0/24",
-                "gw": "15.5.6.8",
-				"mtu": 1024
+                "gw": "15.5.6.8"
             }
         ]
     },
@@ -90,8 +89,7 @@ func testResult(resultCNIVersion, jsonCNIVersion string) (*types020.Result, stri
         "routes": [
             {
                 "dst": "1111:dddd::/80",
-                "gw": "1111:dddd::aaaa",
-				"mtu": 1024
+                "gw": "1111:dddd::aaaa"
             }
         ]
     },

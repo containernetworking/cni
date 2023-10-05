@@ -131,7 +131,6 @@ func (d *DNS) Copy() *DNS {
 type Route struct {
 	Dst net.IPNet
 	GW  net.IP
-	MTU int
 }
 
 func (r *Route) String() string {
@@ -146,7 +145,6 @@ func (r *Route) Copy() *Route {
 	return &Route{
 		Dst: r.Dst,
 		GW:  r.GW,
-		MTU: r.MTU,
 	}
 }
 
@@ -199,7 +197,6 @@ func (e *Error) Print() error {
 type route struct {
 	Dst IPNet  `json:"dst"`
 	GW  net.IP `json:"gw,omitempty"`
-	MTU int    `json:"mtu,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {
@@ -210,7 +207,6 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
-	r.MTU = rt.MTU
 	return nil
 }
 
@@ -218,7 +214,6 @@ func (r Route) MarshalJSON() ([]byte, error) {
 	rt := route{
 		Dst: IPNet(r.Dst),
 		GW:  r.GW,
-		MTU: r.MTU,
 	}
 
 	return json.Marshal(rt)

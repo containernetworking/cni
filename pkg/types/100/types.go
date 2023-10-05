@@ -83,11 +83,11 @@ func NewResultFromResult(result types.Result) (*Result, error) {
 
 // Result is what gets returned from the plugin (via stdout) to the caller
 type Result struct {
-	CNIVersion string         `json:"cniVersion,omitempty"`
-	Interfaces []*Interface   `json:"interfaces,omitempty"`
-	IPs        []*IPConfig    `json:"ips,omitempty"`
-	Routes     []*types.Route `json:"routes,omitempty"`
-	DNS        types.DNS      `json:"dns,omitempty"`
+	CNIVersion string       `json:"cniVersion,omitempty"`
+	Interfaces []*Interface `json:"interfaces,omitempty"`
+	IPs        []*IPConfig  `json:"ips,omitempty"`
+	Routes     []*Route     `json:"routes,omitempty"`
+	DNS        types.DNS    `json:"dns,omitempty"`
 }
 
 func convertFrom02x(from types.Result, toVersion string) (types.Result, error) {
@@ -127,7 +127,7 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 	toResult := &Result{
 		CNIVersion: toVersion,
 		DNS:        *fromResult.DNS.Copy(),
-		Routes:     []*types.Route{},
+		Routes:     []*Route{},
 	}
 	for _, fromIntf := range fromResult.Interfaces {
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceFrom040(fromIntf))
@@ -136,7 +136,7 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 		toResult.IPs = append(toResult.IPs, convertIPConfigFrom040(fromIPC))
 	}
 	for _, fromRoute := range fromResult.Routes {
-		toResult.Routes = append(toResult.Routes, fromRoute.Copy())
+		toResult.Routes = append(toResult.Routes, convertRouteFrom040(fromRoute))
 	}
 	return toResult, nil
 }
@@ -180,7 +180,7 @@ func convertTo04x(from types.Result, toVersion string) (types.Result, error) {
 		toResult.IPs = append(toResult.IPs, convertIPConfigTo040(fromIPC))
 	}
 	for _, fromRoute := range fromResult.Routes {
-		toResult.Routes = append(toResult.Routes, fromRoute.Copy())
+		toResult.Routes = append(toResult.Routes, fromRoute.convertTo040())
 	}
 	return toResult, nil
 }
@@ -304,4 +304,53 @@ func (c *IPConfig) UnmarshalJSON(data []byte) error {
 	c.Address = net.IPNet(ipc.Address)
 	c.Gateway = ipc.Gateway
 	return nil
+}
+
+type Route struct {
+	Dst net.IPNet
+	GW  net.IP
+	MTU int
+}
+
+func (r *Route) String() string {
+	return fmt.Sprintf("%+v", *r)
+}
+
+func (r *Route) Copy() *Route {
+	if r == nil {
+		return nil
+	}
+	newRoute := *r
+	return &newRoute
+}
+
+func (r *Route) convertTo040() *types.Route {
+	return &types.Route{
+		Dst: net.IPNet(types.IPNet(r.Dst)),
+		GW:  r.GW,
+	}
+}
+
+func convertRouteFrom040(from *types.Route) *Route {
+	return &Route{
+		Dst: from.Dst,
+		GW:  from.GW,
+	}
+}
+
+// JSON (un)marshallable types
+type route struct {
+	Dst types.IPNet `json:"dst"`
+	GW  net.IP      `json:"gw,omitempty"`
+	MTU int         `json:"mtu,omitempty"`
+}
+
+func (r *Route) MarshalJSON() ([]byte, error) {
+	rt := route{
+		Dst: types.IPNet(r.Dst),
+		GW:  r.GW,
+		MTU: r.MTU,
+	}
+
+	return json.Marshal(rt)
 }

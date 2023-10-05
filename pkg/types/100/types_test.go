@@ -68,7 +68,7 @@ func testResult() *current.Result {
 				Gateway:   net.ParseIP("abcd:1234:ffff::1"),
 			},
 		},
-		Routes: []*types.Route{
+		Routes: []*current.Route{
 			{Dst: *routev4, GW: routegwv4, MTU: 1024},
 			{Dst: *routev6, GW: routegwv6, MTU: 1024},
 		},
@@ -178,8 +178,7 @@ var _ = Describe("Current types operations", func() {
         "routes": [
             {
                 "dst": "15.5.6.0/24",
-                "gw": "15.5.6.8",
-				"mtu": 1024
+                "gw": "15.5.6.8"
             }
         ]
     },
@@ -189,8 +188,7 @@ var _ = Describe("Current types operations", func() {
         "routes": [
             {
                 "dst": "1111:dddd::/80",
-                "gw": "1111:dddd::aaaa",
-				"mtu": 1024
+                "gw": "1111:dddd::aaaa"
             }
         ]
     },
@@ -257,13 +255,11 @@ var _ = Describe("Current types operations", func() {
     "routes": [
         {
             "dst": "15.5.6.0/24",
-            "gw": "15.5.6.8",
-			"mtu": 1024
+            "gw": "15.5.6.8"
         },
         {
             "dst": "1111:dddd::/80",
-            "gw": "1111:dddd::aaaa",
-			"mtu": 1024
+            "gw": "1111:dddd::aaaa"
         }
     ],
     "dns": {
