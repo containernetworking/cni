@@ -38,7 +38,8 @@ import (
 
 type NetConf struct {
 	types.NetConf
-	DebugFile string `json:"debugFile"`
+	DebugFile  string `json:"debugFile"`
+	CommandLog string `json:"commandLog"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
@@ -115,6 +116,17 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	err = debug.WriteDebug(debugFilePath)
 	if err != nil {
 		return err
+	}
+
+	if netConf.CommandLog != "" {
+		if err = noop_debug.WriteCommandLog(
+			netConf.CommandLog,
+			noop_debug.CmdLogEntry{
+				Command: command,
+				CmdArgs: *args,
+			}); err != nil {
+			return err
+		}
 	}
 
 	if debug.ReportStderr != "" {
@@ -196,6 +208,10 @@ func cmdDel(args *skel.CmdArgs) error {
 	return debugBehavior(args, "DEL")
 }
 
+func cmdGC(args *skel.CmdArgs) error {
+	return debugBehavior(args, "GC")
+}
+
 func saveStdin() ([]byte, error) {
 	// Read original stdin
 	stdinData, err := io.ReadAll(os.Stdin)
@@ -227,5 +243,10 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
+	skel.PluginMainFuncs(skel.CNIFuncs{
+		Add:   cmdAdd,
+		Check: cmdCheck,
+		Del:   cmdDel,
+		GC:    cmdGC,
+	}, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
 }

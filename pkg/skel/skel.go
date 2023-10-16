@@ -60,9 +60,10 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 	var cmd, contID, netns, ifName, args, path, netnsOverride string
 
 	vars := []struct {
-		name      string
-		val       *string
-		reqForCmd reqForCmdEntry
+		name       string
+		val        *string
+		reqForCmd  reqForCmdEntry
+		validateFn func(string) *types.Error
 	}{
 		{
 			"CNI_COMMAND",
@@ -71,7 +72,9 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"ADD":   true,
 				"CHECK": true,
 				"DEL":   true,
+				"GC":    true,
 			},
+			nil,
 		},
 		{
 			"CNI_CONTAINERID",
@@ -81,6 +84,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"CHECK": true,
 				"DEL":   true,
 			},
+			utils.ValidateContainerID,
 		},
 		{
 			"CNI_NETNS",
@@ -90,6 +94,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"CHECK": true,
 				"DEL":   false,
 			},
+			nil,
 		},
 		{
 			"CNI_IFNAME",
@@ -99,6 +104,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"CHECK": true,
 				"DEL":   true,
 			},
+			utils.ValidateInterfaceName,
 		},
 		{
 			"CNI_ARGS",
@@ -108,6 +114,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"CHECK": false,
 				"DEL":   false,
 			},
+			nil,
 		},
 		{
 			"CNI_PATH",
@@ -116,7 +123,9 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"ADD":   true,
 				"CHECK": true,
 				"DEL":   true,
+				"GC":    true,
 			},
+			nil,
 		},
 		{
 			"CNI_NETNS_OVERRIDE",
@@ -126,6 +135,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 				"CHECK": false,
 				"DEL":   false,
 			},
+			nil,
 		},
 	}
 
@@ -135,6 +145,10 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		if *v.val == "" {
 			if v.reqForCmd[cmd] || v.name == "CNI_COMMAND" {
 				argsMissing = append(argsMissing, v.name)
+			}
+		} else if v.reqForCmd[cmd] && v.validateFn != nil {
+			if err := v.validateFn(*v.val); err != nil {
+				return "", nil, err
 			}
 		}
 	}
@@ -151,6 +165,12 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 	stdinData, err := io.ReadAll(t.Stdin)
 	if err != nil {
 		return "", nil, types.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
+	}
+
+	if cmd != "VERSION" {
+		if err := validateConfig(stdinData); err != nil {
+			return "", nil, err
+		}
 	}
 
 	cmdArgs := &CmdArgs{
@@ -173,6 +193,10 @@ func (t *dispatcher) checkVersionAndCall(cmdArgs *CmdArgs, pluginVersionInfo ver
 	verErr := t.VersionReconciler.Check(configVersion, pluginVersionInfo)
 	if verErr != nil {
 		return types.NewError(types.ErrIncompatibleCNIVersion, "incompatible CNI versions", verErr.Details())
+	}
+
+	if toCall == nil {
+		return nil
 	}
 
 	if err = toCall(cmdArgs); err != nil {
@@ -203,7 +227,7 @@ func validateConfig(jsonBytes []byte) *types.Error {
 	return nil
 }
 
-func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
+func (t *dispatcher) pluginMain(funcs CNIFuncs, versionInfo version.PluginInfo, about string) *types.Error {
 	cmd, cmdArgs, err := t.getCmdArgsFromEnv()
 	if err != nil {
 		// Print the about string to stderr when no command is set
@@ -215,21 +239,9 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		return err
 	}
 
-	if cmd != "VERSION" {
-		if err = validateConfig(cmdArgs.StdinData); err != nil {
-			return err
-		}
-		if err = utils.ValidateContainerID(cmdArgs.ContainerID); err != nil {
-			return err
-		}
-		if err = utils.ValidateInterfaceName(cmdArgs.IfName); err != nil {
-			return err
-		}
-	}
-
 	switch cmd {
 	case "ADD":
-		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdAdd)
+		err = t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Add)
 		if err != nil {
 			return err
 		}
@@ -256,7 +268,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 			if err != nil {
 				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
 			} else if gtet {
-				if err := t.checkVersionAndCall(cmdArgs, versionInfo, cmdCheck); err != nil {
+				if err := t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Check); err != nil {
 					return err
 				}
 				return nil
@@ -264,7 +276,7 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 		}
 		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow CHECK", "")
 	case "DEL":
-		err = t.checkVersionAndCall(cmdArgs, versionInfo, cmdDel)
+		err = t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Del)
 		if err != nil {
 			return err
 		}
@@ -276,6 +288,28 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 				return types.NewError(types.ErrInvalidNetNS, "plugin's netns and netns from CNI_NETNS should not be the same", "")
 			}
 		}
+	case "GC":
+		configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
+		if err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		}
+		if gtet, err := version.GreaterThanOrEqualTo(configVersion, "1.1.0"); err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		} else if !gtet {
+			return types.NewError(types.ErrIncompatibleCNIVersion, "config version does not allow GC", "")
+		}
+		for _, pluginVersion := range versionInfo.SupportedVersions() {
+			gtet, err := version.GreaterThanOrEqualTo(pluginVersion, configVersion)
+			if err != nil {
+				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+			} else if gtet {
+				if err := t.checkVersionAndCall(cmdArgs, versionInfo, funcs.GC); err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow GC", "")
 	case "VERSION":
 		if err := versionInfo.Encode(t.Stdout); err != nil {
 			return types.NewError(types.ErrIOFailure, err.Error(), "")
@@ -299,13 +333,62 @@ func (t *dispatcher) pluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error,
 //
 // To let this package automatically handle errors and call os.Exit(1) for you,
 // use PluginMain() instead.
+//
+// Deprecated: Use github.com/containernetworking/cni/pkg/skel.PluginMainFuncsWithError instead.
 func PluginMainWithError(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) *types.Error {
+	return PluginMainFuncsWithError(CNIFuncs{Add: cmdAdd, Check: cmdCheck, Del: cmdDel}, versionInfo, about)
+}
+
+// CNIFuncs contains a group of callback command funcs to be passed in as
+// parameters to the core "main" for a plugin.
+type CNIFuncs struct {
+	Add   func(_ *CmdArgs) error
+	Del   func(_ *CmdArgs) error
+	Check func(_ *CmdArgs) error
+	GC    func(_ *CmdArgs) error
+}
+
+// PluginMainFuncsWithError is the core "main" for a plugin. It accepts
+// callback functions defined within CNIFuncs and returns an error.
+//
+// The caller must also specify what CNI spec versions the plugin supports.
+//
+// It is the responsibility of the caller to check for non-nil error return.
+//
+// For a plugin to comply with the CNI spec, it must print any error to stdout
+// as JSON and then exit with nonzero status code.
+//
+// To let this package automatically handle errors and call os.Exit(1) for you,
+// use PluginMainFuncs() instead.
+func PluginMainFuncsWithError(funcs CNIFuncs, versionInfo version.PluginInfo, about string) *types.Error {
 	return (&dispatcher{
 		Getenv: os.Getenv,
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
-	}).pluginMain(cmdAdd, cmdCheck, cmdDel, versionInfo, about)
+	}).pluginMain(funcs, versionInfo, about)
+}
+
+// PluginMainFuncs is the core "main" for a plugin which includes automatic error handling.
+// This is a newer alternative func to PluginMain which abstracts CNI commands within a
+// CNIFuncs interface.
+//
+// The caller must also specify what CNI spec versions the plugin supports.
+//
+// The caller can specify an "about" string, which is printed on stderr
+// when no CNI_COMMAND is specified. The recommended output is "CNI plugin <foo> v<version>"
+//
+// When an error occurs in any func in CNIFuncs, PluginMainFuncs will print the error
+// as JSON to stdout and call os.Exit(1).
+//
+// To have more control over error handling, use PluginMainFuncsWithError() instead.
+func PluginMainFuncs(funcs CNIFuncs, versionInfo version.PluginInfo, about string) {
+	if e := PluginMainFuncsWithError(funcs, versionInfo, about); e != nil {
+		if err := e.Print(); err != nil {
+			log.Print("Error writing error JSON to stdout: ", err)
+		}
+		os.Exit(1)
+	}
 }
 
 // PluginMain is the core "main" for a plugin which includes automatic error handling.
@@ -319,6 +402,8 @@ func PluginMainWithError(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versio
 // as JSON to stdout and call os.Exit(1).
 //
 // To have more control over error handling, use PluginMainWithError() instead.
+//
+// Deprecated: Use github.com/containernetworking/cni/pkg/skel.PluginMainFuncs instead.
 func PluginMain(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versionInfo version.PluginInfo, about string) {
 	if e := PluginMainWithError(cmdAdd, cmdCheck, cmdDel, versionInfo, about); e != nil {
 		if err := e.Print(); err != nil {
