@@ -17,6 +17,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      golang:
+        patterns:
+          - "*"
   - package-ecosystem: "gomod"
     directory: "/plugins/debug"
     schedule:
