@@ -1,0 +1,1 @@
+include mk/lint.mk
