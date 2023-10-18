@@ -94,11 +94,12 @@ func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 			if !ok {
 				return nil, fmt.Errorf("error parsing configuration list: invalid disableCheck type %T", rawDisableCheck)
 			}
-			if strings.ToLower(disableCheckStr) == "false" {
+			switch {
+			case strings.ToLower(disableCheckStr) == "false":
 				disableCheck = false
-			} else if strings.ToLower(disableCheckStr) == "true" {
+			case strings.ToLower(disableCheckStr) == "true":
 				disableCheck = true
-			} else {
+			default:
 				return nil, fmt.Errorf("error parsing configuration list: invalid disableCheck value %q", disableCheckStr)
 			}
 		}
