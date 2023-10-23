@@ -114,6 +114,7 @@ type CNI interface {
 	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
 
 	GCNetworkList(ctx context.Context, net *NetworkConfigList, args *GCArgs) error
+	GetStatusNetworkList(ctx context.Context, net *NetworkConfigList) error
 
 	GetCachedAttachments(containerID string) ([]*NetworkAttachment, error)
 }
@@ -825,6 +826,41 @@ func (c *CNIConfig) gcNetwork(ctx context.Context, net *NetworkConfig) error {
 		return err
 	}
 	args := c.args("GC", &RuntimeConf{})
+
+	return invoke.ExecPluginWithoutResult(ctx, pluginPath, net.Bytes, args, c.exec)
+}
+
+func (c *CNIConfig) GetStatusNetworkList(ctx context.Context, list *NetworkConfigList) error {
+	// If the version doesn't support status, abort.
+	if gt, _ := version.GreaterThanOrEqualTo(list.CNIVersion, "1.1.0"); !gt {
+		return nil
+	}
+
+	inject := map[string]interface{}{
+		"name":       list.Name,
+		"cniVersion": list.CNIVersion,
+	}
+
+	for _, plugin := range list.Plugins {
+		// build config here
+		pluginConfig, err := InjectConf(plugin, inject)
+		if err != nil {
+			return fmt.Errorf("failed to generate configuration to get plugin STATUS %s: %w", plugin.Network.Type, err)
+		}
+		if err := c.getStatusNetwork(ctx, pluginConfig); err != nil {
+			return err // Don't collect errors here, so we return a clean error code.
+		}
+	}
+	return nil
+}
+
+func (c *CNIConfig) getStatusNetwork(ctx context.Context, net *NetworkConfig) error {
+	c.ensureExec()
+	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
+	if err != nil {
+		return err
+	}
+	args := c.args("STATUS", &RuntimeConf{})
 
 	return invoke.ExecPluginWithoutResult(ctx, pluginPath, net.Bytes, args, c.exec)
 }

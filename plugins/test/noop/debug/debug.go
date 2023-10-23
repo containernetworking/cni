@@ -29,6 +29,7 @@ type Debug struct {
 	// Report* fields allow the test to control the behavior of the no-op plugin
 	ReportResult         string
 	ReportError          string
+	ReportErrorCode      uint
 	ReportStderr         string
 	ReportVersionSupport []string
 	ExitWithCode         int
