@@ -1,4 +1,4 @@
-module github.com/containernetworking/cni
+module github.com/containernetworking/cni_T
 
 go 1.18
 
