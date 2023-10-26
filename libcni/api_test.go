@@ -311,8 +311,7 @@ var _ = Describe("Invoking plugins", func() {
 			debug = &noop_debug.Debug{
 				ReportResult: `{
 					"cniVersion": "` + version.Current() + `",
-					"ips": [{"address": "10.1.2.3/24"}],
-					"dns": {}
+					"ips": [{"address": "10.1.2.3/24"}]
 				}`,
 			}
 			Expect(debug.WriteDebug(debugFilePath)).To(Succeed())
@@ -1001,7 +1000,7 @@ var _ = Describe("Invoking plugins", func() {
 						},
 					},
 					// DNS injected by last plugin
-					DNS: types.DNS{
+					DNS: &types.DNS{
 						Nameservers: []string{"1.2.3.4"},
 					},
 				}))

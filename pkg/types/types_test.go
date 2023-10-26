@@ -179,7 +179,7 @@ var _ = Describe("Types", func() {
 						Gateway:   net.ParseIP("abcd:1234:ffff::1"),
 					},
 				},
-				DNS: types.DNS{
+				DNS: &types.DNS{
 					Nameservers: []string{"1.2.3.4", "1::cafe"},
 					Domain:      "acompany.com",
 					Search:      []string{"somedomain.com", "otherdomain.net"},

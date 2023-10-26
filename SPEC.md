@@ -562,6 +562,7 @@ For certain operations, plugins must output result information. The output shoul
 ### ADD Success
 
 Plugins must output a JSON object with the following keys upon a successful `ADD` operation:
+All keys are optional other than `cniVersion`.
 
 - `cniVersion`: The same version supplied on input - the string "1.1.0"
 - `interfaces`: An array of all interfaces created by the attachment, including any host-level interfaces:

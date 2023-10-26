@@ -497,7 +497,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{Name: "some-plugin", Type: "bridge", DNS: types.DNS{Nameservers: servers, Domain: "local"}},
+					Network: &types.NetConf{Name: "some-plugin", Type: "bridge", DNS: &types.DNS{Nameservers: servers, Domain: "local"}},
 					Bytes:   expectedPluginConfig,
 				}))
 			})

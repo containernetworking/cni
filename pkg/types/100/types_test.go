@@ -72,7 +72,7 @@ func testResult() *current.Result {
 			{Dst: *routev4, GW: routegwv4},
 			{Dst: *routev6, GW: routegwv6},
 		},
-		DNS: types.DNS{
+		DNS: &types.DNS{
 			Nameservers: []string{"1.2.3.4", "1::cafe"},
 			Domain:      "acompany.com",
 			Search:      []string{"somedomain.com", "otherdomain.net"},

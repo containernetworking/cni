@@ -92,7 +92,7 @@ type Result struct {
 	Interfaces []*Interface   `json:"interfaces,omitempty"`
 	IPs        []*IPConfig    `json:"ips,omitempty"`
 	Routes     []*types.Route `json:"routes,omitempty"`
-	DNS        types.DNS      `json:"dns,omitempty"`
+	DNS        *types.DNS     `json:"dns,omitempty"`
 }
 
 // Note: DNS should be omit if DNS is empty but default Marshal function
@@ -168,7 +168,7 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 	fromResult := from.(*types040.Result)
 	toResult := &Result{
 		CNIVersion: toVersion,
-		DNS:        *fromResult.DNS.Copy(),
+		DNS:        fromResult.DNS.Copy(),
 		Routes:     []*types.Route{},
 	}
 	for _, fromIntf := range fromResult.Interfaces {
