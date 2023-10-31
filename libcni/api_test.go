@@ -486,8 +486,7 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
 					"cniVersion": "` + version.Current() + `",
-					"ips": [{"address": "10.1.2.3/24"}],
-					"dns": {}
+					"ips": [{"address": "10.1.2.3/24"}]
 				}`
 				err = os.WriteFile(cacheFile, []byte(cachedJson), 0o600)
 				Expect(err).NotTo(HaveOccurred())
@@ -676,8 +675,7 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(err).NotTo(HaveOccurred())
 				cachedJson := `{
 					"cniVersion": "` + version.Current() + `",
-					"ips": [{"address": "10.1.2.3/24"}],
-					"dns": {}
+					"ips": [{"address": "10.1.2.3/24"}]
 				}`
 				err = os.WriteFile(cacheFile, []byte(cachedJson), 0o600)
 				Expect(err).NotTo(HaveOccurred())
@@ -971,7 +969,7 @@ var _ = Describe("Invoking plugins", func() {
 				"otherCapability": capabilityArgs["otherCapability"],
 			}
 
-			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "dns":{},"ips":[{"address": "10.1.2.3/24"}]}`, version.Current())
+			ipResult = fmt.Sprintf(`{"cniVersion": "%s", "ips":[{"address": "10.1.2.3/24"}]}`, version.Current())
 			netConfigList, plugins = makePluginList(version.Current(), ipResult, rcMap)
 
 			ctx = context.TODO()
