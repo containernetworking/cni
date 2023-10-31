@@ -245,7 +245,7 @@ func (t *dispatcher) pluginMain(funcs CNIFuncs, versionInfo version.PluginInfo, 
 		if err != nil {
 			return err
 		}
-		if strings.ToUpper(cmdArgs.NetnsOverride) != "TRUE" || cmdArgs.NetnsOverride != "1" {
+		if strings.ToUpper(cmdArgs.NetnsOverride) != "TRUE" && cmdArgs.NetnsOverride != "1" {
 			isPluginNetNS, checkErr := ns.CheckNetNS(cmdArgs.Netns)
 			if checkErr != nil {
 				return checkErr
@@ -280,7 +280,7 @@ func (t *dispatcher) pluginMain(funcs CNIFuncs, versionInfo version.PluginInfo, 
 		if err != nil {
 			return err
 		}
-		if strings.ToUpper(cmdArgs.NetnsOverride) != "TRUE" || cmdArgs.NetnsOverride != "1" {
+		if strings.ToUpper(cmdArgs.NetnsOverride) != "TRUE" && cmdArgs.NetnsOverride != "1" {
 			isPluginNetNS, checkErr := ns.CheckNetNS(cmdArgs.Netns)
 			if checkErr != nil {
 				return checkErr
