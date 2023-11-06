@@ -7,4 +7,9 @@ require (
 	github.com/containernetworking/plugins v1.2.0
 )
 
-require golang.org/x/sys v0.4.0 // indirect
+require (
+	github.com/vishvananda/netns v0.0.4 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+)
+
+replace github.com/containernetworking/cni => ../..
