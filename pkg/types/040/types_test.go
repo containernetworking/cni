@@ -71,7 +71,7 @@ func testResult() *types040.Result {
 				Gateway:   net.ParseIP("abcd:1234:ffff::1"),
 			},
 		},
-		Routes: []*types.Route{
+		Routes: []*types040.Route{
 			{Dst: *routev4, GW: routegwv4},
 			{Dst: *routev6, GW: routegwv6},
 		},
@@ -238,14 +238,14 @@ var _ = Describe("040 types operations", func() {
 			IP4: &types020.IPConfig{
 				IP:      *ipv4,
 				Gateway: net.ParseIP("1.2.3.1"),
-				Routes: []types.Route{
+				Routes: []types020.Route{
 					{Dst: *routev4, GW: routegwv4},
 				},
 			},
 			IP6: &types020.IPConfig{
 				IP:      *ipv6,
 				Gateway: net.ParseIP("abcd:1234:ffff::1"),
-				Routes: []types.Route{
+				Routes: []types020.Route{
 					{Dst: *routev6, GW: routegwv6},
 				},
 			},
@@ -295,14 +295,14 @@ var _ = Describe("040 types operations", func() {
 			IP4: &types020.IPConfig{
 				IP:      *ipv4,
 				Gateway: net.ParseIP("1.2.3.1"),
-				Routes: []types.Route{
+				Routes: []types020.Route{
 					{Dst: *routev4},
 				},
 			},
 			IP6: &types020.IPConfig{
 				IP:      *ipv6,
 				Gateway: net.ParseIP("abcd:1234:ffff::1"),
-				Routes: []types.Route{
+				Routes: []types020.Route{
 					{Dst: *routev6},
 				},
 			},
