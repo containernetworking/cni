@@ -69,10 +69,11 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 			"CNI_COMMAND",
 			&cmd,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
-				"GC":    true,
+				"ADD":    true,
+				"CHECK":  true,
+				"DEL":    true,
+				"GC":     true,
+				"STATUS": true,
 			},
 			nil,
 		},
@@ -120,10 +121,11 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 			"CNI_PATH",
 			&path,
 			reqForCmdEntry{
-				"ADD":   true,
-				"CHECK": true,
-				"DEL":   true,
-				"GC":    true,
+				"ADD":    true,
+				"CHECK":  true,
+				"DEL":    true,
+				"GC":     true,
+				"STATUS": true,
 			},
 			nil,
 		},
@@ -310,6 +312,28 @@ func (t *dispatcher) pluginMain(funcs CNIFuncs, versionInfo version.PluginInfo, 
 			}
 		}
 		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow GC", "")
+	case "STATUS":
+		configVersion, err := t.ConfVersionDecoder.Decode(cmdArgs.StdinData)
+		if err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		}
+		if gtet, err := version.GreaterThanOrEqualTo(configVersion, "1.1.0"); err != nil {
+			return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+		} else if !gtet {
+			return types.NewError(types.ErrIncompatibleCNIVersion, "config version does not allow STATUS", "")
+		}
+		for _, pluginVersion := range versionInfo.SupportedVersions() {
+			gtet, err := version.GreaterThanOrEqualTo(pluginVersion, configVersion)
+			if err != nil {
+				return types.NewError(types.ErrDecodingFailure, err.Error(), "")
+			} else if gtet {
+				if err := t.checkVersionAndCall(cmdArgs, versionInfo, funcs.Status); err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+		return types.NewError(types.ErrIncompatibleCNIVersion, "plugin version does not allow STATUS", "")
 	case "VERSION":
 		if err := versionInfo.Encode(t.Stdout); err != nil {
 			return types.NewError(types.ErrIOFailure, err.Error(), "")
@@ -342,10 +366,11 @@ func PluginMainWithError(cmdAdd, cmdCheck, cmdDel func(_ *CmdArgs) error, versio
 // CNIFuncs contains a group of callback command funcs to be passed in as
 // parameters to the core "main" for a plugin.
 type CNIFuncs struct {
-	Add   func(_ *CmdArgs) error
-	Del   func(_ *CmdArgs) error
-	Check func(_ *CmdArgs) error
-	GC    func(_ *CmdArgs) error
+	Add    func(_ *CmdArgs) error
+	Del    func(_ *CmdArgs) error
+	Check  func(_ *CmdArgs) error
+	GC     func(_ *CmdArgs) error
+	Status func(_ *CmdArgs) error
 }
 
 // PluginMainFuncsWithError is the core "main" for a plugin. It accepts

@@ -1580,6 +1580,44 @@ var _ = Describe("Invoking plugins", func() {
 				}
 			})
 		})
+		Describe("GetStatusNetworkList", func() {
+			It("issues a STATUS request", func() {
+				netConfigList, plugins = makePluginList("1.1.0", ipResult, rcMap)
+
+				err := cniConfig.GetStatusNetworkList(ctx, netConfigList)
+				Expect(err).NotTo(HaveOccurred())
+
+				debug, err := noop_debug.ReadDebug(plugins[0].debugFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(debug.Command).To(Equal("STATUS"))
+			})
+
+			It("correctly reports an error", func() {
+				netConfigList, plugins = makePluginList("1.1.0", ipResult, rcMap)
+
+				plugins[1].debug.ReportError = "plugin error: banana"
+				plugins[1].debug.ReportErrorCode = 50
+				Expect(plugins[1].debug.WriteDebug(plugins[1].debugFilePath)).To(Succeed())
+
+				err := cniConfig.GetStatusNetworkList(ctx, netConfigList)
+				Expect(err).To(HaveOccurred())
+				var eerr *types.Error
+				Expect(errors.As(err, &eerr)).To(BeTrue())
+				Expect(eerr.Code).To(Equal(uint(50)))
+
+				debug, err := noop_debug.ReadDebug(plugins[0].debugFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(debug.Command).To(Equal("STATUS"))
+
+				debug, err = noop_debug.ReadDebug(plugins[1].debugFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(debug.Command).To(Equal("STATUS"))
+
+				debug, err = noop_debug.ReadDebug(plugins[2].debugFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(debug.Command).To(Equal(""))
+			})
+		})
 	})
 
 	Describe("Invoking a sleep plugin", func() {

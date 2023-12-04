@@ -23,7 +23,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -136,7 +135,14 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	}
 	switch {
 	case debug.ReportError != "":
-		return errors.New(debug.ReportError)
+		ec := debug.ReportErrorCode
+		if ec == 0 {
+			ec = types.ErrInternal
+		}
+		return &types.Error{
+			Msg:  debug.ReportError,
+			Code: ec,
+		}
 	case debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS":
 		prevResult := netConf.PrevResult
 		if debug.ReportResult == "INJECT-DNS" {
@@ -212,6 +218,10 @@ func cmdGC(args *skel.CmdArgs) error {
 	return debugBehavior(args, "GC")
 }
 
+func cmdStatus(args *skel.CmdArgs) error {
+	return debugBehavior(args, "STATUS")
+}
+
 func saveStdin() ([]byte, error) {
 	// Read original stdin
 	stdinData, err := io.ReadAll(os.Stdin)
@@ -244,9 +254,10 @@ func main() {
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
 	skel.PluginMainFuncs(skel.CNIFuncs{
-		Add:   cmdAdd,
-		Check: cmdCheck,
-		Del:   cmdDel,
-		GC:    cmdGC,
+		Add:    cmdAdd,
+		Check:  cmdCheck,
+		Del:    cmdDel,
+		GC:     cmdGC,
+		Status: cmdStatus,
 	}, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
 }
