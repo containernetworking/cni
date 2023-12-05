@@ -20,7 +20,7 @@ Establishing these conventions allows plugins to work across multiple runtimes. 
 Additional conventions can be created by creating PRs which modify this document.
 
 ## Dynamic Plugin specific fields (Capabilities / Runtime Configuration)
-[Plugin specific fields](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) formed part of the original CNI spec and have been present since the initial release.
+[Plugin specific fields](SPEC.md#network-configuration) formed part of the original CNI spec and have been present since the initial release.
 > Plugins may define additional fields that they accept and may generate an error if called with unknown fields. The exception to this is the args field may be used to pass arbitrary data which may be ignored by plugins.
 
 A plugin can define any additional fields it needs to work properly. It should return an error if it can't act on fields that were expected or where the field values were malformed.
@@ -32,7 +32,7 @@ This method of passing information to a plugin is recommended when the following
 Dynamic information (i.e. data that a runtime fills out) should be placed in a `runtimeConfig` section. Plugins can request
 that the runtime insert this dynamic configuration by explicitly listing their `capabilities` in the network configuration.
 
-For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration-lists).
+For example, the configuration for a port mapping plugin might look like this to an operator (it should be included as part of a [network configuration list](SPEC.md#network-configuration-lists).
 ```json
 {
   "name" : "ExamplePlugin",
@@ -69,7 +69,7 @@ But the runtime would fill in the mappings so the plugin itself would receive so
 | cgroup path | Provide the cgroup path for pod as requested by CNI plugins. | `cgroupPath` | `cgroupPath` (string entry). <pre>"/kubelet.slice/kubelet-kubepods.slice/kubelet-kubepods-burstable.slice/kubelet-kubepods-burstable-pod28ce45bc_63f8_48a3_a99b_cfb9e63c856c.slice" </pre> | none | CNI `host-local` plugin |
 
 ## "args" in network config
-`args` in [network config](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration) were reserved as a  field in the `0.2.0` release of the CNI spec.
+`args` in [network config](SPEC.md#network-configuration) were reserved as a  field in the `0.2.0` release of the CNI spec.
 > args (dictionary): Optional additional arguments provided by the container runtime. For example a dictionary of labels could be passed to CNI plugins by adding them to a labels field under args.
 
 `args` provide a way of providing more structured data than the flat strings that CNI_ARGS can support.
