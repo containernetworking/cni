@@ -34,7 +34,7 @@ are very busy and read the mailing lists.
 
 This is a rough outline of how to prepare a contribution:
 
-- Create a topic branch from where you want to base your work (usually branched from master).
+- Create a topic branch from where you want to base your work (usually branched from main).
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.

@@ -64,12 +64,12 @@ ensure that the configuration files specify a `cniVersion` field and that the
 version there is supported by your container runtime and CNI plugins.
 Configuration files without a version field should be given version 0.2.0. 
 The CNI spec includes example configuration files for 
-[single plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations)
-and for [lists of chained plugins](https://github.com/containernetworking/cni/blob/master/SPEC.md#example-configurations).
+[single plugins](SPEC.md#example-configurations)
+and for [lists of chained plugins](SPEC.md#example-configurations).
 
 Consult the documentation for your runtime and plugins to determine what
 CNI spec versions they support. Test any plugin upgrades before deploying to 
-production. You may find [cnitool](https://github.com/containernetworking/cni/tree/master/cnitool)
+production. You may find [cnitool](https://github.com/containernetworking/cni/tree/main/cnitool)
 useful. Specifically, your configuration version should be the lowest common
 version supported by your plugins.
 
@@ -94,7 +94,7 @@ command with the following JSON data:
 ```
 
 Second, for the `ADD` command, a plugin must respect the `cniVersion` field
-provided in the [network configuration JSON](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration). 
+provided in the [network configuration JSON](SPEC.md#network-configuration). 
 That field is a request for the plugin to return results of a particular format:
 
 - If the `cniVersion` field is not present, then spec v0.2.0 should be assumed
@@ -102,11 +102,11 @@ That field is a request for the plugin to return results of a particular format:
 
 - If the plugin doesn't support the version, the plugin must error.
 
-- Otherwise, the plugin must return a [CNI Result](https://github.com/containernetworking/cni/blob/master/SPEC.md#result)
+- Otherwise, the plugin must return a [CNI Result](SPEC.md#result)
 	in the format requested.
 
 Result formats for older CNI spec versions are available in the
-[git history for SPEC.md](https://github.com/containernetworking/cni/commits/master/SPEC.md).
+[git history for SPEC.md](https://github.com/containernetworking/cni/commits/main/SPEC.md).
 
 For example, suppose a plugin, via its `VERSION` response, advertises CNI specification
 support for v0.2.0 and v0.3.0.  When it receives `cniVersion` key of `0.2.0`,
@@ -182,7 +182,7 @@ result, err := current.NewResultFromResult(ipamResult)
 ```
 
 Other examples of spec v0.3.0-compatible plugins are the
-[main plugins in this repo](https://github.com/containernetworking/plugins/tree/master/plugins)
+[main plugins in this repo](https://github.com/containernetworking/plugins/)
 
 
 ## For Runtime Authors
@@ -203,15 +203,15 @@ call both new and legacy plugins, and handle the results from either.
 
 When calling a plugin, the runtime must request that the plugin respond in a
 particular format by specifying the `cniVersion` field in the
-[Network Configuration](https://github.com/containernetworking/cni/blob/master/SPEC.md#network-configuration)
+[Network Configuration](SPEC.md#network-configuration)
 JSON block.  The plugin will then respond with
-a [Result](https://github.com/containernetworking/cni/blob/master/SPEC.md#result)
+a [Result](SPEC.md#result)
 in the format defined by that CNI spec version, and the runtime must parse
 and handle this result.
 
 #### Handle errors due to version incompatibility
 Plugins may respond with error indicating that they don't support the requested
-CNI version (see [Well-known Error Codes](https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes)),
+CNI version (see [Well-known Error Codes](SPEC.md#well-known-error-codes)),
 e.g.
 ```json
 {

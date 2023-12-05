@@ -149,7 +149,7 @@ func (r *Route) Copy() *Route {
 }
 
 // Well known error codes
-// see https://github.com/containernetworking/cni/blob/master/SPEC.md#well-known-error-codes
+// see https://github.com/containernetworking/cni/blob/main/SPEC.md#well-known-error-codes
 const (
 	ErrUnknown                     uint = iota // 0
 	ErrIncompatibleCNIVersion                  // 1

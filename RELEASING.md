@@ -21,7 +21,7 @@ Creating a new release produces the following artifacts:
 
 ## Creating the release artifacts
 
-1. Make sure you are on the master branch and don't have any local uncommitted changes.
+1. Make sure you are on the main branch and don't have any local uncommitted changes.
 1. Create a signed tag for the release `git tag -s $VERSION` (Ensure that GPG keys are created and added to GitHub)
 1. Run the release script from the root of the repository
 
