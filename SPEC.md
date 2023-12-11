@@ -8,6 +8,7 @@
     - [Configuration format](#configuration-format)
       - [Plugin configuration objects:](#plugin-configuration-objects)
       - [Example configuration](#example-configuration)
+    - [Version considerations](#version-considerations)
   - [Section 2: Execution Protocol](#section-2-execution-protocol)
     - [Overview](#overview-1)
     - [Parameters](#parameters)
@@ -107,6 +108,7 @@ require this.
 A network configuration consists of a JSON object with the following keys:
 
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.1.0"
+- `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
@@ -147,6 +149,7 @@ Plugins may define additional fields that they accept and may generate an error 
 ```jsonc
 {
   "cniVersion": "1.1.0",
+  "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
   "plugins": [
     {
@@ -184,6 +187,15 @@ Plugins may define additional fields that they accept and may generate an error 
   ]
 }
 ```
+
+### Version considerations
+
+CNI runtimes, plugins, and network configurations may support multiple CNI specification versions independently. Plugins indicate their set of supported versions through the VERSION command, while network configurations indicate their set of supported versions through the `cniVersion` and `cniVersions` fields.
+
+CNI runtimes MUST select the highest supported version from the set of network configuration versions given by the `cniVersion` and `cniVersions` fields. Runtimes MAY consider the set of supported plugin versions as reported by the VERSION command when determining available versions.
+
+
+The CNI protocol follows Semantic Versioning principles, so the configuration format MUST remain backwards and forwards compatible within major versions.
 
 ## Section 2: Execution Protocol
 
@@ -471,7 +483,7 @@ The network configuration format (which is a list of plugin configurations to ex
 The request configuration for a single plugin invocation is also JSON. It consists of the plugin configuration, primarily unchanged except for the specified additions and removals.
 
 The following fields are always to be inserted into the request configuration by the runtime:
-- `cniVersion`: taken from the `cniVersion` field of the network configuration
+- `cniVersion`: the protocol version selected by the runtime - the string "1.1.0"
 - `name`: taken from the `name` field of the network configuration
 
 
@@ -596,7 +608,7 @@ Example:
 
 Plugins should output a JSON object with the following keys if they encounter an error:
 
-- `cniVersion`: The same value as provided by the configuration
+- `cniVersion`: The protocol version in use - "1.1.0"
 - `code`: A numeric error code, see below for reserved codes.
 - `msg`: A short message characterizing the error.
 - `details`: A longer message describing the error.
