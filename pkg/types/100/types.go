@@ -273,6 +273,7 @@ type Interface struct {
 	Sandbox    string `json:"sandbox,omitempty"`
 	SocketPath string `json:"socketPath,omitempty"`
 	PciID      string `json:"pciID,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 func (i *Interface) String() string {

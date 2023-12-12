@@ -55,6 +55,7 @@ func testResult() *current.Result {
 				Sandbox:    "/proc/3553/ns/net",
 				PciID:      "8086:9a01",
 				SocketPath: "/path/to/vhost/fd",
+				Metadata: make(map[string]string),
 			},
 		},
 		IPs: []*current.IPConfig{
