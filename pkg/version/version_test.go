@@ -57,7 +57,7 @@ var _ = Describe("Version operations", func() {
 			err := json.Unmarshal(rawBytes, &raw)
 			Expect(err).NotTo(HaveOccurred())
 
-			conf := &types.NetConf{
+			conf := &types.PluginConf{
 				CNIVersion:    "1.0.0",
 				Name:          "foobar",
 				Type:          "baz",
@@ -91,7 +91,7 @@ var _ = Describe("Version operations", func() {
 		})
 
 		It("fails if the prevResult version is unknown", func() {
-			conf := &types.NetConf{
+			conf := &types.PluginConf{
 				CNIVersion: version.Current(),
 				Name:       "foobar",
 				Type:       "baz",
@@ -105,7 +105,7 @@ var _ = Describe("Version operations", func() {
 		})
 
 		It("fails if the prevResult version does not match the prevResult version", func() {
-			conf := &types.NetConf{
+			conf := &types.PluginConf{
 				CNIVersion: version.Current(),
 				Name:       "foobar",
 				Type:       "baz",
@@ -125,7 +125,7 @@ var _ = Describe("Version operations", func() {
 
 	Context("when a prevResult is not available", func() {
 		It("does not fail", func() {
-			conf := &types.NetConf{
+			conf := &types.PluginConf{
 				CNIVersion: version.Current(),
 				Name:       "foobar",
 				Type:       "baz",

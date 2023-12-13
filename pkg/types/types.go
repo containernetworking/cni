@@ -56,8 +56,12 @@ func (n *IPNet) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// NetConf describes a network.
-type NetConf struct {
+// Deprecated: Use PluginConf instead of NetConf, the NetConf
+// backwards-compat alias will be removed in a future release.
+type NetConf = PluginConf
+
+// PluginConf describes a plugin configuration for a specific network.
+type PluginConf struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
 
 	Name         string          `json:"name,omitempty"`
@@ -72,9 +76,9 @@ type NetConf struct {
 
 // Note: DNS should be omit if DNS is empty but default Marshal function
 // will output empty structure hence need to write a Marshal function
-func (n *NetConf) MarshalJSON() ([]byte, error) {
+func (n *PluginConf) MarshalJSON() ([]byte, error) {
 	// use type alias to escape recursion for json.Marshal() to MarshalJSON()
-	type fixObjType = NetConf
+	type fixObjType = PluginConf
 
 	bytes, err := json.Marshal(fixObjType(*n)) //nolint:all
 	if err != nil {
@@ -106,9 +110,9 @@ func (i *IPAM) IsEmpty() bool {
 type NetConfList struct {
 	CNIVersion string `json:"cniVersion,omitempty"`
 
-	Name         string     `json:"name,omitempty"`
-	DisableCheck bool       `json:"disableCheck,omitempty"`
-	Plugins      []*NetConf `json:"plugins,omitempty"`
+	Name         string        `json:"name,omitempty"`
+	DisableCheck bool          `json:"disableCheck,omitempty"`
+	Plugins      []*PluginConf `json:"plugins,omitempty"`
 }
 
 // Result is an interface that provides the result of plugin execution

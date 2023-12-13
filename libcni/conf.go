@@ -46,9 +46,16 @@ func (e NoConfigsFoundError) Error() string {
 	return fmt.Sprintf(`no net configurations found in %s`, e.Dir)
 }
 
-func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
-	conf := &NetworkConfig{Bytes: bytes, Network: &types.NetConf{}}
-	if err := json.Unmarshal(bytes, conf.Network); err != nil {
+// This will not validate that the plugins actually belong to the netconfig by ensuring
+// that they are loaded from a directory named after the networkName, relative to the network config.
+//
+// Since here we are just accepting raw bytes, the caller is responsible for ensuring that the plugin
+// config provided here actually "belongs" to the networkconfig in question.
+func NetworkPluginConfFromBytes(pluginConfBytes []byte) (*PluginConfig, error) {
+	// TODO why are we creating a struct that holds both the byte representation and the deserialized
+	// representation, and returning that, instead of just returning the deserialized representation?
+	conf := &PluginConfig{Bytes: pluginConfBytes, Network: &types.PluginConf{}}
+	if err := json.Unmarshal(pluginConfBytes, conf.Network); err != nil {
 		return nil, fmt.Errorf("error parsing configuration: %w", err)
 	}
 	if conf.Network.Type == "" {
@@ -57,17 +64,37 @@ func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	return conf, nil
 }
 
-func ConfFromFile(filename string) (*NetworkConfig, error) {
-	bytes, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("error reading %s: %w", filename, err)
+// Given a path to a directory containing a network configuration, and the name of a network,
+// loads all plugin definitions found at path `networkConfPath/networkName/*.conf`
+func NetworkPluginConfsFromFiles(networkConfPath, networkName string) ([]*PluginConfig, error) {
+	pluginConfFiles, err := ConfFiles(filepath.Join(networkConfPath, networkName), []string{".conf"})
+	switch {
+	case err != nil:
+		return nil, fmt.Errorf("failed to read plugin config file: %w", err)
+	case len(pluginConfFiles) == 0:
+		// Having 0 plugins for a given network is not necessarily a problem,
+		// but return as error for caller to decide.
+		return nil, fmt.Errorf("no plugin config found in %s: %w", networkConfPath, err)
 	}
-	return ConfFromBytes(bytes)
+
+	var pConfs []*PluginConfig
+	for _, pluginConfFile := range pluginConfFiles {
+		pluginConfBytes, err := os.ReadFile(pluginConfFile)
+		if err != nil {
+			return nil, fmt.Errorf("error reading %s: %w", pluginConfFile, err)
+		}
+		pluginConf, err := NetworkPluginConfFromBytes(pluginConfBytes)
+		if err != nil {
+			return nil, err
+		}
+		pConfs = append(pConfs, pluginConf)
+	}
+	return pConfs, nil
 }
 
-func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
+func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 	rawList := make(map[string]interface{})
-	if err := json.Unmarshal(bytes, &rawList); err != nil {
+	if err := json.Unmarshal(confBytes, &rawList); err != nil {
 		return nil, fmt.Errorf("error parsing configuration list: %w", err)
 	}
 
@@ -153,45 +180,67 @@ func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 		Name:         name,
 		DisableCheck: disableCheck,
 		CNIVersion:   cniVersion,
-		Bytes:        bytes,
+		Bytes:        confBytes,
 	}
 
-	var plugins []interface{}
-	plug, ok := rawList["plugins"]
-	if !ok {
-		return nil, fmt.Errorf("error parsing configuration list: no 'plugins' key")
+	if _, ok := rawList["plugins"]; ok {
+		return nil, fmt.Errorf("error parsing configuration list: no 'plugins' key allowed, cniVersion %s must load plugins from subdirectories", version.Current())
 	}
-	plugins, ok = plug.([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("error parsing configuration list: invalid 'plugins' type %T", plug)
-	}
-	if len(plugins) == 0 {
-		return nil, fmt.Errorf("error parsing configuration list: no plugins in list")
-	}
-
-	for i, conf := range plugins {
-		newBytes, err := json.Marshal(conf)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal plugin config %d: %w", i, err)
-		}
-		netConf, err := ConfFromBytes(newBytes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse plugin config %d: %w", i, err)
-		}
-		list.Plugins = append(list.Plugins, netConf)
-	}
-
 	return list, nil
 }
 
-func ConfListFromFile(filename string) (*NetworkConfigList, error) {
+func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %w", filename, err)
 	}
-	return ConfListFromBytes(bytes)
+
+	// TODO
+	conf, err := NetworkConfFromBytes(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	conf.Plugins = plugins
+
+	return conf, nil
 }
 
+// Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
+func ConfFromBytes(bytes []byte) (*PluginConfig, error) {
+	return NetworkPluginConfFromBytes(bytes)
+}
+
+// TODO Are we ok, at this point, cutting a new major version of libCNI and dropping the non-list CNI config?
+//
+// The non-list format was dropped in 1.0 and so I feel we should.
+//
+// Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
+func ConfFromFile(filename string) (*NetworkConfig, error) {
+	bytes, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s: %w", filename, err)
+	}
+	return ConfFromBytes(bytes)
+}
+
+// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
+func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
+	return NetworkConfFromBytes(bytes)
+}
+
+// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
+func ConfListFromFile(filename string) (*NetworkConfigList, error) {
+	return NetworkConfFromFile(filename)
+}
+
+// ConfFiles simply returns a slice of all files in the provided directory
+// with extensions matching the provided set.
 func ConfFiles(dir string, extensions []string) ([]string, error) {
 	// In part, adapted from rkt/networking/podenv.go#listFiles
 	files, err := os.ReadDir(dir)
@@ -218,6 +267,7 @@ func ConfFiles(dir string, extensions []string) ([]string, error) {
 	return confFiles, nil
 }
 
+// Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
 func LoadConf(dir, name string) (*NetworkConfig, error) {
 	files, err := ConfFiles(dir, []string{".conf", ".json"})
 	switch {
@@ -240,6 +290,7 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 	return nil, NotFoundError{dir, name}
 }
 
+// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	files, err := ConfFiles(dir, []string{".conflist"})
 	if err != nil {
@@ -273,7 +324,30 @@ func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	return ConfListFromConf(singleConf)
 }
 
-func InjectConf(original *NetworkConfig, newValues map[string]interface{}) (*NetworkConfig, error) {
+// LoadNetworkConf looks at all the network configs in a given dir,
+// loads and parses them all, and returns the first one that matches the provided
+// network name predicate.
+func LoadNetworkConf(dir, name string) (*NetworkConfigList, error) {
+	files, err := ConfFiles(dir, []string{".conf"})
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(files)
+
+	for _, confFile := range files {
+		conf, err := NetworkConfFromFile(confFile)
+		if err != nil {
+			return nil, err
+		}
+		if conf.Name == name {
+			return conf, nil
+		}
+	}
+	return nil, fmt.Errorf("no netconfig found in %q with name %s", dir, name)
+}
+
+// InjectConf takes a PluginConfig and inserts additional values into it, ensuring the result is serializable.
+func InjectConf(original *PluginConfig, newValues map[string]interface{}) (*PluginConfig, error) {
 	config := make(map[string]interface{})
 	err := json.Unmarshal(original.Bytes, &config)
 	if err != nil {
@@ -297,12 +371,14 @@ func InjectConf(original *NetworkConfig, newValues map[string]interface{}) (*Net
 		return nil, err
 	}
 
-	return ConfFromBytes(newBytes)
+	return NetworkPluginConfFromBytes(newBytes)
 }
 
 // ConfListFromConf "upconverts" a network config in to a NetworkConfigList,
 // with the single network as the only entry in the list.
-func ConfListFromConf(original *NetworkConfig) (*NetworkConfigList, error) {
+//
+// Deprecated: Non-conflist file formats are unsupported, use NetworkConfXXX and NetworkPluginXXX functions
+func ConfListFromConf(original *PluginConfig) (*NetworkConfigList, error) {
 	// Re-deserialize the config's json, then make a raw map configlist.
 	// This may seem a bit strange, but it's to make the Bytes fields
 	// actually make sense. Otherwise, the generated json is littered with

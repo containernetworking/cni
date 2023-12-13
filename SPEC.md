@@ -109,13 +109,14 @@ A network configuration consists of a JSON object with the following keys:
 
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.1.0"
 - `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
-- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
+- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-). Must not contain characters disallowed in file paths. A path segment (such as a filesystem directory) with the same name as the network name, containing one or more plugin configuration JSON objects for that network, should exist at the same level as the network configuration object itself.
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
-- `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
+<!-- - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects. -->
 
 #### Plugin configuration objects:
-Plugin configuration objects may contain additional fields than the ones defined here.
-The runtime MUST pass through these fields, unchanged, to the plugin, as defined in section 3.
+All plugin configuration objects present in a directory with the same name as a valid network configuration must be parsed, and each plugin with a parsable configuration object must be invoked.
+
+Plugin configuration objects may contain additional fields beyond the ones defined here. The runtime MUST pass through these fields, unchanged, to the invoked plugin, as defined in section 3.
 
 **Required keys:**
 - `type` (string): Matches the name of the CNI plugin binary on disk. Must not contain characters disallowed in file paths for the system (e.g. / or \\).
@@ -146,46 +147,59 @@ Plugins that consume any of these configuration keys should respect their intend
 Plugins may define additional fields that they accept and may generate an error if called with unknown fields. Runtimes must preserve unknown fields in plugin configuration objects when transforming for execution.
 
 #### Example configuration
+
+`/etc/cni/net.d/10-dbnet.conf`:
 ```jsonc
 {
   "cniVersion": "1.1.0",
   "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
-  "plugins": [
-    {
-      "type": "bridge",
-      // plugin specific parameters
-      "bridge": "cni0",
-      "keyA": ["some more", "plugin specific", "configuration"],
-      
-      "ipam": {
-        "type": "host-local",
-        // ipam specific
-        "subnet": "10.1.0.0/16",
-        "gateway": "10.1.0.1",
-        "routes": [
-            {"dst": "0.0.0.0/0"}
-        ]
-      },
-      "dns": {
-        "nameservers": [ "10.1.0.1" ]
-      }
-    },
-    {
-      "type": "tuning",
-      "capabilities": {
-        "mac": true
-      },
-      "sysctl": {
-        "net.core.somaxconn": "500"
-      }
-    },
-    {
-        "type": "portmap",
-        "capabilities": {"portMappings": true}
-    }
-  ]
 }
+```
+
+`/etc/cni/net.d/dbnet/5-bridge.conf`:
+```jsonc
+{
+  "type": "bridge",
+  // plugin specific parameters
+  "bridge": "cni0",
+  "keyA": ["some more", "plugin specific", "configuration"],
+
+  "ipam": {
+    "type": "host-local",
+    // ipam specific
+    "subnet": "10.1.0.0/16",
+    "gateway": "10.1.0.1",
+    "routes": [
+        {"dst": "0.0.0.0/0"}
+    ]
+  },
+  "dns": {
+    "nameservers": [ "10.1.0.1" ]
+  }
+},
+```
+
+`/etc/cni/net.d/dbnet/10-tuning.conf`:
+```jsonc
+{
+  "type": "tuning",
+  "capabilities": {
+    "mac": true
+  },
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  }
+},
+```
+
+`/etc/cni/net.d/dbnet/15-portmap.conf`:
+```jsonc
+{
+    "type": "portmap",
+    "capabilities": {"portMappings": true}
+}
+
 ```
 
 ### Version considerations

@@ -176,7 +176,7 @@ var _ = Describe("Invoking plugins", func() {
 			pluginConfig  []byte
 			cniConfig     *libcni.CNIConfig
 			runtimeConfig *libcni.RuntimeConf
-			netConfig     *libcni.NetworkConfig
+			netConfig     *libcni.PluginConfig
 			ctx           context.Context
 		)
 
@@ -295,7 +295,7 @@ var _ = Describe("Invoking plugins", func() {
 			debug         *noop_debug.Debug
 			pluginConfig  string
 			cniConfig     *libcni.CNIConfig
-			netConfig     *libcni.NetworkConfig
+			netConfig     *libcni.PluginConfig
 			runtimeConfig *libcni.RuntimeConf
 			ctx           context.Context
 
@@ -1625,7 +1625,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniBinPath    string
 			pluginConfig  string
 			cniConfig     *libcni.CNIConfig
-			netConfig     *libcni.NetworkConfig
+			netConfig     *libcni.PluginConfig
 			runtimeConfig *libcni.RuntimeConf
 			netConfigList *libcni.NetworkConfigList
 		)
@@ -1798,7 +1798,7 @@ var _ = Describe("Invoking plugins", func() {
 			cniBinPath    string
 			pluginConfig  string
 			cniConfig     *libcni.CNIConfig
-			netConfig     *libcni.NetworkConfig
+			netConfig     *libcni.PluginConfig
 			runtimeConfig *libcni.RuntimeConf
 
 			ctx context.Context
@@ -1920,14 +1920,14 @@ var _ = Describe("Invoking plugins", func() {
 		Context("when the RuntimeConf is incomplete", func() {
 			var (
 				testRt          *libcni.RuntimeConf
-				testNetConf     *libcni.NetworkConfig
+				testNetConf     *libcni.PluginConfig
 				testNetConfList *libcni.NetworkConfigList
 			)
 
 			BeforeEach(func() {
 				testRt = &libcni.RuntimeConf{}
-				testNetConf = &libcni.NetworkConfig{
-					Network: &types.NetConf{},
+				testNetConf = &libcni.PluginConfig{
+					Network: &types.PluginConf{},
 				}
 				testNetConfList = &libcni.NetworkConfigList{}
 			})

@@ -50,8 +50,8 @@ var _ = Describe("Loading configuration from disk", func() {
 		It("finds the network config file for the plugin of the given type", func() {
 			netConfig, err := libcni.LoadConf(configDir, "some-plugin")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(netConfig).To(Equal(&libcni.NetworkConfig{
-				Network: &types.NetConf{
+			Expect(netConfig).To(Equal(&libcni.PluginConfig{
+				Network: &types.PluginConf{
 					Name: "some-plugin",
 					Type: "foobar",
 				},
@@ -79,8 +79,8 @@ var _ = Describe("Loading configuration from disk", func() {
 			It("finds the network config file for the plugin of the given type", func() {
 				netConfig, err := libcni.LoadConf(configDir, "some-plugin")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{
+				Expect(netConfig).To(Equal(&libcni.PluginConfig{
+					Network: &types.PluginConf{
 						Name: "some-plugin",
 						Type: "foobar",
 					},
@@ -234,17 +234,17 @@ var _ = Describe("Loading configuration from disk", func() {
 				Name:         "some-list",
 				CNIVersion:   "0.2.0",
 				DisableCheck: true,
-				Plugins: []*libcni.NetworkConfig{
+				Plugins: []*libcni.PluginConfig{
 					{
-						Network: &types.NetConf{Type: "host-local"},
+						Network: &types.PluginConf{Type: "host-local"},
 						Bytes:   []byte(`{"subnet":"10.0.0.1/24","type":"host-local"}`),
 					},
 					{
-						Network: &types.NetConf{Type: "bridge"},
+						Network: &types.PluginConf{Type: "bridge"},
 						Bytes:   []byte(`{"mtu":1400,"type":"bridge"}`),
 					},
 					{
-						Network: &types.NetConf{Type: "port-forwarding"},
+						Network: &types.PluginConf{Type: "port-forwarding"},
 						Bytes:   []byte(`{"ports":{"20.0.0.1:8080":"80"},"type":"port-forwarding"}`),
 					},
 				},
@@ -401,19 +401,19 @@ var _ = Describe("Loading configuration from disk", func() {
 	})
 
 	Describe("InjectConf", func() {
-		var testNetConfig *libcni.NetworkConfig
+		var testNetConfig *libcni.PluginConfig
 
 		BeforeEach(func() {
-			testNetConfig = &libcni.NetworkConfig{
-				Network: &types.NetConf{Name: "some-plugin", Type: "foobar"},
+			testNetConfig = &libcni.PluginConfig{
+				Network: &types.PluginConf{Name: "some-plugin", Type: "foobar"},
 				Bytes:   []byte(`{ "name": "some-plugin", "type": "foobar" }`),
 			}
 		})
 
 		Context("when function parameters are incorrect", func() {
 			It("returns unmarshal error", func() {
-				conf := &libcni.NetworkConfig{
-					Network: &types.NetConf{Name: "some-plugin"},
+				conf := &libcni.PluginConfig{
+					Network: &types.PluginConf{Name: "some-plugin"},
 					Bytes:   []byte(`{ cc cc cc}`),
 				}
 
@@ -438,8 +438,8 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				resultConfig, err := libcni.InjectConf(testNetConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{
+				Expect(resultConfig).To(Equal(&libcni.PluginConfig{
+					Network: &types.PluginConf{
 						Name: "some-plugin",
 						Type: "foobar",
 					},
@@ -456,8 +456,8 @@ var _ = Describe("Loading configuration from disk", func() {
 				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"test": "changedValue"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{
+				Expect(resultConfig).To(Equal(&libcni.PluginConfig{
+					Network: &types.PluginConf{
 						Name: "some-plugin",
 						Type: "foobar",
 					},
@@ -474,8 +474,8 @@ var _ = Describe("Loading configuration from disk", func() {
 				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"test": "test"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{
+				Expect(resultConfig).To(Equal(&libcni.PluginConfig{
+					Network: &types.PluginConf{
 						Name: "some-plugin",
 						Type: "foobar",
 					},
@@ -496,8 +496,8 @@ var _ = Describe("Loading configuration from disk", func() {
 				resultConfig, err = libcni.InjectConf(resultConfig, map[string]interface{}{"type": "bridge"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(resultConfig).To(Equal(&libcni.NetworkConfig{
-					Network: &types.NetConf{Name: "some-plugin", Type: "bridge", DNS: types.DNS{Nameservers: servers, Domain: "local"}},
+				Expect(resultConfig).To(Equal(&libcni.PluginConfig{
+					Network: &types.PluginConf{Name: "some-plugin", Type: "bridge", DNS: types.DNS{Nameservers: servers, Domain: "local"}},
 					Bytes:   expectedPluginConfig,
 				}))
 			})
@@ -553,7 +553,7 @@ var _ = Describe("ConfListFromBytes", func() {
 })
 
 var _ = Describe("ConfListFromConf", func() {
-	var testNetConfig *libcni.NetworkConfig
+	var testNetConfig *libcni.PluginConfig
 
 	BeforeEach(func() {
 		pb := []byte(`{"name":"some-plugin","cniVersion":"0.3.1", "type":"foobar"}`)
@@ -575,7 +575,7 @@ var _ = Describe("ConfListFromConf", func() {
 		Expect(ncl).To(Equal(&libcni.NetworkConfigList{
 			Name:       "some-plugin",
 			CNIVersion: "0.3.1",
-			Plugins:    []*libcni.NetworkConfig{testNetConfig},
+			Plugins:    []*libcni.PluginConfig{testNetConfig},
 		}))
 
 		// Test that the json unmarshals to the same data
