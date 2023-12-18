@@ -129,8 +129,11 @@ func (d *DNS) Copy() *DNS {
 }
 
 type Route struct {
-	Dst net.IPNet
-	GW  net.IP
+	Dst      net.IPNet
+	GW       net.IP
+	MTU      int
+	AdvMSS   int
+	Priority int
 }
 
 func (r *Route) String() string {
@@ -143,8 +146,11 @@ func (r *Route) Copy() *Route {
 	}
 
 	return &Route{
-		Dst: r.Dst,
-		GW:  r.GW,
+		Dst:      r.Dst,
+		GW:       r.GW,
+		MTU:      r.MTU,
+		AdvMSS:   r.AdvMSS,
+		Priority: r.Priority,
 	}
 }
 
@@ -195,8 +201,11 @@ func (e *Error) Print() error {
 
 // JSON (un)marshallable types
 type route struct {
-	Dst IPNet  `json:"dst"`
-	GW  net.IP `json:"gw,omitempty"`
+	Dst      IPNet  `json:"dst"`
+	GW       net.IP `json:"gw,omitempty"`
+	MTU      int    `json:"mtu,omitempty"`
+	AdvMSS   int    `json:"advmss,omitempty"`
+	Priority int    `json:"priority,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {
@@ -207,13 +216,20 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
+	r.MTU = rt.MTU
+	r.AdvMSS = rt.AdvMSS
+	r.Priority = rt.Priority
+
 	return nil
 }
 
 func (r Route) MarshalJSON() ([]byte, error) {
 	rt := route{
-		Dst: IPNet(r.Dst),
-		GW:  r.GW,
+		Dst:      IPNet(r.Dst),
+		GW:       r.GW,
+		MTU:      r.MTU,
+		AdvMSS:   r.AdvMSS,
+		Priority: r.Priority,
 	}
 
 	return json.Marshal(rt)
