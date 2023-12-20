@@ -114,6 +114,8 @@ type CNI interface {
 	GetStatusNetworkList(ctx context.Context, net *NetworkConfigList) error
 
 	GetCachedAttachments(containerID string) ([]*NetworkAttachment, error)
+
+	GetVersionInfo(ctx context.Context, pluginType string) (version.PluginInfo, error)
 }
 
 type CNIConfig struct {
