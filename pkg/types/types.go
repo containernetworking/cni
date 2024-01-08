@@ -64,14 +64,42 @@ type NetConf struct {
 	Type         string          `json:"type,omitempty"`
 	Capabilities map[string]bool `json:"capabilities,omitempty"`
 	IPAM         IPAM            `json:"ipam,omitempty"`
-	DNS          DNS             `json:"dns"`
+	DNS          DNS             `json:"dns,omitempty"`
 
 	RawPrevResult map[string]interface{} `json:"prevResult,omitempty"`
 	PrevResult    Result                 `json:"-"`
 }
 
+// Note: DNS should be omit if DNS is empty but default Marshal function
+// will output empty structure hence need to write a Marshal function
+func (n *NetConf) MarshalJSON() ([]byte, error) {
+	// use type alias to escape recursion for json.Marshal() to MarshalJSON()
+	type fixObjType = NetConf
+
+	bytes, err := json.Marshal(fixObjType(*n)) //nolint:all
+	if err != nil {
+		return nil, err
+	}
+
+	fixupObj := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &fixupObj); err != nil {
+		return nil, err
+	}
+
+	if n.DNS.IsEmpty() {
+		delete(fixupObj, "dns")
+	}
+
+	return json.Marshal(fixupObj)
+}
+
 type IPAM struct {
 	Type string `json:"type,omitempty"`
+}
+
+// IsEmpty returns true if IPAM structure has no value, otherwise return false
+func (i *IPAM) IsEmpty() bool {
+	return i.Type == ""
 }
 
 // NetConfList describes an ordered list of networks.
@@ -114,6 +142,14 @@ type DNS struct {
 	Domain      string   `json:"domain,omitempty"`
 	Search      []string `json:"search,omitempty"`
 	Options     []string `json:"options,omitempty"`
+}
+
+// IsEmpty returns true if DNS structure has no value, otherwise return false
+func (d *DNS) IsEmpty() bool {
+	if len(d.Nameservers) == 0 && d.Domain == "" && len(d.Search) == 0 && len(d.Options) == 0 {
+		return true
+	}
+	return false
 }
 
 func (d *DNS) Copy() *DNS {

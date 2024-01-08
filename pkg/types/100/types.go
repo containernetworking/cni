@@ -95,6 +95,29 @@ type Result struct {
 	DNS        types.DNS      `json:"dns,omitempty"`
 }
 
+// Note: DNS should be omit if DNS is empty but default Marshal function
+// will output empty structure hence need to write a Marshal function
+func (r *Result) MarshalJSON() ([]byte, error) {
+	// use type alias to escape recursion for json.Marshal() to MarshalJSON()
+	type fixObjType = Result
+
+	bytes, err := json.Marshal(fixObjType(*r)) //nolint:all
+	if err != nil {
+		return nil, err
+	}
+
+	fixupObj := make(map[string]interface{})
+	if err := json.Unmarshal(bytes, &fixupObj); err != nil {
+		return nil, err
+	}
+
+	if r.DNS.IsEmpty() {
+		delete(fixupObj, "dns")
+	}
+
+	return json.Marshal(fixupObj)
+}
+
 // convertFrom100 does nothing except set the version; the types are the same
 func convertFrom100(from types.Result, toVersion string) (types.Result, error) {
 	fromResult := from.(*Result)
