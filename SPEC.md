@@ -75,7 +75,7 @@ For the purposes of this proposal, we define six terms very specifically:
 - _runtime_ is the program responsible for executing CNI plugins.
 - _plugin_ is a program that applies a specified network configuration.
 - _attachment is the operation of applying a network configuration to a container, which results in an endpoint.
-- _endpoint is a uniquely addressable, container-scoped connection to a single network.
+- _endpoint is a uniquely identifiable, container-scoped connection to a single network.
 
 This document aims to specify the interface between "runtimes" and "plugins". The key words "must", "must not", "required", "shall", "shall not", "should", "should not", "recommended", "may" and "optional" are used as specified in [RFC 2119][rfc-2119].
 
