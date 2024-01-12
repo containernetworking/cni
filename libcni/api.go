@@ -89,12 +89,8 @@ type NetworkAttachment struct {
 	CapabilityArgs map[string]interface{}
 }
 
-type GCAttachment struct {
-	ContainerID string `json:"containerID"`
-	IfName      string `json:"ifname"`
-}
 type GCArgs struct {
-	ValidAttachments []GCAttachment
+	ValidAttachments []types.GCAttachment
 }
 
 type CNI interface {
@@ -768,7 +764,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 		return nil
 	}
 
-	validAttachments := make(map[GCAttachment]interface{}, len(args.ValidAttachments))
+	validAttachments := make(map[types.GCAttachment]interface{}, len(args.ValidAttachments))
 	for _, a := range args.ValidAttachments {
 		validAttachments[a] = nil
 	}
@@ -780,7 +776,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 			continue
 		}
 		// we found this attachment
-		gca := GCAttachment{
+		gca := types.GCAttachment{
 			ContainerID: cachedAttachment.ContainerID,
 			IfName:      cachedAttachment.IfName,
 		}
