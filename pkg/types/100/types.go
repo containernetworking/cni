@@ -270,6 +270,7 @@ func (r *Result) PrintTo(writer io.Writer) error {
 type Interface struct {
 	Name       string `json:"name"`
 	Mac        string `json:"mac,omitempty"`
+	Mtu        int    `json:"mtu,omitempty"`
 	Sandbox    string `json:"sandbox,omitempty"`
 	SocketPath string `json:"socketPath,omitempty"`
 	PciID      string `json:"pciID,omitempty"`

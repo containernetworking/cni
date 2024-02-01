@@ -52,6 +52,7 @@ func testResult() *current.Result {
 			{
 				Name:       "eth0",
 				Mac:        "00:11:22:33:44:55",
+				Mtu:        1500,
 				Sandbox:    "/proc/3553/ns/net",
 				PciID:      "8086:9a01",
 				SocketPath: "/path/to/vhost/fd",
@@ -107,6 +108,7 @@ var _ = Describe("Current types operations", func() {
         {
             "name":        "eth0",
             "mac":         "00:11:22:33:44:55",
+            "mtu": 1500,
             "sandbox":     "/proc/3553/ns/net",
             "pciID": 	   "8086:9a01",
             "socketPath":  "/path/to/vhost/fd"

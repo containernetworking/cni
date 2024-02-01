@@ -567,6 +567,7 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
 - `interfaces`: An array of all interfaces created by the attachment, including any host-level interfaces:
     - `name` (string): The name of the interface.
     - `mac` (string): The hardware address of the interface (if applicable).
+    - `mtu`: (uint) The MTU of the interface (if applicable).
     - `sandbox` (string): The isolation domain reference (e.g. path to network namespace) for the interface, or empty if on the host. For interfaces created inside the container, this should be the value passed via `CNI_NETNS`.
     - `socketPath` (string, optional): An absolute path to a socket file corresponding to this interface, if applicable.
     - `pciID` (string, optional): The platform-specific identifier of the PCI device corresponding to this interface, if applicable.
