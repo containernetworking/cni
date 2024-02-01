@@ -67,17 +67,20 @@ func NetworkPluginConfFromBytes(pluginConfBytes []byte) (*PluginConfig, error) {
 // Given a path to a directory containing a network configuration, and the name of a network,
 // loads all plugin definitions found at path `networkConfPath/networkName/*.conf`
 func NetworkPluginConfsFromFiles(networkConfPath, networkName string) ([]*PluginConfig, error) {
-	pluginConfFiles, err := ConfFiles(filepath.Join(networkConfPath, networkName), []string{".conf"})
+	var pConfs []*PluginConfig
+
+	pluginConfPath := filepath.Join(networkConfPath, networkName)
+
+	pluginConfFiles, err := ConfFiles(pluginConfPath, []string{".conf"})
 	switch {
 	case err != nil:
-		return nil, fmt.Errorf("failed to read plugin config file: %w", err)
+		return nil, fmt.Errorf("failed to read plugin config files in %s: %w", pluginConfPath, err)
 	case len(pluginConfFiles) == 0:
 		// Having 0 plugins for a given network is not necessarily a problem,
-		// but return as error for caller to decide.
-		return nil, fmt.Errorf("no plugin config found in %s: %w", networkConfPath, err)
+		// but return as error for caller to decide, since they tried to load
+		return nil, fmt.Errorf("no plugin config found in %s", pluginConfPath)
 	}
 
-	var pConfs []*PluginConfig
 	for _, pluginConfFile := range pluginConfFiles {
 		pluginConfBytes, err := os.ReadFile(pluginConfFile)
 		if err != nil {
@@ -176,15 +179,52 @@ func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 		}
 	}
 
-	list := &NetworkConfigList{
-		Name:         name,
-		DisableCheck: disableCheck,
-		CNIVersion:   cniVersion,
-		Bytes:        confBytes,
+	loadPluginsFromFolder := false
+	if rawLoadCheck, ok := rawList["loadPluginsFromFolder"]; ok {
+		loadPluginsFromFolder, ok = rawLoadCheck.(bool)
+		if !ok {
+			return nil, fmt.Errorf("error parsing configuration list: invalid loadPluginsFromFolder type %T", rawLoadCheck)
+		}
 	}
 
-	if _, ok := rawList["plugins"]; ok {
-		return nil, fmt.Errorf("error parsing configuration list: no 'plugins' key allowed, cniVersion %s must load plugins from subdirectories", version.Current())
+	list := &NetworkConfigList{
+		Name:                  name,
+		DisableCheck:          disableCheck,
+		LoadPluginsFromFolder: loadPluginsFromFolder,
+		CNIVersion:            cniVersion,
+		Bytes:                 confBytes,
+	}
+
+	var plugins []interface{}
+	plug, ok := rawList["plugins"]
+	// We can have a `plugins` list key in the main conf,
+	// We can also have `loadPluginsFromFolder == true`
+	// They can both be present in the same config.
+	// But if one of them is NOT present/false, the other *must* be there.
+	if !ok && !loadPluginsFromFolder {
+		return nil, fmt.Errorf("error parsing configuration list: `loadPluginsFromFolder` not true, and no 'plugins' key")
+	} else if !ok && loadPluginsFromFolder {
+		return list, nil
+	}
+
+	plugins, ok = plug.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("error parsing configuration list: invalid 'plugins' type %T", plug)
+	}
+	if len(plugins) == 0 {
+		return nil, fmt.Errorf("error parsing configuration list: no plugins in list")
+	}
+
+	for i, conf := range plugins {
+		newBytes, err := json.Marshal(conf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal plugin config %d: %w", i, err)
+		}
+		netConf, err := ConfFromBytes(newBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse plugin config %d: %w", i, err)
+		}
+		list.Plugins = append(list.Plugins, netConf)
 	}
 	return list, nil
 }
@@ -195,31 +235,27 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 		return nil, fmt.Errorf("error reading %s: %w", filename, err)
 	}
 
-	// TODO
 	conf, err := NetworkConfFromBytes(bytes)
 	if err != nil {
 		return nil, err
 	}
 
-	plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
-	if err != nil {
-		return nil, err
+	if conf.LoadPluginsFromFolder {
+		plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
+		if err != nil {
+			return nil, err
+		}
+		conf.Plugins = append(conf.Plugins, plugins...)
 	}
-
-	conf.Plugins = plugins
 
 	return conf, nil
 }
 
 // Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
-func ConfFromBytes(bytes []byte) (*PluginConfig, error) {
+func ConfFromBytes(bytes []byte) (*NetworkConfig, error) {
 	return NetworkPluginConfFromBytes(bytes)
 }
 
-// TODO Are we ok, at this point, cutting a new major version of libCNI and dropping the non-list CNI config?
-//
-// The non-list format was dropped in 1.0 and so I feel we should.
-//
 // Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
 func ConfFromFile(filename string) (*NetworkConfig, error) {
 	bytes, err := os.ReadFile(filename)
@@ -292,43 +328,16 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 
 // Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
-	files, err := ConfFiles(dir, []string{".conflist"})
-	if err != nil {
-		return nil, err
-	}
-	sort.Strings(files)
-
-	for _, confFile := range files {
-		conf, err := ConfListFromFile(confFile)
-		if err != nil {
-			return nil, err
-		}
-		if conf.Name == name {
-			return conf, nil
-		}
-	}
-
-	// Try and load a network configuration file (instead of list)
-	// from the same name, then upconvert.
-	singleConf, err := LoadConf(dir, name)
-	if err != nil {
-		// A little extra logic so the error makes sense
-		var ncfErr NoConfigsFoundError
-		if len(files) != 0 && errors.As(err, &ncfErr) {
-			// Config lists found but no config files found
-			return nil, NotFoundError{dir, name}
-		}
-
-		return nil, err
-	}
-	return ConfListFromConf(singleConf)
+	return LoadNetworkConf(dir, name)
 }
 
 // LoadNetworkConf looks at all the network configs in a given dir,
-// loads and parses them all, and returns the first one that matches the provided
-// network name predicate.
+// loads and parses them all, and returns the first one with an extension of `.conf`
+// that matches the provided network name predicate.
 func LoadNetworkConf(dir, name string) (*NetworkConfigList, error) {
-	files, err := ConfFiles(dir, []string{".conf"})
+	// TODO this .conflist/.conf extension thing is confusing and inexact
+	// for implementors. We should pick one extension for everything and stick with it.
+	files, err := ConfFiles(dir, []string{".conflist"})
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +352,21 @@ func LoadNetworkConf(dir, name string) (*NetworkConfigList, error) {
 			return conf, nil
 		}
 	}
-	return nil, fmt.Errorf("no netconfig found in %q with name %s", dir, name)
+
+	// Deprecated: Try and load a network configuration file (instead of list)
+	// from the same name, then upconvert.
+	singleConf, err := LoadConf(dir, name)
+	if err != nil {
+		// A little extra logic so the error makes sense
+		var ncfErr NoConfigsFoundError
+		if len(files) != 0 && errors.As(err, &ncfErr) {
+			// Config lists found but no config files found
+			return nil, NotFoundError{dir, name}
+		}
+
+		return nil, err
+	}
+	return ConfListFromConf(singleConf)
 }
 
 // InjectConf takes a PluginConfig and inserts additional values into it, ensuring the result is serializable.

@@ -111,7 +111,8 @@ A network configuration consists of a JSON object with the following keys:
 - `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-). Must not contain characters disallowed in file paths. A path segment (such as a filesystem directory) with the same name as the network name, containing one or more plugin configuration JSON objects for that network, should exist at the same level as the network configuration object itself.
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
-<!-- - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects. -->
+- `loadPluginsFromFolder` (boolean): Either `true` or `false`. If `true`, indicates [plugin configuration objects](#plugin-configuration-objects) should be loaded from a sibling folder with the same name as the network `name` field. These sibling folders should exist at the same path as the network configuration itself. Any valid plugin configuration objects within the sibling folder will be appended to the final list of plugins for that network. If `plugins` is not present in the network configuration, `loadPluginsFromFolder` must be present, and set to true.
+- `plugins` (list): A list of inlined [plugin configuration objects](#plugin-configuration-objects). If this key is populated with inlined plugin objects, and `loadPluginsFromFolder` is true, the final set of plugins for a network must consist of all the plugin objects in this list and the all the plugins loaded from the sibling folder with the same name as the network.
 
 #### Plugin configuration objects:
 All plugin configuration objects present in a directory with the same name as a valid network configuration must be parsed, and each plugin with a parsable configuration object must be invoked.
@@ -147,13 +148,14 @@ Plugins that consume any of these configuration keys should respect their intend
 Plugins may define additional fields that they accept and may generate an error if called with unknown fields. Runtimes must preserve unknown fields in plugin configuration objects when transforming for execution.
 
 #### Example configuration
-
+Network configuration with no inlined plugin confs, and two loaded plugin confs:
 `/etc/cni/net.d/10-dbnet.conf`:
 ```jsonc
 {
   "cniVersion": "1.1.0",
   "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
+  "loadPluginsFromFolder": true,
 }
 ```
 
@@ -177,7 +179,7 @@ Plugins may define additional fields that they accept and may generate an error 
   "dns": {
     "nameservers": [ "10.1.0.1" ]
   }
-},
+}
 ```
 
 `/etc/cni/net.d/dbnet/10-tuning.conf`:
@@ -190,16 +192,83 @@ Plugins may define additional fields that they accept and may generate an error 
   "sysctl": {
     "net.core.somaxconn": "500"
   }
-},
+}
 ```
 
-`/etc/cni/net.d/dbnet/15-portmap.conf`:
+Network configuration with one inlined plugin conf, and one loaded plugin conf:
+`/etc/cni/net.d/10-dbnet.conf`:
 ```jsonc
 {
-    "type": "portmap",
-    "capabilities": {"portMappings": true}
-}
+  "cniVersion": "1.1.0",
+  "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
+  "name": "dbnet",
+  "loadPluginsFromFolder": true,
+  plugins: [
+    {
+      "type": "bridge",
+      // plugin specific parameters
+      "bridge": "cni0",
+      "keyA": ["some more", "plugin specific", "configuration"],
 
+      "ipam": {
+        "type": "host-local",
+        // ipam specific
+        "subnet": "10.1.0.0/16",
+        "gateway": "10.1.0.1",
+        "routes": [
+            {"dst": "0.0.0.0/0"}
+        ]
+      },
+      "dns": {
+        "nameservers": [ "10.1.0.1" ]
+      }
+    }
+  ]
+}
+```
+
+`/etc/cni/net.d/dbnet/10-tuning.conf`:
+```jsonc
+{
+  "type": "tuning",
+  "capabilities": {
+    "mac": true
+  },
+  "sysctl": {
+    "net.core.somaxconn": "500"
+  }
+}
+```
+
+Network configuration with one inlined plugin conf, and no loaded plugin conf:
+`/etc/cni/net.d/10-dbnet.conf`:
+```jsonc
+{
+  "cniVersion": "1.1.0",
+  "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
+  "name": "dbnet",
+  "plugins": [
+    {
+      "type": "bridge",
+      // plugin specific parameters
+      "bridge": "cni0",
+      "keyA": ["some more", "plugin specific", "configuration"],
+
+      "ipam": {
+        "type": "host-local",
+        // ipam specific
+        "subnet": "10.1.0.0/16",
+        "gateway": "10.1.0.1",
+        "routes": [
+            {"dst": "0.0.0.0/0"}
+        ]
+      },
+      "dns": {
+        "nameservers": [ "10.1.0.1" ]
+      }
+    }
+  ]
+}
 ```
 
 ### Version considerations
