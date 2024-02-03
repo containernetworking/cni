@@ -12,29 +12,29 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: setup go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
       - uses: ibiqlik/action-yamllint@v3
         with:
           format: auto
       - uses: golangci/golangci-lint-action@v3
         with:
           args: --verbose
+          skip-cache: true
           version: v1.51.2
   build:
     name: Build all linux architectures
     needs: lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: setup go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
-
       - name: Build on all supported architectures
         run: |
           set -e
@@ -48,12 +48,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: setup go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
-
       - name: Install test binaries
         env:
           GO111MODULE: off
@@ -77,10 +76,10 @@ jobs:
     needs: build
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
       - name: setup go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
       - name: test
         run: bash ./test.sh
