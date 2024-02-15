@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	CacheDir = "/var/lib/cni"
+	CacheDir = "/var/run/cni"
 	// slightly awkward wording to preserve anyone matching on error strings
 	ErrorCheckNotSupp = fmt.Errorf("does not support the CHECK command")
 )
