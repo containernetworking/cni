@@ -93,13 +93,14 @@ var _ = Describe("Types", func() {
 				AdvMSS:   1340,
 				Priority: 100,
 				Table:    types040.Int(50),
+				Scope:    253,
 			}
 		})
 
 		It("marshals and unmarshals to JSON", func() {
 			jsonBytes, err := json.Marshal(example)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1", "mtu": 1500, "advmss": 1340, "priority": 100, "table": 50 }`))
+			Expect(jsonBytes).To(MatchJSON(`{ "dst": "1.2.3.0/24", "gw": "1.2.3.1", "mtu": 1500, "advmss": 1340, "priority": 100, "table": 50, "scope": 253 }`))
 
 			var unmarshaled types.Route
 			Expect(json.Unmarshal(jsonBytes, &unmarshaled)).To(Succeed())
@@ -115,7 +116,7 @@ var _ = Describe("Types", func() {
 		})
 
 		It("formats as a string with a hex mask", func() {
-			Expect(example.String()).To(Equal(`{Dst:{IP:1.2.3.0 Mask:ffffff00} GW:1.2.3.1 MTU:1500 AdvMSS:1340 Priority:100 Table:50}`))
+			Expect(example.String()).To(Equal(`{Dst:{IP:1.2.3.0 Mask:ffffff00} GW:1.2.3.1 MTU:1500 AdvMSS:1340 Priority:100 Table:50 Scope:253}`))
 		})
 	})
 
