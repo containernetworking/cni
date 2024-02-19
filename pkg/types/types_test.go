@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/containernetworking/cni/pkg/types"
+	types040 "github.com/containernetworking/cni/pkg/types/040"
 	current "github.com/containernetworking/cni/pkg/types/100"
 )
 
@@ -91,7 +92,7 @@ var _ = Describe("Types", func() {
 				MTU:      1500,
 				AdvMSS:   1340,
 				Priority: 100,
-				Table:    50,
+				Table:    types040.Int(50),
 			}
 		})
 
