@@ -171,7 +171,7 @@ type Route struct {
 	AdvMSS   int
 	Priority int
 	Table    *int
-	Scope    int
+	Scope    *int
 }
 
 func (r *Route) String() string {
@@ -180,7 +180,12 @@ func (r *Route) String() string {
 		table = fmt.Sprintf("%d", *r.Table)
 	}
 
-	return fmt.Sprintf("{Dst:%+v GW:%v MTU:%d AdvMSS:%d Priority:%d Table:%s Scope:%d}", r.Dst, r.GW, r.MTU, r.AdvMSS, r.Priority, table, r.Scope)
+	scope := "<nil>"
+	if r.Scope != nil {
+		scope = fmt.Sprintf("%d", *r.Scope)
+	}
+
+	return fmt.Sprintf("{Dst:%+v GW:%v MTU:%d AdvMSS:%d Priority:%d Table:%s Scope:%s}", r.Dst, r.GW, r.MTU, r.AdvMSS, r.Priority, table, scope)
 }
 
 func (r *Route) Copy() *Route {
@@ -200,6 +205,11 @@ func (r *Route) Copy() *Route {
 	if r.Table != nil {
 		table := *r.Table
 		route.Table = &table
+	}
+
+	if r.Scope != nil {
+		scope := *r.Scope
+		route.Scope = &scope
 	}
 
 	return route
@@ -258,7 +268,7 @@ type route struct {
 	AdvMSS   int    `json:"advmss,omitempty"`
 	Priority int    `json:"priority,omitempty"`
 	Table    *int   `json:"table,omitempty"`
-	Scope    int    `json:"scope,omitempty"`
+	Scope    *int   `json:"scope,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {

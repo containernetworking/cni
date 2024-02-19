@@ -93,7 +93,7 @@ var _ = Describe("Types", func() {
 				AdvMSS:   1340,
 				Priority: 100,
 				Table:    types040.Int(50),
-				Scope:    253,
+				Scope:    types040.Int(253),
 			}
 		})
 
