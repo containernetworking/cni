@@ -111,8 +111,8 @@ A network configuration consists of a JSON object with the following keys:
 - `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-). Must not contain characters disallowed in file paths. A path segment (such as a filesystem directory) with the same name as the network name, containing one or more plugin configuration JSON objects for that network, should exist at the same level as the network configuration object itself.
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
-- `loadPluginsFromFolder` (boolean): Either `true` or `false`. If `true`, indicates [plugin configuration objects](#plugin-configuration-objects) should be loaded from a sibling folder with the same name as the network `name` field. These sibling folders should exist at the same path as the network configuration itself. Any valid plugin configuration objects within the sibling folder will be appended to the final list of plugins for that network. If `plugins` is not present in the network configuration, `loadPluginsFromFolder` must be present, and set to true.
-- `plugins` (list): A list of inlined [plugin configuration objects](#plugin-configuration-objects). If this key is populated with inlined plugin objects, and `loadPluginsFromFolder` is true, the final set of plugins for a network must consist of all the plugin objects in this list, merged with all the plugins loaded from the sibling folder with the same name as the network.
+- `disableLoadPluginsFromPath` (boolean): Either `true` or `false`. If `false` (default), indicates [plugin configuration objects](#plugin-configuration-objects) should be loaded from a sibling directory with the same name as the network `name` field. These sibling directories should exist at the same path as the network configuration itself. Any valid plugin configuration objects within a named sibling directory will be appended to the final list of `plugins` for that network name. If set to `true`, plugin configuration objects in sibling directories will be ignored. If `plugins` is not present in the network configuration, `disableLoadPluginsFromPath` cannot be set to `true`.
+- `plugins` (list): A list of inlined [plugin configuration objects](#plugin-configuration-objects). If this key is populated with inlined plugin objects, and `disableLoadPluginsFromPath` is true, the final set of plugins for a network must consist of all the plugin objects in this list, merged with all the plugins loaded from the sibling folder with the same name as the network.
 
 #### Plugin configuration objects:
 All plugin configuration objects present in a directory with the same name as a valid network configuration must be parsed, and each plugin with a parsable configuration object must be invoked.
@@ -155,7 +155,7 @@ Network configuration with no inlined plugin confs, and two loaded plugin confs:
   "cniVersion": "1.1.0",
   "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
-  "loadPluginsFromFolder": true,
+  "disableLoadPluginsFromPath": false,
 }
 ```
 
@@ -202,7 +202,7 @@ Network configuration with one inlined plugin conf, and one loaded plugin conf:
   "cniVersion": "1.1.0",
   "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
-  "loadPluginsFromFolder": true,
+  "disableLoadPluginsFromPath": false,
   plugins: [
     {
       "type": "bridge",
@@ -247,6 +247,7 @@ Network configuration with one inlined plugin conf, and no loaded plugin conf:
   "cniVersion": "1.1.0",
   "cniVersions": ["0.3.1", "0.4.0", "1.0.0", "1.1.0"],
   "name": "dbnet",
+  "disableLoadPluginsFromPath": true,
   "plugins": [
     {
       "type": "bridge",

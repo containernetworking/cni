@@ -72,13 +72,8 @@ func NetworkPluginConfsFromFiles(networkConfPath, networkName string) ([]*Plugin
 	pluginConfPath := filepath.Join(networkConfPath, networkName)
 
 	pluginConfFiles, err := ConfFiles(pluginConfPath, []string{".conf"})
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, fmt.Errorf("failed to read plugin config files in %s: %w", pluginConfPath, err)
-	case len(pluginConfFiles) == 0:
-		// Having 0 plugins for a given network is not necessarily a problem,
-		// but return as error for caller to decide, since they tried to load
-		return nil, fmt.Errorf("no plugin config found in %s", pluginConfPath)
 	}
 
 	for _, pluginConfFile := range pluginConfFiles {
@@ -179,31 +174,35 @@ func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 		}
 	}
 
-	loadPluginsFromFolder := false
-	if rawLoadCheck, ok := rawList["loadPluginsFromFolder"]; ok {
-		loadPluginsFromFolder, ok = rawLoadCheck.(bool)
+	disableLoadPluginsFromPath := false
+	if rawLoadCheck, ok := rawList["disableLoadPluginsFromPath"]; ok {
+		disableLoadPluginsFromPath, ok = rawLoadCheck.(bool)
 		if !ok {
-			return nil, fmt.Errorf("error parsing configuration list: invalid loadPluginsFromFolder type %T", rawLoadCheck)
+			return nil, fmt.Errorf("error parsing configuration list: invalid disableLoadPluginsFromPath type %T", rawLoadCheck)
 		}
 	}
 
 	list := &NetworkConfigList{
-		Name:                  name,
-		DisableCheck:          disableCheck,
-		LoadPluginsFromFolder: loadPluginsFromFolder,
-		CNIVersion:            cniVersion,
-		Bytes:                 confBytes,
+		Name:                       name,
+		DisableCheck:               disableCheck,
+		DisableLoadPluginsFromPath: disableLoadPluginsFromPath,
+		CNIVersion:                 cniVersion,
+		Bytes:                      confBytes,
 	}
 
 	var plugins []interface{}
 	plug, ok := rawList["plugins"]
 	// We can have a `plugins` list key in the main conf,
-	// We can also have `loadPluginsFromFolder == true`
-	// They can both be present in the same config.
-	// But if one of them is NOT present/false, the other *must* be there.
-	if !ok && !loadPluginsFromFolder {
-		return nil, fmt.Errorf("error parsing configuration list: `loadPluginsFromFolder` not true, and no 'plugins' key")
-	} else if !ok && loadPluginsFromFolder {
+	// We can also have `disableLoadPluginsFromPath == true`
+	//
+	// If `plugins` is there, then `disableLoadPluginsFromPath` can be true
+	//
+	// If plugins is NOT there, then `disableLoadPluginsFromPath` cannot be true
+	//
+	// We have to have at least some plugins.
+	if !ok && disableLoadPluginsFromPath {
+		return nil, fmt.Errorf("error parsing configuration list: `disableLoadPluginsFromPath` is true, and no 'plugins' key")
+	} else if !ok && !disableLoadPluginsFromPath {
 		return list, nil
 	}
 
@@ -240,7 +239,7 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 		return nil, err
 	}
 
-	if conf.LoadPluginsFromFolder {
+	if !conf.DisableLoadPluginsFromPath {
 		plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
 		if err != nil {
 			return nil, err
@@ -248,6 +247,11 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 		conf.Plugins = append(conf.Plugins, plugins...)
 	}
 
+	if len(conf.Plugins) == 0 {
+		// Having 0 plugins for a given network is not necessarily a problem,
+		// but return as error for caller to decide, since they tried to load
+		return nil, fmt.Errorf("no plugin configs found")
+	}
 	return conf, nil
 }
 
@@ -283,6 +287,8 @@ func ConfFiles(dir string, extensions []string) ([]string, error) {
 	switch {
 	case err == nil: // break
 	case os.IsNotExist(err):
+		// If folder not there, return no error - only return an
+		// error if we cannot read contents or there are no contents.
 		return nil, nil
 	default:
 		return nil, err

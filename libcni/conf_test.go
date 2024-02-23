@@ -390,12 +390,12 @@ var _ = Describe("Loading configuration from disk", func() {
 			})
 		})
 
-		Context("for loadPluginsFromFolder", func() {
+		Context("for disableLoadPluginsFromPath", func() {
 			It("the value will be parsed", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": true,
+				  "disableLoadPluginsFromPath": true,
 				  "plugins": [
 				    {
 				      "type": "host-local",
@@ -416,7 +416,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfigList.LoadPluginsFromFolder).To(BeTrue())
+				Expect(netConfigList.DisableLoadPluginsFromPath).To(BeTrue())
 			})
 
 			It("the value will be false if not in config", func() {
@@ -434,15 +434,15 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfigList.LoadPluginsFromFolder).To(BeFalse())
+				Expect(netConfigList.DisableLoadPluginsFromPath).To(BeFalse())
 			})
 
 			It("will return an error on an unrecognized value", func() {
-				const badValue string = "spagnum"
+				const badValue string = "sphagnum"
 				configList = []byte(fmt.Sprintf(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": "%s",
+				  "disableLoadPluginsFromPath": "%s",
 				  "plugins": [
 				    {
 				      "type": "host-local",
@@ -453,10 +453,45 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				_, err := libcni.LoadNetworkConf(configDir, "some-network")
-				Expect(err).To(MatchError("error parsing configuration list: invalid loadPluginsFromFolder type string"))
+				Expect(err).To(MatchError("error parsing configuration list: invalid disableLoadPluginsFromPath type string"))
 			})
 
-			It("will return an error if `plugins` is missing and `loadPluginsFromFolder` is also missing", func() {
+			It("will return an error if `plugins` is missing and `disableLoadPluginsFromPath` is `true`", func() {
+				configList = []byte(`{
+				  "name": "some-network",
+				  "cniVersion": "0.4.0",
+				  "disableLoadPluginsFromPath": true
+				}`)
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
+
+				_, err := libcni.LoadNetworkConf(configDir, "some-network")
+				Expect(err).To(MatchError("error parsing configuration list: `disableLoadPluginsFromPath` is true, and no 'plugins' key"))
+			})
+
+			It("will return no error if `plugins` is missing and `disableLoadPluginsFromPath` is false", func() {
+				configList = []byte(`{
+				  "name": "some-network",
+				  "cniVersion": "0.4.0",
+				  "disableLoadPluginsFromPath": false
+				}`)
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
+
+				dirPluginConf := []byte(`{
+				      "type": "bro-check-out-my-plugin",
+				      "subnet": "10.0.0.1/24"
+				}`)
+
+				subDir := filepath.Join(configDir, "some-network")
+				Expect(os.MkdirAll(subDir, 0o700)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(subDir, "funky-second-plugin.conf"), dirPluginConf, 0o600)).To(Succeed())
+
+				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(netConfigList.DisableLoadPluginsFromPath).To(BeFalse())
+				Expect(netConfigList.Plugins).To(HaveLen(1))
+			})
+
+			It("will return error if `disableLoadPluginsFromPath` is implicitly false + no conf plugin is defined, but no plugins subfolder with network name exists", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0"
@@ -464,50 +499,36 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				_, err := libcni.LoadNetworkConf(configDir, "some-network")
-				Expect(err).To(MatchError("error parsing configuration list: `loadPluginsFromFolder` not true, and no 'plugins' key"))
+				Expect(err).To(MatchError("no plugin configs found"))
 			})
 
-			It("will return no error if `plugins` is missing and `loadPluginsFromFolder` is true", func() {
+			It("will return NO error if `disableLoadPluginsFromPath` is implicitly false + at least 1 conf plugin is defined, but no plugins subfolder with network name exists", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": true
-				}`)
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
-
-				dirPluginConf := []byte(`{
-				      "type": "bro-check-out-my-plugin",
+				  "plugins": [
+				    {
+				      "type": "host-local",
 				      "subnet": "10.0.0.1/24"
+				    }
+				  ]
 				}`)
+				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
-				subDir := filepath.Join(configDir, "some-network")
-				Expect(os.MkdirAll(subDir, 0o700)).To(Succeed())
-				Expect(os.WriteFile(filepath.Join(subDir, "funky-second-plugin.conf"), dirPluginConf, 0o600)).To(Succeed())
-
-				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
+				_, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfigList.LoadPluginsFromFolder).To(BeTrue())
-				Expect(netConfigList.Plugins).To(HaveLen(1))
 			})
 
-			It("will return error if `loadPluginsFromFolder` is true but no plugins subfolder with network name exists", func() {
+			It("will return NO error if `disableLoadPluginsFromPath` is implicitly false + at least 1 conf plugin is defined and network name subfolder exists, but is empty/unreadable", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": true
-				}`)
-				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
-
-				subDir := filepath.Join(configDir, "some-network")
-				_, err := libcni.LoadNetworkConf(configDir, "some-network")
-				Expect(err).To(MatchError(fmt.Sprintf("no plugin config found in %s", subDir)))
-			})
-
-			It("will return  error if `loadPluginsFromFolder` is true and network name subfolder exists, but no plugin configs", func() {
-				configList = []byte(`{
-				  "name": "some-network",
-				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": true
+				  "plugins": [
+				    {
+				      "type": "host-local",
+				      "subnet": "10.0.0.1/24"
+				    }
+				  ]
 				}`)
 				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
@@ -515,14 +536,13 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(os.MkdirAll(subDir, 0o700)).To(Succeed())
 
 				_, err := libcni.LoadNetworkConf(configDir, "some-network")
-				Expect(err).To(MatchError(fmt.Sprintf("no plugin config found in %s", subDir)))
+				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("will merge loaded and inlined plugin lists if both `plugins` is set and `loadPluginsFromFolder` is true", func() {
+			It("will merge loaded and inlined plugin lists if both `plugins` is set and `disableLoadPluginsFromPath` is false", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
-				  "loadPluginsFromFolder": true,
 				  "plugins": [
 				    {
 				      "type": "host-local",
@@ -544,14 +564,15 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfigList.LoadPluginsFromFolder).To(BeTrue())
+				Expect(netConfigList.DisableLoadPluginsFromPath).To(BeFalse())
 				Expect(netConfigList.Plugins).To(HaveLen(2))
 			})
 
-			It("will ignore loaded plugins if `plugins` is set and `loadPluginsFromFolder` is not present", func() {
+			It("will ignore loaded plugins if `plugins` is set and `disableLoadPluginsFromPath` is true", func() {
 				configList = []byte(`{
 				  "name": "some-network",
 				  "cniVersion": "0.4.0",
+				  "disableLoadPluginsFromPath": true,
 				  "plugins": [
 				    {
 				      "type": "host-local",
@@ -572,7 +593,7 @@ var _ = Describe("Loading configuration from disk", func() {
 
 				netConfigList, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(netConfigList.LoadPluginsFromFolder).To(BeFalse())
+				Expect(netConfigList.DisableLoadPluginsFromPath).To(BeTrue())
 				Expect(netConfigList.Plugins).To(HaveLen(1))
 				Expect(netConfigList.Plugins[0].Network.Type).To(Equal("host-local"))
 			})

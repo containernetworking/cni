@@ -76,12 +76,12 @@ type PluginConfig struct {
 }
 
 type NetworkConfigList struct {
-	Name                  string
-	CNIVersion            string
-	DisableCheck          bool
-	LoadPluginsFromFolder bool
-	Plugins               []*PluginConfig
-	Bytes                 []byte
+	Name                       string
+	CNIVersion                 string
+	DisableCheck               bool
+	DisableLoadPluginsFromPath bool
+	Plugins                    []*PluginConfig
+	Bytes                      []byte
 }
 
 type NetworkAttachment struct {
