@@ -580,6 +580,7 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
     - `mtu` (uint): The MTU (Maximum transmission unit) along the path to the destination.
     - `advmss` (uint): The MSS (Maximal Segment Size) to advertise to these destinations when establishing TCP connections.
     - `priority` (uint): The priority of route, lower is higher.
+    - `table` (uint): The table to add the route to.
 - `dns`: a dictionary consisting of DNS configuration information
     - `nameservers` (list of strings): list of a priority-ordered list of DNS nameservers that this network is aware of. Each entry in the list is a string containing either an IPv4 or an IPv6 address.
     - `domain` (string): the local domain used for short hostname lookups.
