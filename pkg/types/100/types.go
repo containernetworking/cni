@@ -268,9 +268,11 @@ func (r *Result) PrintTo(writer io.Writer) error {
 
 // Interface contains values about the created interfaces
 type Interface struct {
-	Name    string `json:"name"`
-	Mac     string `json:"mac,omitempty"`
-	Sandbox string `json:"sandbox,omitempty"`
+	Name       string `json:"name"`
+	Mac        string `json:"mac,omitempty"`
+	Sandbox    string `json:"sandbox,omitempty"`
+	SocketPath string `json:"socketPath,omitempty"`
+	PciID      string `json:"pciID,omitempty"`
 }
 
 func (i *Interface) String() string {

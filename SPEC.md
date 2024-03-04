@@ -565,9 +565,11 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
 
 - `cniVersion`: The same version supplied on input - the string "1.1.0"
 - `interfaces`: An array of all interfaces created by the attachment, including any host-level interfaces:
-    - `name`: The name of the interface.
-    - `mac`: The hardware address of the interface (if applicable).
-    - `sandbox`: The isolation domain reference (e.g. path to network namespace) for the interface, or empty if on the host. For interfaces created inside the container, this should be the value passed via `CNI_NETNS`.
+    - `name` (string): The name of the interface.
+    - `mac` (string): The hardware address of the interface (if applicable).
+    - `sandbox` (string): The isolation domain reference (e.g. path to network namespace) for the interface, or empty if on the host. For interfaces created inside the container, this should be the value passed via `CNI_NETNS`.
+    - `socketPath` (string, optional): An absolute path to a socket file corresponding to this interface, if applicable.
+    - `pciID` (string, optional): The platform-specific identifier of the PCI device corresponding to this interface, if applicable.
 - `ips`: IPs assigned by this attachment. Plugins may include IPs assigned external to the container.
     - `address` (string): an IP address in CIDR notation (eg "192.168.1.3/24").
     - `gateway` (string): the default gateway for this subnet, if one exists.

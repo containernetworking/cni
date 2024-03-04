@@ -45,15 +45,16 @@ func testResult() *current.Result {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(routev6).NotTo(BeNil())
 	Expect(routegwv6).NotTo(BeNil())
-
 	// Set every field of the struct to ensure source compatibility
 	return &current.Result{
 		CNIVersion: current.ImplementedSpecVersion,
 		Interfaces: []*current.Interface{
 			{
-				Name:    "eth0",
-				Mac:     "00:11:22:33:44:55",
-				Sandbox: "/proc/3553/ns/net",
+				Name:       "eth0",
+				Mac:        "00:11:22:33:44:55",
+				Sandbox:    "/proc/3553/ns/net",
+				PciID:      "8086:9a01",
+				SocketPath: "/path/to/vhost/fd",
 			},
 		},
 		IPs: []*current.IPConfig{
@@ -104,9 +105,11 @@ var _ = Describe("Current types operations", func() {
     "cniVersion": "` + current.ImplementedSpecVersion + `",
     "interfaces": [
         {
-            "name": "eth0",
-            "mac": "00:11:22:33:44:55",
-            "sandbox": "/proc/3553/ns/net"
+            "name":        "eth0",
+            "mac":         "00:11:22:33:44:55",
+            "sandbox":     "/proc/3553/ns/net",
+            "pciID": 	   "8086:9a01",
+            "socketPath":  "/path/to/vhost/fd"
         }
     ],
     "ips": [

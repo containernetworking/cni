@@ -159,14 +159,15 @@ var _ = Describe("Types", func() {
 			ipv6, err := types.ParseCIDR("abcd:1234:ffff::cdde/64")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ipv6).NotTo(BeNil())
-
 			result = &current.Result{
 				CNIVersion: "1.0.0",
 				Interfaces: []*current.Interface{
 					{
-						Name:    "eth0",
-						Mac:     "00:11:22:33:44:55",
-						Sandbox: "/proc/3553/ns/net",
+						Name:       "eth0",
+						Mac:        "00:11:22:33:44:55",
+						Sandbox:    "/proc/3553/ns/net",
+						PciID:      "8086:9a01",
+						SocketPath: "/path/to/vhost/fd",
 					},
 				},
 				IPs: []*current.IPConfig{

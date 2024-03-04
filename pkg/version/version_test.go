@@ -39,9 +39,11 @@ var _ = Describe("Version operations", func() {
 				"cniVersion": "1.0.0",
 				"interfaces": [
 					{
-						"name": "eth0",
-						"mac": "00:11:22:33:44:55",
-						"sandbox": "/proc/3553/ns/net"
+						"name":        "eth0",
+						"mac":         "00:11:22:33:44:55",
+						"sandbox":     "/proc/3553/ns/net",
+						"pciID":       "8086:9a01",
+						"socketPath":  "/path/to/vhost/fd"
 					}
 				],
 				"ips": [
@@ -66,14 +68,15 @@ var _ = Describe("Version operations", func() {
 
 			err = version.ParsePrevResult(conf)
 			Expect(err).NotTo(HaveOccurred())
-
 			expectedResult := &cniv1.Result{
 				CNIVersion: "1.0.0",
 				Interfaces: []*cniv1.Interface{
 					{
-						Name:    "eth0",
-						Mac:     "00:11:22:33:44:55",
-						Sandbox: "/proc/3553/ns/net",
+						Name:       "eth0",
+						Mac:        "00:11:22:33:44:55",
+						Sandbox:    "/proc/3553/ns/net",
+						PciID:      "8086:9a01",
+						SocketPath: "/path/to/vhost/fd",
 					},
 				},
 				IPs: []*cniv1.IPConfig{
