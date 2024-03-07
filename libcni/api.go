@@ -586,9 +586,9 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	if gtet, err := version.GreaterThanOrEqualTo(list.CNIVersion, "0.4.0"); err != nil {
 		return err
 	} else if gtet {
-		cachedResult, err = c.getCachedResult(list.Name, list.CNIVersion, rt)
-		if err != nil {
-			return fmt.Errorf("failed to get network %q cached result: %w", list.Name, err)
+		if cachedResult, err = c.getCachedResult(list.Name, list.CNIVersion, rt); err != nil {
+			_ = c.cacheDel(list.Name, rt)
+			cachedResult = nil
 		}
 	}
 
@@ -598,7 +598,10 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 			return fmt.Errorf("plugin %s failed (delete): %w", pluginDescription(net.Network), err)
 		}
 	}
-	_ = c.cacheDel(list.Name, rt)
+
+	if cachedResult != nil {
+		_ = c.cacheDel(list.Name, rt)
+	}
 
 	return nil
 }
