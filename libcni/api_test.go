@@ -1474,7 +1474,7 @@ var _ = Describe("Invoking plugins", func() {
 			})
 
 			Context("when the cached result is invalid", func() {
-				It("returns an error", func() {
+				It("tolerates the error", func() {
 					cacheFile := resultCacheFilePath(cacheDirPath, netConfigList.Name, runtimeConfig)
 					err := os.MkdirAll(filepath.Dir(cacheFile), 0o700)
 					Expect(err).NotTo(HaveOccurred())
@@ -1482,7 +1482,7 @@ var _ = Describe("Invoking plugins", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					err = cniConfig.DelNetworkList(ctx, netConfigList, runtimeConfig)
-					Expect(err).To(MatchError("failed to get network \"some-list\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
