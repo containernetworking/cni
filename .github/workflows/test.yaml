@@ -20,7 +20,7 @@ jobs:
       - uses: ibiqlik/action-yamllint@v3
         with:
           format: auto
-      - uses: golangci/golangci-lint-action@v3
+      - uses: golangci/golangci-lint-action@v4
         with:
           args: --verbose
           version: v1.51.2
