@@ -223,4 +223,48 @@ var _ = Describe("Delegate", func() {
 			})
 		})
 	})
+
+	Describe("DelegateStatus", func() {
+		BeforeEach(func() {
+			os.Setenv("CNI_COMMAND", "STATUS")
+		})
+
+		It("finds and execs the named plugin", func() {
+			err := invoke.DelegateStatus(ctx, pluginName, netConf, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			pluginInvocation, err := debug.ReadDebug(debugFileName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(pluginInvocation.Command).To(Equal("STATUS"))
+		})
+
+		Context("if the STATUS delegation runs on an existing non-STATUS command", func() {
+			BeforeEach(func() {
+				os.Setenv("CNI_COMMAND", "NOPE")
+			})
+
+			It("aborts and returns a useful error", func() {
+				err := invoke.DelegateStatus(ctx, pluginName, netConf, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				pluginInvocation, err := debug.ReadDebug(debugFileName)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pluginInvocation.Command).To(Equal("STATUS"))
+
+				// check the original env
+				Expect(os.Getenv("CNI_COMMAND")).To(Equal("NOPE"))
+			})
+		})
+
+		Context("when the plugin cannot be found", func() {
+			BeforeEach(func() {
+				pluginName = "non-existent-plugin"
+			})
+
+			It("returns a useful error", func() {
+				err := invoke.DelegateStatus(ctx, pluginName, netConf, nil)
+				Expect(err).To(MatchError(HavePrefix("failed to find plugin")))
+			})
+		})
+	})
 })

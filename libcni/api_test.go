@@ -1513,7 +1513,7 @@ var _ = Describe("Invoking plugins", func() {
 
 				By("Issuing a GC with valid networks")
 				gcargs := &libcni.GCArgs{
-					ValidAttachments: []libcni.GCAttachment{{
+					ValidAttachments: []types.GCAttachment{{
 						ContainerID: runtimeConfig.ContainerID,
 						IfName:      runtimeConfig.IfName,
 					}},
