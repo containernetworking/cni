@@ -23,6 +23,7 @@ package libcni
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -815,7 +816,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 		}
 	}
 
-	return joinErrors(errs...)
+	return errors.Join(errs...)
 }
 
 func (c *CNIConfig) gcNetwork(ctx context.Context, net *NetworkConfig) error {
