@@ -77,6 +77,7 @@ To avoid duplication, we think it is prudent to define a common interface betwee
 - [Hybridnet - a CNI plugin designed for hybrid clouds which provides both overlay and underlay networking for containers in one or more clusters. Overlay and underlay containers can run on the same node and have cluster-wide bidirectional network connectivity.](https://github.com/alibaba/hybridnet)
 - [Spiderpool - An IP Address Management (IPAM) CNI plugin of Kubernetes for managing static ip for underlay network](https://github.com/spidernet-io/spiderpool)
 - [AWS VPC CNI - Networking plugin for pod networking in Kubernetes using Elastic Network Interfaces on AWS](https://github.com/aws/amazon-vpc-cni-k8s)
+- [Multi-NIC CNI - a CNI plugin designed to simplify attachment to multiple secondary networks, offering automated features such as interface discovery, host-interface-local CIDR computation, L3 host route configuration, and policy-based NIC selection](https://github.com/foundation-model-stack/multi-nic-cni)
 
 The CNI team also maintains some [core plugins in a separate repository](https://github.com/containernetworking/plugins).
 
