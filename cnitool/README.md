@@ -75,3 +75,11 @@ And clean up:
 sudo CNI_PATH=./bin cnitool del myptp /var/run/netns/testing
 sudo ip netns del testing
 ```
+
+cnitool also supports the GC command, which takes a list of still-valid attachments
+and removes all others. Since cnitool generates the container ID based on the
+path to the network namespace, this is the parameter
+
+```bash
+sudo CNI_PATH=./bin cnitool gc myptp /var/run/netns/keep-1 /var/run/netns/keep-2
+```
