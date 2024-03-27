@@ -67,17 +67,22 @@ type RuntimeConf struct {
 	CacheDir string
 }
 
-type NetworkConfig struct {
-	Network *types.NetConf
+// Deprecated: Use PluginConfig instead of NetworkConfig, the NetworkConfig
+// backwards-compat alias will be removed in a future release.
+type NetworkConfig = PluginConfig
+
+type PluginConfig struct {
+	Network *types.PluginConf
 	Bytes   []byte
 }
 
 type NetworkConfigList struct {
-	Name         string
-	CNIVersion   string
-	DisableCheck bool
-	Plugins      []*NetworkConfig
-	Bytes        []byte
+	Name                       string
+	CNIVersion                 string
+	DisableCheck               bool
+	DisableLoadPluginsFromPath bool
+	Plugins                    []*PluginConfig
+	Bytes                      []byte
 }
 
 type NetworkAttachment struct {
@@ -101,14 +106,14 @@ type CNI interface {
 	GetNetworkListCachedResult(net *NetworkConfigList, rt *RuntimeConf) (types.Result, error)
 	GetNetworkListCachedConfig(net *NetworkConfigList, rt *RuntimeConf) ([]byte, *RuntimeConf, error)
 
-	AddNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
-	CheckNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error
-	DelNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error
-	GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) (types.Result, error)
-	GetNetworkCachedConfig(net *NetworkConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error)
+	AddNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) (types.Result, error)
+	CheckNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) error
+	DelNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) error
+	GetNetworkCachedResult(net *PluginConfig, rt *RuntimeConf) (types.Result, error)
+	GetNetworkCachedConfig(net *PluginConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error)
 
 	ValidateNetworkList(ctx context.Context, net *NetworkConfigList) ([]string, error)
-	ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error)
+	ValidateNetwork(ctx context.Context, net *PluginConfig) ([]string, error)
 
 	GCNetworkList(ctx context.Context, net *NetworkConfigList, args *GCArgs) error
 	GetStatusNetworkList(ctx context.Context, net *NetworkConfigList) error
@@ -144,7 +149,7 @@ func NewCNIConfigWithCacheDir(path []string, cacheDir string, exec invoke.Exec) 
 	}
 }
 
-func buildOneConfig(name, cniVersion string, orig *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (*NetworkConfig, error) {
+func buildOneConfig(name, cniVersion string, orig *PluginConfig, prevResult types.Result, rt *RuntimeConf) (*PluginConfig, error) {
 	var err error
 
 	inject := map[string]interface{}{
@@ -180,7 +185,7 @@ func buildOneConfig(name, cniVersion string, orig *NetworkConfig, prevResult typ
 // capabilities include "portMappings", and the CapabilityArgs map includes a
 // "portMappings" key, that key and its value are added to the "runtimeConfig"
 // dictionary to be passed to the plugin's stdin.
-func injectRuntimeConfig(orig *NetworkConfig, rt *RuntimeConf) (*NetworkConfig, error) {
+func injectRuntimeConfig(orig *PluginConfig, rt *RuntimeConf) (*PluginConfig, error) {
 	var err error
 
 	rc := make(map[string]interface{})
@@ -401,7 +406,7 @@ func (c *CNIConfig) GetNetworkListCachedResult(list *NetworkConfigList, rt *Runt
 
 // GetNetworkCachedResult returns the cached Result of the previous
 // AddNetwork() operation for a network, or an error.
-func (c *CNIConfig) GetNetworkCachedResult(net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
+func (c *CNIConfig) GetNetworkCachedResult(net *PluginConfig, rt *RuntimeConf) (types.Result, error) {
 	return c.getCachedResult(net.Network.Name, net.Network.CNIVersion, rt)
 }
 
@@ -413,7 +418,7 @@ func (c *CNIConfig) GetNetworkListCachedConfig(list *NetworkConfigList, rt *Runt
 
 // GetNetworkCachedConfig copies the input RuntimeConf to output
 // RuntimeConf with fields updated with info from the cached Config.
-func (c *CNIConfig) GetNetworkCachedConfig(net *NetworkConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
+func (c *CNIConfig) GetNetworkCachedConfig(net *PluginConfig, rt *RuntimeConf) ([]byte, *RuntimeConf, error) {
 	return c.getCachedConfig(net.Network.Name, rt)
 }
 
@@ -476,7 +481,7 @@ func (c *CNIConfig) GetCachedAttachments(containerID string) ([]*NetworkAttachme
 	return attachments, nil
 }
 
-func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {
+func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net *PluginConfig, prevResult types.Result, rt *RuntimeConf) (types.Result, error) {
 	c.ensureExec()
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
@@ -518,7 +523,7 @@ func (c *CNIConfig) AddNetworkList(ctx context.Context, list *NetworkConfigList,
 	return result, nil
 }
 
-func (c *CNIConfig) checkNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) error {
+func (c *CNIConfig) checkNetwork(ctx context.Context, name, cniVersion string, net *PluginConfig, prevResult types.Result, rt *RuntimeConf) error {
 	c.ensureExec()
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
@@ -560,7 +565,7 @@ func (c *CNIConfig) CheckNetworkList(ctx context.Context, list *NetworkConfigLis
 	return nil
 }
 
-func (c *CNIConfig) delNetwork(ctx context.Context, name, cniVersion string, net *NetworkConfig, prevResult types.Result, rt *RuntimeConf) error {
+func (c *CNIConfig) delNetwork(ctx context.Context, name, cniVersion string, net *PluginConfig, prevResult types.Result, rt *RuntimeConf) error {
 	c.ensureExec()
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
@@ -603,7 +608,7 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 	return nil
 }
 
-func pluginDescription(net *types.NetConf) string {
+func pluginDescription(net *types.PluginConf) string {
 	if net == nil {
 		return "<missing>"
 	}
@@ -617,7 +622,7 @@ func pluginDescription(net *types.NetConf) string {
 }
 
 // AddNetwork executes the plugin with the ADD command
-func (c *CNIConfig) AddNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) (types.Result, error) {
+func (c *CNIConfig) AddNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) (types.Result, error) {
 	result, err := c.addNetwork(ctx, net.Network.Name, net.Network.CNIVersion, net, nil, rt)
 	if err != nil {
 		return nil, err
@@ -631,7 +636,7 @@ func (c *CNIConfig) AddNetwork(ctx context.Context, net *NetworkConfig, rt *Runt
 }
 
 // CheckNetwork executes the plugin with the CHECK command
-func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error {
+func (c *CNIConfig) CheckNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) error {
 	// CHECK was added in CNI spec version 0.4.0 and higher
 	if gtet, err := version.GreaterThanOrEqualTo(net.Network.CNIVersion, "0.4.0"); err != nil {
 		return err
@@ -647,7 +652,7 @@ func (c *CNIConfig) CheckNetwork(ctx context.Context, net *NetworkConfig, rt *Ru
 }
 
 // DelNetwork executes the plugin with the DEL command
-func (c *CNIConfig) DelNetwork(ctx context.Context, net *NetworkConfig, rt *RuntimeConf) error {
+func (c *CNIConfig) DelNetwork(ctx context.Context, net *PluginConfig, rt *RuntimeConf) error {
 	var cachedResult types.Result
 
 	// Cached result on DEL was added in CNI spec version 0.4.0 and higher
@@ -707,7 +712,7 @@ func (c *CNIConfig) ValidateNetworkList(ctx context.Context, list *NetworkConfig
 // ValidateNetwork checks that a configuration is reasonably valid.
 // It uses the same logic as ValidateNetworkList)
 // Returns a list of capabilities
-func (c *CNIConfig) ValidateNetwork(ctx context.Context, net *NetworkConfig) ([]string, error) {
+func (c *CNIConfig) ValidateNetwork(ctx context.Context, net *PluginConfig) ([]string, error) {
 	caps := []string{}
 	for c, ok := range net.Network.Capabilities {
 		if ok {
@@ -819,7 +824,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 	return errors.Join(errs...)
 }
 
-func (c *CNIConfig) gcNetwork(ctx context.Context, net *NetworkConfig) error {
+func (c *CNIConfig) gcNetwork(ctx context.Context, net *PluginConfig) error {
 	c.ensureExec()
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
@@ -854,7 +859,7 @@ func (c *CNIConfig) GetStatusNetworkList(ctx context.Context, list *NetworkConfi
 	return nil
 }
 
-func (c *CNIConfig) getStatusNetwork(ctx context.Context, net *NetworkConfig) error {
+func (c *CNIConfig) getStatusNetwork(ctx context.Context, net *PluginConfig) error {
 	c.ensureExec()
 	pluginPath, err := c.exec.FindInPath(net.Network.Type, c.Path)
 	if err != nil {
