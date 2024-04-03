@@ -36,9 +36,11 @@ const (
 
 	DefaultNetDir = "/etc/cni/net.d"
 
-	CmdAdd   = "add"
-	CmdCheck = "check"
-	CmdDel   = "del"
+	CmdAdd    = "add"
+	CmdCheck  = "check"
+	CmdDel    = "del"
+	CmdGC     = "gc"
+	CmdStatus = "status"
 )
 
 func parseArgs(args string) ([][2]string, error) {
@@ -125,16 +127,23 @@ func main() {
 		exit(err)
 	case CmdDel:
 		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
+	case CmdGC:
+		// Currently just invoke GC without args, hence all network interface should be GC'ed!
+		exit(cninet.GCNetworkList(context.TODO(), netconf, nil))
+	case CmdStatus:
+		exit(cninet.GetStatusNetworkList(context.TODO(), netconf))
 	}
 }
 
 func usage() {
 	exe := filepath.Base(os.Args[0])
 
-	fmt.Fprintf(os.Stderr, "%s: Add, check, or remove network interfaces from a network namespace\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s add   <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s check <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s del   <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "%s: Add, check, remove, gc or status network interfaces from a network namespace\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s add    <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s check  <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s del    <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s gc     <net> <netns>\n", exe)
+	fmt.Fprintf(os.Stderr, "  %s status <net> <netns>\n", exe)
 	os.Exit(1)
 }
 
