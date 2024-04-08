@@ -36,7 +36,7 @@ import (
 )
 
 type NetConf struct {
-	types.NetConf
+	types.PluginConf
 	DebugFile  string `json:"debugFile"`
 	CommandLog string `json:"commandLog"`
 }
@@ -46,7 +46,7 @@ func loadConf(bytes []byte) (*NetConf, error) {
 	if err := json.Unmarshal(bytes, n); err != nil {
 		return nil, fmt.Errorf("failed to load netconf: %w %q", err, string(bytes))
 	}
-	if err := version.ParsePrevResult(&n.NetConf); err != nil {
+	if err := version.ParsePrevResult(&n.PluginConf); err != nil {
 		return nil, err
 	}
 	return n, nil

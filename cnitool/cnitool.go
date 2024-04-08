@@ -68,7 +68,7 @@ func main() {
 	if netdir == "" {
 		netdir = DefaultNetDir
 	}
-	netconf, err := libcni.LoadConfList(netdir, os.Args[2])
+	netconf, err := libcni.LoadNetworkConf(netdir, os.Args[2])
 	if err != nil {
 		exit(err)
 	}
