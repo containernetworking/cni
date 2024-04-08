@@ -88,10 +88,7 @@ type GCAttachment struct {
 // Note: DNS should be omit if DNS is empty but default Marshal function
 // will output empty structure hence need to write a Marshal function
 func (n *PluginConf) MarshalJSON() ([]byte, error) {
-	// use type alias to escape recursion for json.Marshal() to MarshalJSON()
-	type fixObjType = PluginConf
-
-	bytes, err := json.Marshal(fixObjType(*n))
+	bytes, err := json.Marshal(*n)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +120,7 @@ type NetConfList struct {
 
 	Name         string        `json:"name,omitempty"`
 	DisableCheck bool          `json:"disableCheck,omitempty"`
-	DisableGC    bool       `json:"disableGC,omitempty"`
+	DisableGC    bool          `json:"disableGC,omitempty"`
 	Plugins      []*PluginConf `json:"plugins,omitempty"`
 }
 

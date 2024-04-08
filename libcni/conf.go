@@ -64,6 +64,32 @@ func NetworkPluginConfFromBytes(pluginConfBytes []byte) (*PluginConfig, error) {
 	return conf, nil
 }
 
+// Given a path to a directory containing a network configuration, and the name of a network,
+// loads all plugin definitions found at path `networkConfPath/networkName/*.conf`
+func NetworkPluginConfsFromFiles(networkConfPath, networkName string) ([]*PluginConfig, error) {
+	var pConfs []*PluginConfig
+
+	pluginConfPath := filepath.Join(networkConfPath, networkName)
+
+	pluginConfFiles, err := ConfFiles(pluginConfPath, []string{".conf"})
+	if err != nil {
+		return nil, fmt.Errorf("failed to read plugin config files in %s: %w", pluginConfPath, err)
+	}
+
+	for _, pluginConfFile := range pluginConfFiles {
+		pluginConfBytes, err := os.ReadFile(pluginConfFile)
+		if err != nil {
+			return nil, fmt.Errorf("error reading %s: %w", pluginConfFile, err)
+		}
+		pluginConf, err := NetworkPluginConfFromBytes(pluginConfBytes)
+		if err != nil {
+			return nil, err
+		}
+		pConfs = append(pConfs, pluginConf)
+	}
+	return pConfs, nil
+}
+
 func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 	rawList := make(map[string]interface{})
 	if err := json.Unmarshal(confBytes, &rawList); err != nil {
@@ -162,19 +188,36 @@ func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 		return nil, err
 	}
 
+	loadOnlyInlinedPlugins, err := readBool("loadOnlyInlinedPlugins")
+	if err != nil {
+		return nil, err
+	}
+
 	list := &NetworkConfigList{
-		Name:         name,
-		DisableCheck: disableCheck,
-		DisableGC:    disableGC,
-		CNIVersion:   cniVersion,
-		Bytes:        confBytes,
+		Name:                   name,
+		DisableCheck:           disableCheck,
+		DisableGC:              disableGC,
+		LoadOnlyInlinedPlugins: loadOnlyInlinedPlugins,
+		CNIVersion:             cniVersion,
+		Bytes:                  confBytes,
 	}
 
 	var plugins []interface{}
 	plug, ok := rawList["plugins"]
-	if !ok {
-		return nil, fmt.Errorf("error parsing configuration list: no 'plugins' key")
+	// We can have a `plugins` list key in the main conf,
+	// We can also have `loadOnlyInlinedPlugins == true`
+	//
+	// If `plugins` is there, then `loadOnlyInlinedPlugins` can be true
+	//
+	// If plugins is NOT there, then `loadOnlyInlinedPlugins` cannot be true
+	//
+	// We have to have at least some plugins.
+	if !ok && loadOnlyInlinedPlugins {
+		return nil, fmt.Errorf("error parsing configuration list: `loadOnlyInlinedPlugins` is true, and no 'plugins' key")
+	} else if !ok && !loadOnlyInlinedPlugins {
+		return list, nil
 	}
+
 	plugins, ok = plug.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("error parsing configuration list: invalid 'plugins' type %T", plug)
@@ -194,7 +237,6 @@ func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 		}
 		list.Plugins = append(list.Plugins, netConf)
 	}
-
 	return list, nil
 }
 
@@ -203,7 +245,26 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %w", filename, err)
 	}
-	return ConfListFromBytes(bytes)
+
+	conf, err := NetworkConfFromBytes(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	if !conf.LoadOnlyInlinedPlugins {
+		plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
+		if err != nil {
+			return nil, err
+		}
+		conf.Plugins = append(conf.Plugins, plugins...)
+	}
+
+	if len(conf.Plugins) == 0 {
+		// Having 0 plugins for a given network is not necessarily a problem,
+		// but return as error for caller to decide, since they tried to load
+		return nil, fmt.Errorf("no plugin configs found")
+	}
+	return conf, nil
 }
 
 // Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
@@ -238,6 +299,8 @@ func ConfFiles(dir string, extensions []string) ([]string, error) {
 	switch {
 	case err == nil: // break
 	case os.IsNotExist(err):
+		// If folder not there, return no error - only return an
+		// error if we cannot read contents or there are no contents.
 		return nil, nil
 	default:
 		return nil, err
