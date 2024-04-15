@@ -45,7 +45,7 @@
 
 ## Version
 
-This is CNI **spec** version **1.1.0-dev**.
+This is CNI **spec** version **1.1.0**.
 
 Note that this is **independent from the version of the CNI library and plugins** in this repository (e.g. the versions of [releases](https://github.com/containernetworking/cni/releases)).
 
