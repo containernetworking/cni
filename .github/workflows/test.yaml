@@ -23,7 +23,7 @@ jobs:
       - uses: golangci/golangci-lint-action@v6
         with:
           args: --verbose
-          version: v1.54
+          version: v1.57.1
   build:
     name: Build all linux architectures
     needs: lint
