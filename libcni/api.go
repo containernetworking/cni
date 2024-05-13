@@ -425,6 +425,9 @@ func (c *CNIConfig) GetCachedAttachments(containerID string) ([]*NetworkAttachme
 	dirPath := filepath.Join(c.getCacheDir(&RuntimeConf{}), "results")
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
