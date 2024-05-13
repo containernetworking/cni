@@ -111,6 +111,7 @@ A network configuration consists of a JSON object with the following keys:
 - `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
+- `disableGC` (boolean): Either `true` or `false`.  If `disableGC` is `true`, runtimes must not call `GC` for this network configuration list.  This allows an administrator to prevent `GC`ing when it is known that garbage collection may have undesired effects (e.g. shared configuration between multiple runtimes).
 - `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
 
 #### Plugin configuration objects:
