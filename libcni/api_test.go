@@ -1511,8 +1511,19 @@ var _ = Describe("Invoking plugins", func() {
 				_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
 				Expect(err).NotTo(HaveOccurred())
 
+				By("Issuing a GC with disableGC=true")
+				netConfigList.DisableGC = true
+				gcargs := &libcni.GCArgs{}
+				err = cniConfig.GCNetworkList(ctx, netConfigList, gcargs)
+				Expect(err).NotTo(HaveOccurred())
+
+				commands, err := noop_debug.ReadCommandLog(plugins[0].commandFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(commands).To(HaveLen(1)) // ADD
+
 				By("Issuing a GC with valid networks")
-				gcargs := &libcni.GCArgs{
+				netConfigList.DisableGC = false
+				gcargs = &libcni.GCArgs{
 					ValidAttachments: []types.GCAttachment{{
 						ContainerID: runtimeConfig.ContainerID,
 						IfName:      runtimeConfig.IfName,
@@ -1526,7 +1537,7 @@ var _ = Describe("Invoking plugins", func() {
 				err = cniConfig.GCNetworkList(ctx, netConfigList, gcargs)
 				Expect(err).NotTo(HaveOccurred())
 
-				commands, err := noop_debug.ReadCommandLog(plugins[0].commandFilePath)
+				commands, err = noop_debug.ReadCommandLog(plugins[0].commandFilePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(commands).To(HaveLen(4))
 

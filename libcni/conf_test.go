@@ -386,7 +386,7 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(os.WriteFile(filepath.Join(configDir, "50-whatever.conflist"), configList, 0o600)).To(Succeed())
 
 				_, err := libcni.LoadConfList(configDir, "some-list")
-				Expect(err).To(MatchError(fmt.Sprintf("error parsing configuration list: invalid disableCheck value \"%s\"", badValue)))
+				Expect(err).To(MatchError(`error parsing configuration list: invalid value "adsfasdfasf" for disableCheck`))
 			})
 		})
 	})

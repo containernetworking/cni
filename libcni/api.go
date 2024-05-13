@@ -76,6 +76,7 @@ type NetworkConfigList struct {
 	Name         string
 	CNIVersion   string
 	DisableCheck bool
+	DisableGC    bool
 	Plugins      []*NetworkConfig
 	Bytes        []byte
 }
@@ -762,6 +763,11 @@ func (c *CNIConfig) GetVersionInfo(ctx context.Context, pluginType string) (vers
 // - dump the list of cached attachments, and issue deletes as necessary
 // - issue a GC to the underlying plugins (if the version is high enough)
 func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, args *GCArgs) error {
+	// If DisableGC is set, then don't bother GCing at all.
+	if list.DisableGC {
+		return nil
+	}
+
 	// First, get the list of cached attachments
 	cachedAttachments, err := c.GetCachedAttachments("")
 	if err != nil {
