@@ -598,9 +598,7 @@ func (c *CNIConfig) DelNetworkList(ctx context.Context, list *NetworkConfigList,
 		}
 	}
 
-	if cachedResult != nil {
-		_ = c.cacheDel(list.Name, rt)
-	}
+	_ = c.cacheDel(list.Name, rt)
 
 	return nil
 }
