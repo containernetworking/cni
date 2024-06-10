@@ -122,6 +122,7 @@ type NetConfList struct {
 
 	Name         string     `json:"name,omitempty"`
 	DisableCheck bool       `json:"disableCheck,omitempty"`
+	DisableGC    bool       `json:"disableGC,omitempty"`
 	Plugins      []*NetConf `json:"plugins,omitempty"`
 }
 
