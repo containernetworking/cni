@@ -375,6 +375,8 @@ Resources may, for example, include:
 
 A plugin SHOULD remove as many stale resources as possible. For example, a plugin should remove any IPAM reservations associated with attachments not in the provided list. The plugin MAY assume that the isolation domain (e.g. network namespace) has been deleted, and thus any resources (e.g. network interfaces) therein have been removed.
 
+Garbage collection is a per-network operation. If a plugin manages resources shared across multiple networks, it must only remove stale resources known to belong to the network provided in the `GC `action.
+
 Plugins should generally complete a `GC` action without error. If an error is encountered, a plugin should continue; removing as many resources as possible, and report the errors back to the runtime.
 
 Plugins MUST, additionally, forward any GC calls to delegated plugins they are configured to use (see section 4).
