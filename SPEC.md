@@ -109,14 +109,16 @@ A network configuration consists of a JSON object with the following keys:
 
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.1.0"
 - `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
-- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-).
+- `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-). Must not contain characters disallowed in file paths.
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `disableGC` (boolean): Either `true` or `false`.  If `disableGC` is `true`, runtimes must not call `GC` for this network configuration list.  This allows an administrator to prevent `GC`ing when it is known that garbage collection may have undesired effects (e.g. shared configuration between multiple runtimes).
-- `plugins` (list): A list of CNI plugins and their configuration, which is a list of plugin configuration objects.
+- `loadOnlyInlinedPlugins` (boolean): Either `true` or `false`. If `false` (default), indicates [plugin configuration objects](#plugin-configuration-objects) can be aggregated from multiple sources. Any valid plugin configuration objects aggregated from other sources must be appended to the final list of `plugins` for that network name. If set to `true`, indicates that valid plugin configuration objects aggregated from sources other than the main network configuration will be ignored. If `plugins` is not present in the network configuration, `loadOnlyInlinedPlugins` cannot be set to `true`.
+- `plugins` (list): A list of inlined [plugin configuration objects](#plugin-configuration-objects). If this key is populated with inlined plugin objects, and `loadOnlyInlinedPlugins` is true, the final set of plugins for a network must consist of all the plugin objects in this list, merged with all the plugins loaded from the sibling folder with the same name as the network.
 
 #### Plugin configuration objects:
-Plugin configuration objects may contain additional fields than the ones defined here.
-The runtime MUST pass through these fields, unchanged, to the plugin, as defined in section 3.
+Runtimes may aggregate plugin configuration objects from multiple sources, and must unambiguously associate each loaded plugin configuration object with a single, valid network configuration. All aggregated plugin configuration objects must be validated, and each plugin with a valid configuration object must be invoked.
+
+Plugin configuration objects may contain additional fields beyond the ones defined here. The runtime MUST pass through these fields, unchanged, to the invoked plugin, as defined in section 3.
 
 **Required keys:**
 - `type` (string): Matches the name of the CNI plugin binary on disk. Must not contain characters disallowed in file paths for the system (e.g. / or \\).
@@ -147,6 +149,7 @@ Plugins that consume any of these configuration keys should respect their intend
 Plugins may define additional fields that they accept and may generate an error if called with unknown fields. Runtimes must preserve unknown fields in plugin configuration objects when transforming for execution.
 
 #### Example configuration
+The following is an example JSON representation of a network configuration `dbnet` with three plugin configurations (`bridge`, `tuning`, and `portmap`).
 ```jsonc
 {
   "cniVersion": "1.1.0",
@@ -158,7 +161,7 @@ Plugins may define additional fields that they accept and may generate an error 
       // plugin specific parameters
       "bridge": "cni0",
       "keyA": ["some more", "plugin specific", "configuration"],
-      
+
       "ipam": {
         "type": "host-local",
         // ipam specific
@@ -374,8 +377,6 @@ Resources may, for example, include:
 - Firewall rules
 
 A plugin SHOULD remove as many stale resources as possible. For example, a plugin should remove any IPAM reservations associated with attachments not in the provided list. The plugin MAY assume that the isolation domain (e.g. network namespace) has been deleted, and thus any resources (e.g. network interfaces) therein have been removed.
-
-Garbage collection is a per-network operation. If a plugin manages resources shared across multiple networks, it must only remove stale resources known to belong to the network provided in the `GC `action.
 
 Plugins should generally complete a `GC` action without error. If an error is encountered, a plugin should continue; removing as many resources as possible, and report the errors back to the runtime.
 
