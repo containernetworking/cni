@@ -3,7 +3,6 @@ module github.com/containernetworking/cni
 go 1.21
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/vishvananda/netns v0.0.4
