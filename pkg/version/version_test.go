@@ -139,4 +139,22 @@ var _ = Describe("Version operations", func() {
 			Expect(conf.PrevResult).To(BeNil())
 		})
 	})
+
+	Context("version parsing", func() {
+		It("parses versions correctly", func() {
+			v1 := "1.1.0"
+			v2 := "1.1.1"
+
+			check := func(a, b string, want bool) {
+				GinkgoHelper()
+				gt, err := version.GreaterThan(a, b)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(gt).To(Equal(want))
+			}
+
+			check(v1, v2, false)
+			check(v2, v1, true)
+			check(v2, v2, false)
+		})
+	})
 })
