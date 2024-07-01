@@ -387,7 +387,7 @@ The runtime MUST NOT use GC as a substitute for DEL. Plugins may be unable to cl
 
 The runtime must provide a JSON-serialized plugin configuration object (defined below) on standard in. It contains an additional key;
 
-- `cni.dev/attachments` (array of objects): The list of **still valid** attachments to this network:
+- `cni.dev/valid-attachments` (array of objects): The list of **still valid** attachments to this network:
     - `containerID` (string): the value of CNI_CONTAINERID as provided during the CNI ADD operation
     - `ifname` (string): the value of CNI_IFNAME as provided during the CNI ADD operation
 
@@ -496,7 +496,7 @@ For attachment-specific operations (ADD, DEL, CHECK), additional field requireme
 - `capabilities`: must not be set
 
 For GC operations:
-- `cni.dev/attachments`: as specified in section 2.
+- `cni.dev/valid-attachments`: as specified in section 2.
 
 All other fields not prefixed with `cni.dev/` should be passed through unaltered.
 
