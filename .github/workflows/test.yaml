@@ -10,30 +10,39 @@ env:
 jobs:
   lint:
     name: Lint
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32  # v5.0.2
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
-      - uses: ibiqlik/action-yamllint@v3
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  # v4.1.7
+
+      - uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c  # v3.1.1
         with:
           format: auto
-      - uses: golangci/golangci-lint-action@v6
+          config_file: .yamllint.yaml
+
+      - uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86  # v6.1.0
         with:
           args: --verbose
           version: v1.57.1
+
   build:
     name: Build all linux architectures
     needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32  # v5.0.2
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  # v4.1.7
 
       - name: Build on all supported architectures
         run: |
@@ -49,10 +58,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32  # v5.0.2
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  # v4.1.7
 
       - name: Install test binaries
         run: |
@@ -62,9 +72,9 @@ jobs:
       - name: test
         run: COVERALLS=1 ./test.sh
 
-      - name: Send coverage to coveralls
-        env:
+      - env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: Send coverage to coveralls
         run: |
           PATH=$PATH:$(go env GOPATH)/bin
           gover
@@ -76,9 +86,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32  # v5.0.2
         with:
           go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  # v4.1.7
+
       - name: test
         run: bash ./test.sh

@@ -4,6 +4,9 @@
 
 # CNI - the Container Network Interface
 
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2446/badge)](https://bestpractices.coreinfrastructure.org/projects/2446)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/containernetworking/cni/badge)](https://securityscorecards.dev/viewer/?uri=github.com/containernetworking/cni)
+
 ## What is CNI?
 
 CNI (_Container Network Interface_), a [Cloud Native Computing Foundation](https://cncf.io) project, consists of a specification and libraries for writing plugins to configure network interfaces in Linux containers, along with a number of supported plugins.
