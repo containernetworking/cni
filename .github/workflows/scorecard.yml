@@ -28,7 +28,7 @@ jobs:
           publish_results: true
 
       - name: Upload artifact
-        uses: actions/upload-artifact@97a0fba1372883ab732affbe8f94b823f91727db  # v3.pre.node20
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
         with:
           name: SARIF file
           path: results.sarif
