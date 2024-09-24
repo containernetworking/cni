@@ -598,7 +598,9 @@ Plugins provided a `prevResult` key as part of their request configuration must 
 #### Delegated plugins (IPAM)
 Delegated plugins may omit irrelevant sections.
 
-Delegated IPAM plugins must return an abbreviated _Success_ object. Specifically, it is missing the `interfaces` array, as well as the `interface` entry in `ips`.
+Delegated IPAM plugins must return an abbreviated _Success_ object. Specifically, it is missing the `interface` entry in `ips`.
+
+The `interfaces` array can still be kept to indicate the host interface(`sandbox` is empty) associated with the allocated IP. For example, in cases where a node has multiple network interfaces, a specific network interface serves as the uplink for the allocated IP. The primary CNI needs to know the uplink interface to install the corresponding ergess routes.
 
 
 ### VERSION Success
