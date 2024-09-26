@@ -600,7 +600,7 @@ Delegated plugins may omit irrelevant sections.
 
 Delegated IPAM plugins must return an abbreviated _Success_ object. Specifically, it is missing the `interface` entry in `ips`.
 
-The `interfaces` array can still be kept to indicate the host interface(`sandbox` is empty) associated with the allocated IP. For example, in cases where a node has multiple network interfaces, a specific network interface serves as the uplink for the allocated IP. The primary CNI needs to know the uplink interface to install the corresponding ergess routes.
+The `interfaces` array can still be kept to indicate the host interface(`sandbox` is empty) associated with the allocated IP. For example, in cases where a node with multiple network interfaces, a specific network interface serves as the uplink for the allocated IP. The primary CNI plugin needs to know the uplink interface to install the corresponding egress routes.
 
 
 ### VERSION Success
