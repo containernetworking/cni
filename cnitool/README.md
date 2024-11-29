@@ -24,8 +24,7 @@ add or remove an interface in an already-created network namespace.
 First, install cnitool:
 
 ```bash
-go get github.com/containernetworking/cni
-go install github.com/containernetworking/cni/cnitool
+go install github.com/containernetworking/cni/cnitool@latest
 ```
 
 Then, check out and build the plugins. All commands should be run from this directory.
