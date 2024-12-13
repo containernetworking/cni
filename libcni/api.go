@@ -374,6 +374,11 @@ func (c *CNIConfig) getCachedResult(netName, cniVersion string, rt *RuntimeConf)
 		return nil, nil
 	}
 
+	if fdata == "" {
+		// Ignore empty file data; the cached result may not sync to disk
+		return nil, nil
+	}
+
 	cachedInfo := cachedInfo{}
 	if err := json.Unmarshal(fdata, &cachedInfo); err != nil || cachedInfo.Kind != CNICacheV1 {
 		return c.getLegacyCachedResult(netName, cniVersion, rt)
