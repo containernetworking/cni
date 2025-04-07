@@ -67,7 +67,7 @@ type RuntimeConf struct {
 	CacheDir string
 }
 
-// Deprecated: Use PluginConfig instead of NetworkConfig, the NetworkConfig
+// Use PluginConfig instead of NetworkConfig, the NetworkConfig
 // backwards-compat alias will be removed in a future release.
 type NetworkConfig = PluginConfig
 

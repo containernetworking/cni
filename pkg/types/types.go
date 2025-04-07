@@ -56,7 +56,7 @@ func (n *IPNet) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Deprecated: Use PluginConf instead of NetConf, the NetConf
+// Use PluginConf instead of NetConf, the NetConf
 // backwards-compat alias will be removed in a future release.
 type NetConf = PluginConf
 

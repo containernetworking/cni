@@ -285,12 +285,10 @@ func ConfFromFile(filename string) (*NetworkConfig, error) {
 	return ConfFromBytes(bytes)
 }
 
-// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
 func ConfListFromBytes(bytes []byte) (*NetworkConfigList, error) {
 	return NetworkConfFromBytes(bytes)
 }
 
-// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
 func ConfListFromFile(filename string) (*NetworkConfigList, error) {
 	return NetworkConfFromFile(filename)
 }
@@ -348,7 +346,6 @@ func LoadConf(dir, name string) (*NetworkConfig, error) {
 	return nil, NotFoundError{dir, name}
 }
 
-// Deprecated: Use NetworkConfXXX and NetworkPluginXXX functions
 func LoadConfList(dir, name string) (*NetworkConfigList, error) {
 	return LoadNetworkConf(dir, name)
 }
