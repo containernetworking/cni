@@ -268,7 +268,10 @@ A CNI plugin, upon receiving a `DEL` command, should either
 - delete the interface defined by `CNI_IFNAME` inside the container at `CNI_NETNS`, or
 - undo any modifications applied in the plugin's `ADD` functionality
 
-Plugins should generally complete a `DEL` action without error even if some resources are missing.  For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned if this action fails. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources even if the container network namespace and/or container network interface no longer exist.
+A `prevResult` must be supplied to CNI plugins as part of a `DEL` command. For the first plugin in the `DEL` command plugin chain, this `prevResult` will be the final result of the previous `ADD` command.
+Plugins should still return without error if `prevResult` is empty for a `DEL` command, however.
+
+`DEL` command invocations are always considered best-effort - plugins should always complete a `DEL` action without error to the fullest extent possible, even if some resources or state are missing. For example, an IPAM plugin should generally release an IP allocation and return success even if the container network namespace no longer exists, unless that network namespace is critical for IPAM management. While DHCP may usually send a 'release' message on the container network interface, since DHCP leases have a lifetime this release action would not be considered critical and no error should be returned if this action fails. For another example, the `bridge` plugin should delegate the DEL action to the IPAM plugin and clean up its own resources even if the container network namespace and/or container network interface no longer exist.
 
 Plugins MUST accept multiple `DEL` calls for the same (`CNI_CONTAINERID`, `CNI_IFNAME`) pair, and return success if the interface in question, or any modifications added, are missing.
 
