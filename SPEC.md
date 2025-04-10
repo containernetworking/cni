@@ -648,6 +648,8 @@ Error Code|Error Description
  `6`|Failed to decode content. For example, failed to unmarshal network config from bytes or failed to decode version info from string.
  `7`|Invalid network config. If some validations on network configs do not pass, this error will be raised.
  `11`|Try again later. If the plugin detects some transient condition that should clear up, it can use this code to notify the runtime it should re-try the operation later.
+ `50`|The plugin is not available (i.e. cannot service `ADD` requests)
+ `51`|The plugin is not available, and existing containers in the network may have limited connectivity.
 
 In addition, stderr can be used for unstructured output such as logs.
 
