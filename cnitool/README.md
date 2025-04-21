@@ -1,7 +1,7 @@
 # cnitool
 
 `cnitool` is a simple program that executes a CNI configuration. It will
-add or remove an interface in an already-created network namespace.
+add, check, remove, gc, or get status of an interface in an already-created network namespace.
 
 ## Environment Variables
 
@@ -9,15 +9,42 @@ add or remove an interface in an already-created network namespace.
   directory. It defaults to `/etc/cni/net.d`. The `cnitool` searches
   for CNI configuration files in this directory according to the following priorities:
   1. Search files with the extension `*.conflist`, representing a list of plugin configurations.
-  2. If there are no `*.conflist` files in the directory, search files with the extension `*.conf` or `*.json`, 
+  2. If there are no `*.conflist` files in the directory, search files with the extension `*.conf` or `*.json`,
   representing a single plugin configuration.
-  
+
   It loads all the CNI configuration files in
   this directory and if it finds a CNI configuration with the `network
   name` given to the cnitool it returns the corresponding CNI
   configuration, else it returns `nil`.
 * `CNI_PATH`: For a given CNI configuration `cnitool` will search for
   the corresponding CNI plugin in this path.
+* `CNI_ARGS`: Optional arguments in the format "KEY1=VALUE1;KEY2=VALUE2;..." passed to the CNI plugin.
+* `CAP_ARGS`: Optional capability arguments in JSON format passed to the CNI plugin.
+* `CNI_IFNAME`: Interface name to be configured. Defaults to "eth0" if not specified.
+
+## Command Line Usage
+
+```bash
+cnitool: CNI Tool for managing network interfaces in a network namespace
+
+Usage:
+  cnitool [command]
+
+Available Commands:
+  add         Add network interface to a network namespace
+  check       Check network interface in a network namespace
+  completion  Generate the autocompletion script for the specified shell
+  del         Delete network interface from a network namespace
+  gc          Garbage collect network interfaces
+  help        Help about any command
+  status      Get status of network interfaces
+
+Flags:
+  -h, --help            help for cnitool
+  -i, --ifname string   Interface name (defaults to env var CNI_IFNAME or 'eth0')
+
+Use "cnitool [command] --help" for more information about a command.
+```
 
 ## Example invocation
 
