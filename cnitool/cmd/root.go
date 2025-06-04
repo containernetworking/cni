@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cmd
 
 import (
-	"context"
 	"crypto/sha512"
 	"encoding/json"
 	"fmt"
@@ -24,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
+	"github.com/spf13/cobra"
 )
 
 // Protocol parameters are passed to the plugins via OS environment variables.
@@ -35,14 +35,33 @@ const (
 	EnvCNIIfname      = "CNI_IFNAME"
 
 	DefaultNetDir = "/etc/cni/net.d"
-
-	CmdAdd    = "add"
-	CmdCheck  = "check"
-	CmdDel    = "del"
-	CmdGC     = "gc"
-	CmdStatus = "status"
 )
 
+var (
+	// Used for flags
+	netName string
+	netNS   string
+	ifName  string
+
+	rootCmd = &cobra.Command{
+		Use:   "cnitool",
+		Short: "CNI Tool for managing network interfaces in a network namespace",
+		Long: `CNI Tool is a simple program that executes a CNI configuration.
+It will add, check, remove, gc, or get status of an interface in an already-created network namespace.`,
+	}
+)
+
+// Execute executes the root command.
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+func init() {
+	// Global flags
+	rootCmd.PersistentFlags().StringVarP(&ifName, "ifname", "i", "", "Interface name (defaults to env var CNI_IFNAME or 'eth0')")
+}
+
+// parseArgs parses CNI_ARGS environment variable into key-value pairs
 func parseArgs(args string) ([][2]string, error) {
 	var result [][2]string
 
@@ -59,98 +78,77 @@ func parseArgs(args string) ([][2]string, error) {
 	return result, nil
 }
 
-func main() {
-	if len(os.Args) < 4 {
-		usage()
+// setupRuntimeConfig prepares the runtime configuration for CNI operations
+func setupRuntimeConfig(cmd *cobra.Command, args []string) (*libcni.NetworkConfigList, *libcni.RuntimeConf, error) {
+	if len(args) < 2 {
+		return nil, nil, fmt.Errorf("network name and namespace are required")
 	}
 
+	netName = args[0]
+	netNS = args[1]
+
+	// Get network configuration directory
 	netdir := os.Getenv(EnvNetDir)
 	if netdir == "" {
 		netdir = DefaultNetDir
 	}
-	netconf, err := libcni.LoadNetworkConf(netdir, os.Args[2])
+
+	// Load network configuration
+	netconf, err := libcni.LoadNetworkConf(netdir, netName)
 	if err != nil {
-		exit(err)
+		return nil, nil, err
 	}
 
+	// Parse capability arguments
 	var capabilityArgs map[string]interface{}
 	capabilityArgsValue := os.Getenv(EnvCapabilityArgs)
 	if len(capabilityArgsValue) > 0 {
 		if err = json.Unmarshal([]byte(capabilityArgsValue), &capabilityArgs); err != nil {
-			exit(err)
+			return nil, nil, err
 		}
 	}
 
+	// Parse CNI arguments
 	var cniArgs [][2]string
-	args := os.Getenv(EnvCNIArgs)
-	if len(args) > 0 {
-		cniArgs, err = parseArgs(args)
+	args_env := os.Getenv(EnvCNIArgs)
+	if len(args_env) > 0 {
+		cniArgs, err = parseArgs(args_env)
 		if err != nil {
-			exit(err)
+			return nil, nil, err
 		}
 	}
 
-	ifName, ok := os.LookupEnv(EnvCNIIfname)
-	if !ok {
-		ifName = "eth0"
+	// Get interface name from flag or environment variable
+	if ifName == "" {
+		ifName, _ = os.LookupEnv(EnvCNIIfname)
+		if ifName == "" {
+			ifName = "eth0"
+		}
 	}
 
-	netns := os.Args[3]
-	netns, err = filepath.Abs(netns)
+	// Get absolute path of network namespace
+	netNS, err = filepath.Abs(netNS)
 	if err != nil {
-		exit(err)
+		return nil, nil, err
 	}
 
 	// Generate the containerid by hashing the netns path
-	s := sha512.Sum512([]byte(netns))
+	s := sha512.Sum512([]byte(netNS))
 	containerID := fmt.Sprintf("cnitool-%x", s[:10])
 
-	cninet := libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
-
+	// Create runtime configuration
 	rt := &libcni.RuntimeConf{
 		ContainerID:    containerID,
-		NetNS:          netns,
+		NetNS:          netNS,
 		IfName:         ifName,
 		Args:           cniArgs,
 		CapabilityArgs: capabilityArgs,
 	}
 
-	switch os.Args[1] {
-	case CmdAdd:
-		result, err := cninet.AddNetworkList(context.TODO(), netconf, rt)
-		if result != nil {
-			_ = result.Print()
-		}
-		exit(err)
-	case CmdCheck:
-		err := cninet.CheckNetworkList(context.TODO(), netconf, rt)
-		exit(err)
-	case CmdDel:
-		exit(cninet.DelNetworkList(context.TODO(), netconf, rt))
-	case CmdGC:
-		// Currently just invoke GC without args, hence all network interface should be GC'ed!
-		exit(cninet.GCNetworkList(context.TODO(), netconf, nil))
-	case CmdStatus:
-		exit(cninet.GetStatusNetworkList(context.TODO(), netconf))
-	}
+	return netconf, rt, nil
 }
 
-func usage() {
-	exe := filepath.Base(os.Args[0])
-
-	fmt.Fprintf(os.Stderr, "%s: Add, check, remove, gc or status network interfaces from a network namespace\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s add    <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s check  <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s del    <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s gc     <net> <netns>\n", exe)
-	fmt.Fprintf(os.Stderr, "  %s status <net> <netns>\n", exe)
-	os.Exit(1)
-}
-
-func exit(err error) {
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
-	}
-	os.Exit(0)
+// getCNIConfig returns a CNI configuration
+func getCNIConfig() *libcni.CNIConfig {
+	return libcni.NewCNIConfig(filepath.SplitList(os.Getenv(EnvCNIPath)), nil)
 }
