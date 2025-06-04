@@ -50,7 +50,7 @@ This plugin aims to help debugging or troubleshooting in CNI plugin development.
 * `checkHooks` (string array, optional): commands executed in container network namespace at interface check.
    (note: but just execute it and does not catch command failure)
 
-### Sample CNI Ouput
+### Sample CNI Output
 
 ```
 CmdAdd
