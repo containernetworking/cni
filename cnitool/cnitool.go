@@ -34,8 +34,6 @@ const (
 	EnvCNIArgs        = "CNI_ARGS"
 	EnvCNIIfname      = "CNI_IFNAME"
 
-	DefaultNetDir = "/etc/cni/net.d"
-
 	CmdAdd    = "add"
 	CmdCheck  = "check"
 	CmdDel    = "del"
@@ -68,6 +66,23 @@ func main() {
 	if netdir == "" {
 		netdir = DefaultNetDir
 	}
+
+	if !filepath.IsAbs(netdir) {
+		var err error
+		netdir, err = filepath.Abs(netdir)
+		if err != nil {
+			exit(fmt.Errorf("error converting the provided CNI config path ($%s) %q to an absolute path: %w", EnvNetDir, netdir, err))
+		}
+	}
+
+	if stat, err := os.Stat(netdir); err == nil {
+		if !stat.IsDir() {
+			exit(fmt.Errorf("the provided CNI config path ($%s) is not a directory: %q", EnvNetDir, netdir))
+		}
+	} else {
+		exit(fmt.Errorf("the provided CNI config path ($%s) does not exist: %q", EnvNetDir, netdir))
+	}
+
 	netconf, err := libcni.LoadNetworkConf(netdir, os.Args[2])
 	if err != nil {
 		exit(err)
