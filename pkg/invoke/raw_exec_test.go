@@ -122,7 +122,7 @@ var _ = Describe("RawExec", func() {
 				Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 				_, err := execer.ExecPlugin(ctx, pathToPlugin, stdin, environ)
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(`netplugin failed: "some stderr message"`))
+				Expect(err).To(MatchError(`netplugin failed: "some stderr message": exit status 1`))
 			})
 		})
 	})

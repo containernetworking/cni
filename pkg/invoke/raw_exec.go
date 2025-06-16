@@ -75,7 +75,7 @@ func (e *RawExec) pluginErr(err error, stdout, stderr []byte) error {
 		if len(stderr) == 0 {
 			emsg.Msg = fmt.Sprintf("netplugin failed with no error message: %v", err)
 		} else {
-			emsg.Msg = fmt.Sprintf("netplugin failed: %q", string(stderr))
+			emsg.Msg = fmt.Sprintf("netplugin failed: %q: %v", string(stderr), err)
 		}
 	} else if perr := json.Unmarshal(stdout, &emsg); perr != nil {
 		emsg.Msg = fmt.Sprintf("netplugin failed but error parsing its diagnostic message %q: %v", string(stdout), perr)
