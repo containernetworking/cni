@@ -776,7 +776,7 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 	// First, get the list of cached attachments
 	cachedAttachments, err := c.GetCachedAttachments("")
 	if err != nil {
-		return nil
+		return err
 	}
 
 	var validAttachments map[types.GCAttachment]interface{}
