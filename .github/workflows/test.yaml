@@ -27,10 +27,10 @@ jobs:
           format: auto
           config_file: .yamllint.yaml
 
-      - uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86  # v6.1.0
+      - uses: golangci/golangci-lint-action@v8
         with:
           args: --verbose
-          version: v1.57.1
+          version: v2.3.0
 
   build:
     name: Build all linux architectures

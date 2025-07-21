@@ -40,12 +40,12 @@ var (
 )
 
 // VersionsFrom returns a list of versions starting from min, inclusive
-func VersionsStartingFrom(min string) PluginInfo {
+func VersionsStartingFrom(minimum string) PluginInfo {
 	out := []string{}
 	// cheat, just assume ordered
 	ok := false
 	for _, v := range All.SupportedVersions() {
-		if !ok && v == min {
+		if !ok && v == minimum {
 			ok = true
 		}
 		if ok {
