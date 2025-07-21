@@ -169,6 +169,7 @@ var _ = Describe("Types", func() {
 						Sandbox:    "/proc/3553/ns/net",
 						PciID:      "8086:9a01",
 						SocketPath: "/path/to/vhost/fd",
+						Metadata: make(map[string]string),
 					},
 				},
 				IPs: []*current.IPConfig{
