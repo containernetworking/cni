@@ -22,8 +22,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containernetworking/cni/libcni"
 	"github.com/spf13/cobra"
+
+	"github.com/containernetworking/cni/libcni"
 )
 
 // Protocol parameters are passed to the plugins via OS environment variables.
