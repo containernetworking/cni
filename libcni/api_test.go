@@ -837,12 +837,12 @@ var _ = Describe("Invoking plugins", func() {
 				})
 
 				Context("result is invalid JSON", func() {
-					It("returns an error", func() {
+					It("tolerates the error", func() {
 						err := os.WriteFile(cacheFile, []byte("adfadsfasdfasfdsafaf"), 0o600)
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
-						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: decoding version from network config: invalid character 'a' looking for beginning of value"))
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
