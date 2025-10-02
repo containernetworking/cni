@@ -859,7 +859,7 @@ var _ = Describe("Invoking plugins", func() {
 						Expect(err).NotTo(HaveOccurred())
 					})
 
-					It("returns an error when the cached result cannot be converted", func() {
+					It("tolerates the error when the cached result cannot be converted", func() {
 						err := os.WriteFile(cacheFile, []byte(`{
 							"cniVersion": "0.4567.0",
 							"ips": [{"version": "4", "address": "10.1.2.3/24"}],
@@ -868,7 +868,7 @@ var _ = Describe("Invoking plugins", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						err = cniConfig.DelNetwork(ctx, netConfig, runtimeConfig)
-						Expect(err).To(MatchError("failed to get network \"apitest\" cached result: unsupported CNI result version \"0.4567.0\""))
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 			})
