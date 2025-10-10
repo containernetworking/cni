@@ -29,7 +29,7 @@ Here are the recordings of two sessions that the CNI maintainers hosted at KubeC
 We welcome contributions, including [bug reports](https://github.com/containernetworking/cni/issues), and code and documentation improvements.
 If you intend to contribute to code or documentation, please read [CONTRIBUTING.md](CONTRIBUTING.md). Also see the [contact section](#contact) in this README.
 
-The CNI project has a [biweekly meeting](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MHN0c2FiaHJiNWI3MDQ1MjRycm42Y3M4M2FfMjAyNTA5MDFUMTUwMDAwWiAyMmM0NjU1ZjFjMjkzZTg0NDRhNTU2OTVmNDIxODg3MDgwYzc1OWU0YTQ1MjVhYmQ2NTFmYmI2MGVlYTc2YzE5QGc&tmsrc=22c4655f1c293e8444a55695f421887080c759e4a4525abd651fbb60eea76c19%40group.calendar.google.com&scp=ALL) on [jitsi](https://meet.jit.si/CNIMaintainersMeeting). It takes place Mondays at 11:00 US/Eastern. All are welcome to join.
+The CNI project has a [biweekly meeting](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=Yzg1NDlibnA5Y2c0Nm5scDI4ZG5udWpmY2JfMjAyNTEwMTNUMTQwMDAwWiAyMmM0NjU1ZjFjMjkzZTg0NDRhNTU2OTVmNDIxODg3MDgwYzc1OWU0YTQ1MjVhYmQ2NTFmYmI2MGVlYTc2YzE5QGc&tmsrc=22c4655f1c293e8444a55695f421887080c759e4a4525abd651fbb60eea76c19%40group.calendar.google.com&scp=ALL) on [jitsi](https://meet.jit.si/CNIMaintainersMeeting) ([notes](https://github.com/containernetworking/meeting-notes)). It takes place Mondays at 10:00 US/Eastern. All are welcome to join.
 
 ## Why develop CNI?
 
