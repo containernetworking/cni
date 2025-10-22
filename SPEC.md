@@ -69,7 +69,7 @@ Released versions of the spec are available as Git tags.
 
 This document proposes a generic plugin-based networking solution for application containers on Linux, the _Container Networking Interface_, or _CNI_.
 
-For the purposes of this proposal, we define three terms very specifically:
+For the purposes of this proposal, we define four terms very specifically:
 - _container_ is a network isolation domain, though the actual isolation technology is not defined by the specification. This could be a [network namespace][namespaces] or a virtual machine, for example.
 - _network_ refers to a group of endpoints that are uniquely addressable that can communicate amongst each other. This could be either an individual container (as specified above), a machine, or some other network device (e.g. a router). Containers can be conceptually _added to_ or _removed from_ one or more networks.
 - _runtime_ is the program responsible for executing CNI plugins.
