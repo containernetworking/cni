@@ -601,7 +601,9 @@ Plugins provided a `prevResult` key as part of their request configuration must 
 #### Delegated plugins (IPAM)
 Delegated plugins may omit irrelevant sections.
 
-Delegated IPAM plugins must return an abbreviated _Success_ object. Specifically, it is missing the `interfaces` array, as well as the `interface` entry in `ips`.
+Delegated IPAM plugins must return an abbreviated _Success_ object. 
+- The `interfaces` field is optional. Any interfaces provided must not have the `sandbox` field defined. Entries must not refer to interfaces in the sandbox. The delegating plugin should use the returned interface for host-side connectivity. For example, it may specify the uplink for a macvlan interface.
+- The `interface` field in the `ips` list is optional. If missing, it is assumed to apply to the interface specified by CNI_IFNAME.
 
 
 ### VERSION Success
