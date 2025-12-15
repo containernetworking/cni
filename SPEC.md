@@ -108,7 +108,7 @@ require this.
 A network configuration consists of a JSON object with the following keys:
 
 - `cniVersion` (string): [Semantic Version 2.0](https://semver.org) of CNI specification to which this configuration list and all the individual configurations conform. Currently "1.1.0"
-- `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-selection) below.
+- `cniVersions` (string list): List of all CNI versions which this configuration supports. See [version selection](#version-considerations) below.
 - `name` (string): Network name. This should be unique across all network configurations on a host (or other administrative domain).  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore, dot (.) or hyphen (-). Must not contain characters disallowed in file paths.
 - `disableCheck` (boolean): Either `true` or `false`.  If `disableCheck` is `true`, runtimes must not call `CHECK` for this network configuration list.  This allows an administrator to prevent `CHECK`ing where a combination of plugins is known to return spurious errors.
 - `disableGC` (boolean): Either `true` or `false`.  If `disableGC` is `true`, runtimes must not call `GC` for this network configuration list.  This allows an administrator to prevent `GC`ing when it is known that garbage collection may have undesired effects (e.g. shared configuration between multiple runtimes).
