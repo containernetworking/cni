@@ -18,6 +18,9 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"os/exec"
+	"runtime"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -144,6 +147,75 @@ var _ = Describe("RawExec", func() {
 			_, err := execer.ExecPlugin(ctx, "/tmp/some/invalid/plugin/path", stdin, environ)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(ContainSubstring("/tmp/some/invalid/plugin/path")))
+		})
+	})
+
+	Context("when the plugin binary is temporarily busy (ETXTBSY)", func() {
+		var (
+			scriptPath string
+			scriptFile *os.File
+		)
+
+		BeforeEach(func() {
+			if runtime.GOOS != "linux" {
+				Skip("ETXTBSY is Linux-specific")
+			}
+
+			// create a trivial executable script simulating a CNI plugin
+			var err error
+			scriptFile, err = os.CreateTemp("", "cni_etxtbsy_test_*.sh")
+			Expect(err).NotTo(HaveOccurred())
+			scriptPath = scriptFile.Name()
+
+			_, err = scriptFile.WriteString("#!/bin/sh\necho 'hello from retry test'\n")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(scriptFile.Chmod(0755)).To(Succeed())
+			// keep scriptFile open for writing to trigger ETXTBSY
+		})
+
+		AfterEach(func() {
+			scriptFile.Close()
+			os.Remove(scriptPath)
+		})
+
+		It("retries and succeeds after the file is no longer busy", func() {
+			// first, verify that exec actually fails with ETXTBSY while
+			// the file is still open for writing
+			cmd := exec.Command(scriptPath)
+			err := cmd.Run()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("text file busy"))
+
+			// close the file after 500ms so the retry (which sleeps 1s)
+			// finds the file available on its second attempt
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				scriptFile.Close()
+			}()
+
+			start := time.Now()
+			resultBytes, err := execer.ExecPlugin(ctx, scriptPath, []byte{}, []string{})
+			elapsed := time.Since(start)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(resultBytes)).To(ContainSubstring("hello from retry test"))
+
+			// the retry sleeps 1s, so elapsed must be >= 1s, proving the
+			// first attempt failed and the retry loop was exercised
+			Expect(elapsed).To(BeNumerically(">=", time.Second))
+		})
+
+		It("does not retry when the file is not busy", func() {
+			// close the file so there is no ETXTBSY
+			scriptFile.Close()
+
+			start := time.Now()
+			resultBytes, err := execer.ExecPlugin(ctx, scriptPath, []byte{}, []string{})
+			elapsed := time.Since(start)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(resultBytes)).To(ContainSubstring("hello from retry test"))
+
+			// should complete well under the 1s retry sleep
+			Expect(elapsed).To(BeNumerically("<", 500*time.Millisecond))
 		})
 	})
 })
