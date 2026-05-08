@@ -32,12 +32,14 @@ type RawExec struct {
 }
 
 func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData []byte, environ []string) ([]byte, error) {
-	var stdout, stderr *bytes.Buffer
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
 
 	// Retry the command on "text file busy" errors
 	for i := 0; i <= 5; i++ {
-		stdout = &bytes.Buffer{}
-		stderr = &bytes.Buffer{}
+		stdout.Reset()
+		stderr.Reset()
+
 		c := exec.CommandContext(ctx, pluginPath)
 		c.Env = environ
 		c.Stdin = bytes.NewBuffer(stdinData)
