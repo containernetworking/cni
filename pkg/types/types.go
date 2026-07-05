@@ -180,6 +180,7 @@ func (d *DNS) Copy() *DNS {
 type Route struct {
 	Dst      net.IPNet
 	GW       net.IP
+	GWs      []net.IP
 	MTU      int
 	AdvMSS   int
 	Priority int
@@ -198,7 +199,7 @@ func (r *Route) String() string {
 		scope = fmt.Sprintf("%d", *r.Scope)
 	}
 
-	return fmt.Sprintf("{Dst:%+v GW:%v MTU:%d AdvMSS:%d Priority:%d Table:%s Scope:%s}", r.Dst, r.GW, r.MTU, r.AdvMSS, r.Priority, table, scope)
+	return fmt.Sprintf("{Dst:%+v GW:%v GWs:%v MTU:%d AdvMSS:%d Priority:%d Table:%s Scope:%s}", r.Dst, r.GW, r.GWs, r.MTU, r.AdvMSS, r.Priority, table, scope)
 }
 
 func (r *Route) Copy() *Route {
@@ -213,6 +214,11 @@ func (r *Route) Copy() *Route {
 		AdvMSS:   r.AdvMSS,
 		Priority: r.Priority,
 		Scope:    r.Scope,
+	}
+
+	if len(r.GWs) > 0 {
+		route.GWs = make([]net.IP, len(r.GWs))
+		copy(route.GWs, r.GWs)
 	}
 
 	if r.Table != nil {
@@ -277,13 +283,14 @@ func (e *Error) Print() error {
 
 // JSON (un)marshallable types
 type route struct {
-	Dst      IPNet  `json:"dst"`
-	GW       net.IP `json:"gw,omitempty"`
-	MTU      int    `json:"mtu,omitempty"`
-	AdvMSS   int    `json:"advmss,omitempty"`
-	Priority int    `json:"priority,omitempty"`
-	Table    *int   `json:"table,omitempty"`
-	Scope    *int   `json:"scope,omitempty"`
+	Dst      IPNet    `json:"dst"`
+	GW       net.IP   `json:"gw,omitempty"`
+	GWs      []net.IP `json:"gws,omitempty"`
+	MTU      int      `json:"mtu,omitempty"`
+	AdvMSS   int      `json:"advmss,omitempty"`
+	Priority int      `json:"priority,omitempty"`
+	Table    *int     `json:"table,omitempty"`
+	Scope    *int     `json:"scope,omitempty"`
 }
 
 func (r *Route) UnmarshalJSON(data []byte) error {
@@ -294,6 +301,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 
 	r.Dst = net.IPNet(rt.Dst)
 	r.GW = rt.GW
+	r.GWs = rt.GWs
 	r.MTU = rt.MTU
 	r.AdvMSS = rt.AdvMSS
 	r.Priority = rt.Priority
@@ -307,6 +315,7 @@ func (r Route) MarshalJSON() ([]byte, error) {
 	rt := route{
 		Dst:      IPNet(r.Dst),
 		GW:       r.GW,
+		GWs:      r.GWs,
 		MTU:      r.MTU,
 		AdvMSS:   r.AdvMSS,
 		Priority: r.Priority,
