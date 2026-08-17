@@ -585,6 +585,7 @@ Plugins must output a JSON object with the following keys upon a successful `ADD
 - `routes`: Routes created by this attachment:
     - `dst`: The destination of the route, in CIDR notation
     - `gw`: The next hop address. If unset, a value in `gateway` in the `ips` array may be used.
+    - `gws` : A list of next hop addresses for ECMP (Equal-Cost Multi-Path) routing. Each entry is an IP address string. Use this instead of `gw` when the route has multiple gateways.
     - `mtu` (uint): The MTU (Maximum transmission unit) along the path to the destination.
     - `advmss` (uint): The MSS (Maximal Segment Size) to advertise to these destinations when establishing TCP connections.
     - `priority` (uint): The priority of route, lower is higher.
