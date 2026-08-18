@@ -24,7 +24,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/containernetworking/cni/pkg/types"
+	types040 "github.com/containernetworking/cni/pkg/types/040"
 	current "github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/types/create"
 )
 
 func testResult() *current.Result {
@@ -341,5 +343,46 @@ var _ = Describe("Current types operations", func() {
 		Expect(json).To(MatchJSON(`{
     "address": "10.1.2.3/24"
 }`))
+	})
+})
+
+var _ = Describe("Result version conversion with nil elements", func() {
+	// A JSON null in a result array (such as {"ips":[null]}) unmarshals to a nil
+	// element that the version converters used to dereference and panic on.
+
+	It("skips null ips and interfaces converting 0.4.0 up to 1.0.0", func() {
+		from := &types040.Result{
+			CNIVersion: "0.4.0",
+			Interfaces: []*types040.Interface{nil},
+			IPs:        []*types040.IPConfig{nil},
+		}
+		res, err := from.GetAsVersion("1.0.0")
+		Expect(err).NotTo(HaveOccurred())
+		r, ok := res.(*current.Result)
+		Expect(ok).To(BeTrue())
+		Expect(r.Interfaces).To(BeEmpty())
+		Expect(r.IPs).To(BeEmpty())
+	})
+
+	It("skips null ips and interfaces converting 1.0.0 down to 0.4.0", func() {
+		from := &current.Result{
+			CNIVersion: "1.0.0",
+			Interfaces: []*current.Interface{nil},
+			IPs:        []*current.IPConfig{nil},
+		}
+		res, err := from.GetAsVersion("0.4.0")
+		Expect(err).NotTo(HaveOccurred())
+		r, ok := res.(*types040.Result)
+		Expect(ok).To(BeTrue())
+		Expect(r.Interfaces).To(BeEmpty())
+		Expect(r.IPs).To(BeEmpty())
+	})
+
+	It("skips a null route converting 0.4.0 down to 0.2.0", func() {
+		res, err := create.CreateFromBytes([]byte(
+			`{"cniVersion":"0.4.0","ips":[{"version":"4","address":"1.2.3.4/24"},null],"routes":[null]}`))
+		Expect(err).NotTo(HaveOccurred())
+		_, err = res.GetAsVersion("0.2.0")
+		Expect(err).NotTo(HaveOccurred())
 	})
 })

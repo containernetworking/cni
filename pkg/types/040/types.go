@@ -149,7 +149,11 @@ func convertTo02x(from types.Result, toVersion string) (types.Result, error) {
 		DNS:        *fromResult.DNS.Copy(),
 	}
 
+	// A JSON null in the source array unmarshals to a nil element; skip it.
 	for _, fromIP := range fromResult.IPs {
+		if fromIP == nil {
+			continue
+		}
 		// Only convert the first IP address of each version as 0.2.0
 		// and earlier cannot handle multiple IP addresses
 		if fromIP.Version == "4" && toResult.IP4 == nil {
@@ -169,6 +173,9 @@ func convertTo02x(from types.Result, toVersion string) (types.Result, error) {
 	}
 
 	for _, fromRoute := range fromResult.Routes {
+		if fromRoute == nil {
+			continue
+		}
 		is4 := fromRoute.Dst.IP.To4() != nil
 		if is4 && toResult.IP4 != nil {
 			toResult.IP4.Routes = append(toResult.IP4.Routes, types.Route{

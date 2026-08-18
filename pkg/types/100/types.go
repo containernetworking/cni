@@ -171,10 +171,17 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 		DNS:        *fromResult.DNS.Copy(),
 		Routes:     []*types.Route{},
 	}
+	// A JSON null in the source array unmarshals to a nil element; skip it.
 	for _, fromIntf := range fromResult.Interfaces {
+		if fromIntf == nil {
+			continue
+		}
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceFrom040(fromIntf))
 	}
 	for _, fromIPC := range fromResult.IPs {
+		if fromIPC == nil {
+			continue
+		}
 		toResult.IPs = append(toResult.IPs, convertIPConfigFrom040(fromIPC))
 	}
 	for _, fromRoute := range fromResult.Routes {
@@ -216,9 +223,15 @@ func convertTo04x(from types.Result, toVersion string) (types.Result, error) {
 		Routes:     []*types.Route{},
 	}
 	for _, fromIntf := range fromResult.Interfaces {
+		if fromIntf == nil {
+			continue
+		}
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceTo040(fromIntf))
 	}
 	for _, fromIPC := range fromResult.IPs {
+		if fromIPC == nil {
+			continue
+		}
 		toResult.IPs = append(toResult.IPs, convertIPConfigTo040(fromIPC))
 	}
 	for _, fromRoute := range fromResult.Routes {
