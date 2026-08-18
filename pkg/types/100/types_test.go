@@ -24,7 +24,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/containernetworking/cni/pkg/types"
+	types040 "github.com/containernetworking/cni/pkg/types/040"
 	current "github.com/containernetworking/cni/pkg/types/100"
+	"github.com/containernetworking/cni/pkg/types/create"
 )
 
 func testResult() *current.Result {
@@ -84,6 +86,74 @@ func testResult() *current.Result {
 }
 
 var _ = Describe("Current types operations", func() {
+	It("preserves interface positions and IP references across list-shaped conversions", func() {
+		ipv4, err := types.ParseCIDR("192.0.2.10/24")
+		Expect(err).NotTo(HaveOccurred())
+
+		// A JSON null entry decodes to a nil pointer. List-shaped conversions
+		// preserve its position so IPConfig.Interface indices remain stable.
+		from := &types040.Result{
+			CNIVersion: "0.4.0",
+			Interfaces: []*types040.Interface{
+				nil,
+				{Name: "eth0", Sandbox: "/var/run/netns/test"},
+				{Name: "net1", Sandbox: "/var/run/netns/test"},
+			},
+			IPs: []*types040.IPConfig{
+				{Version: "4", Interface: types040.Int(1), Address: *ipv4},
+			},
+		}
+
+		out, err := from.GetAsVersion("1.0.0")
+		Expect(err).NotTo(HaveOccurred())
+
+		got := out.(*current.Result)
+		Expect(got.Interfaces).To(HaveLen(3))
+		Expect(got.Interfaces[0]).To(BeNil())
+		Expect(got.Interfaces[1]).NotTo(BeNil())
+		Expect(got.Interfaces[1].Name).To(Equal("eth0"))
+
+		Expect(got.IPs).To(HaveLen(1))
+		Expect(got.IPs[0].Interface).NotTo(BeNil())
+		Expect(*got.IPs[0].Interface).To(Equal(1))
+		Expect(*got.IPs[0].Interface).To(BeNumerically("<", len(got.Interfaces)))
+
+		roundTrip, err := got.GetAsVersion("0.4.0")
+		Expect(err).NotTo(HaveOccurred())
+
+		back := roundTrip.(*types040.Result)
+		Expect(back.Interfaces).To(HaveLen(3))
+		Expect(back.Interfaces[0]).To(BeNil())
+		Expect(back.Interfaces[1].Name).To(Equal("eth0"))
+		Expect(*back.IPs[0].Interface).To(Equal(1))
+	})
+
+	It("converts a JSON result with null entries and keeps the null slots in place", func() {
+		input := []byte(`{"cniVersion":"0.4.0","interfaces":[null,{"name":"eth0"},{"name":"net1"}],"ips":[{"version":"4","interface":1,"address":"192.0.2.10/24"}],"routes":[null]}`)
+		result, err := create.CreateFromBytes(input)
+		Expect(err).NotTo(HaveOccurred())
+
+		converted, err := result.GetAsVersion("1.0.0")
+		Expect(err).NotTo(HaveOccurred())
+
+		got := converted.(*current.Result)
+		Expect(got.Interfaces).To(HaveLen(3))
+		Expect(got.Interfaces[0]).To(BeNil())
+		Expect(got.Interfaces[1].Name).To(Equal("eth0"))
+		Expect(*got.IPs[0].Interface).To(Equal(1))
+
+		// The nil slots must round-trip to JSON null in place, not be dropped.
+		blob, err := json.Marshal(got)
+		Expect(err).NotTo(HaveOccurred())
+		raw := struct {
+			Interfaces []json.RawMessage `json:"interfaces"`
+			Routes     []json.RawMessage `json:"routes"`
+		}{}
+		Expect(json.Unmarshal(blob, &raw)).To(Succeed())
+		Expect(string(raw.Interfaces[0])).To(Equal("null"))
+		Expect(string(raw.Routes[0])).To(Equal("null"))
+	})
+
 	It("correctly encodes a 1.1.0 Result", func() {
 		res := testResult()
 

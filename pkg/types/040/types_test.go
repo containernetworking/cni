@@ -85,6 +85,26 @@ func testResult() *types040.Result {
 }
 
 var _ = Describe("040 types operations", func() {
+	It("skips nil IP and route entries when downconverting to 0.2.0", func() {
+		// A JSON null in ips or routes decodes to a nil element. The 0.2.0 shape
+		// cannot represent it, so it is skipped while the valid entries still
+		// convert. The nil is placed first to prove later entries are not lost.
+		res := testResult()
+		res.IPs = append([]*types040.IPConfig{nil}, res.IPs...)
+		res.Routes = append([]*types.Route{nil}, res.Routes...)
+
+		out, err := res.GetAsVersion("0.2.0")
+		Expect(err).NotTo(HaveOccurred())
+
+		got := out.(*types020.Result)
+		Expect(got.IP4).NotTo(BeNil())
+		Expect(got.IP6).NotTo(BeNil())
+		Expect(got.IP4.IP.IP.String()).To(Equal("1.2.3.30"))
+		Expect(got.IP6.IP.IP.String()).To(Equal("abcd:1234:ffff::cdde"))
+		Expect(got.IP4.Routes).To(HaveLen(1))
+		Expect(got.IP4.Routes[0].Dst.String()).To(Equal("15.5.6.0/24"))
+	})
+
 	It("correctly encodes a 0.3.x Result", func() {
 		res := testResult()
 
