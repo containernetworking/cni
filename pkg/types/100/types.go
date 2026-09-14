@@ -145,6 +145,10 @@ func convertFrom02x(from types.Result, toVersion string) (types.Result, error) {
 }
 
 func convertIPConfigFrom040(from *types040.IPConfig) *IPConfig {
+	// A JSON null in one of the result's lists decodes to a nil element.
+	if from == nil {
+		return nil
+	}
 	to := &IPConfig{
 		Address: from.Address,
 		Gateway: from.Gateway,
@@ -157,6 +161,9 @@ func convertIPConfigFrom040(from *types040.IPConfig) *IPConfig {
 }
 
 func convertInterfaceFrom040(from *types040.Interface) *Interface {
+	if from == nil {
+		return nil
+	}
 	return &Interface{
 		Name:    from.Name,
 		Mac:     from.Mac,
@@ -171,6 +178,7 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 		DNS:        *fromResult.DNS.Copy(),
 		Routes:     []*types.Route{},
 	}
+	// Preserve nil slots: IPConfig.Interface indexes this slice by position.
 	for _, fromIntf := range fromResult.Interfaces {
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceFrom040(fromIntf))
 	}
@@ -184,6 +192,9 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 }
 
 func convertIPConfigTo040(from *IPConfig) *types040.IPConfig {
+	if from == nil {
+		return nil
+	}
 	version := "6"
 	if from.Address.IP.To4() != nil {
 		version = "4"
@@ -201,6 +212,9 @@ func convertIPConfigTo040(from *IPConfig) *types040.IPConfig {
 }
 
 func convertInterfaceTo040(from *Interface) *types040.Interface {
+	if from == nil {
+		return nil
+	}
 	return &types040.Interface{
 		Name:    from.Name,
 		Mac:     from.Mac,
