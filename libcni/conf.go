@@ -317,6 +317,7 @@ func ConfFiles(dir string, extensions []string) ([]string, error) {
 		for _, ext := range extensions {
 			if fileExt == ext {
 				confFiles = append(confFiles, filepath.Join(dir, f.Name()))
+				break
 			}
 		}
 	}
