@@ -222,7 +222,7 @@ The runtime must execute the plugin in the runtime's networking domain. (For mos
 
 Protocol parameters are passed to the plugins via OS environment variables.
 
-- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, `GC`, or `VERSION`.
+- `CNI_COMMAND`: indicates the desired operation; `ADD`, `DEL`, `CHECK`, `STATUS`, `GC`, or `VERSION`.
 - `CNI_CONTAINERID`: Container ID. A unique plaintext identifier for a container, allocated by the runtime. Must not be empty.  Must start with an alphanumeric character, optionally followed by any combination of one or more alphanumeric characters, underscore (), dot (.) or hyphen (-).
 - `CNI_NETNS`: A reference to the container's "isolation domain". If using network namespaces, then a path to the network namespace (e.g. `/run/netns/[nsname]`)
 - `CNI_IFNAME`: Name of the interface to create inside the container; if the plugin is unable to use this interface name it must return an error.
@@ -234,7 +234,7 @@ A plugin must exit with a return code of 0 on success, and non-zero on failure. 
 
 ### CNI operations
 
-CNI defines 5 operations: `ADD`, `DEL`, `CHECK`, `GC`, and `VERSION`. These are passed to the plugin via the `CNI_COMMAND` environment variable.
+CNI defines 6 operations: `ADD`, `DEL`, `CHECK`, `STATUS`, `GC`, and `VERSION`. These are passed to the plugin via the `CNI_COMMAND` environment variable.
 
 #### `ADD`: Add container to network, or apply modifications
 
