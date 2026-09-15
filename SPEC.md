@@ -242,7 +242,7 @@ A CNI plugin, upon receiving an `ADD` command, should either
 - create the interface defined by `CNI_IFNAME` inside the container at `CNI_NETNS`, or
 - adjust the configuration of the interface defined by `CNI_IFNAME` inside the container at `CNI_NETNS`.
 
-If the CNI plugin is successful, it must output a [result structure](#Success) (see below) on standard out. If the plugin was supplied a `prevResult` as part of its input configuration, it MUST handle `prevResult` by either passing it through, or modifying it appropriately.
+If the CNI plugin is successful, it must output a [result structure](#VERSION-Success) (see below) on standard out. If the plugin was supplied a `prevResult` as part of its input configuration, it MUST handle `prevResult` by either passing it through, or modifying it appropriately.
 
 If an interface of the requested name already exists in the container, the CNI plugin MUST return with an error.
 
