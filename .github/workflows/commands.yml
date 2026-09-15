@@ -3,6 +3,9 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   retest:
     if: github.repository == 'containernetworking/cni'
