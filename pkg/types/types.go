@@ -20,6 +20,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"slices"
 )
 
 // like net.IPNet but adds JSON marshalling and unmarshalling
@@ -207,8 +208,11 @@ func (r *Route) Copy() *Route {
 	}
 
 	route := &Route{
-		Dst:      r.Dst,
-		GW:       r.GW,
+		Dst: net.IPNet{
+			IP:   slices.Clone(r.Dst.IP),
+			Mask: slices.Clone(r.Dst.Mask),
+		},
+		GW:       slices.Clone(r.GW),
 		MTU:      r.MTU,
 		AdvMSS:   r.AdvMSS,
 		Priority: r.Priority,

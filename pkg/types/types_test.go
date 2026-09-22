@@ -118,6 +118,38 @@ var _ = Describe("Types", func() {
 		It("formats as a string with a hex mask", func() {
 			Expect(example.String()).To(Equal(`{Dst:{IP:1.2.3.0 Mask:ffffff00} GW:1.2.3.1 MTU:1500 AdvMSS:1340 Priority:100 Table:50 Scope:253}`))
 		})
+
+		DescribeTable("copies addresses independently",
+			func(destination, gateway string) {
+				dst, err := types.ParseCIDR(destination)
+				Expect(err).NotTo(HaveOccurred())
+				example.Dst = *dst
+				example.GW = net.ParseIP(gateway)
+				original, err := json.Marshal(example)
+				Expect(err).NotTo(HaveOccurred())
+
+				copied := example.Copy()
+				Expect(copied).To(Equal(&example))
+				copied.Dst.IP[0] ^= 0xff
+				copied.Dst.Mask[0] ^= 0xff
+				copied.GW[0] ^= 0xff
+				*copied.Table = 100
+				*copied.Scope = 0
+
+				after, err := json.Marshal(example)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(after).To(Equal(original))
+			},
+			Entry("IPv4", "192.0.2.0/24", "192.0.2.1"),
+			Entry("IPv6", "2001:db8::/64", "2001:db8::1"),
+		)
+
+		It("preserves nil addresses when copying", func() {
+			empty := &types.Route{}
+			Expect(empty.Copy()).To(Equal(empty))
+			var absent *types.Route
+			Expect(absent.Copy()).To(BeNil())
+		})
 	})
 
 	Describe("Error type", func() {
