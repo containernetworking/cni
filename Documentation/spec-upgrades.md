@@ -63,9 +63,9 @@ If you maintain CNI configuration files for a container runtime that uses CNI,
 ensure that the configuration files specify a `cniVersion` field and that the
 version there is supported by your container runtime and CNI plugins.
 Configuration files without a version field should be given version 0.2.0. 
-The CNI spec includes example configuration files for 
-[single plugins](SPEC.md#example-configurations)
-and for [lists of chained plugins](SPEC.md#example-configurations).
+The CNI spec describes [plugin configuration objects](../SPEC.md#plugin-configuration-objects)
+and includes a [network configuration example](../SPEC.md#example-configuration)
+with a list of chained plugins.
 
 Consult the documentation for your runtime and plugins to determine what
 CNI spec versions they support. Test any plugin upgrades before deploying to 
@@ -94,7 +94,7 @@ command with the following JSON data:
 ```
 
 Second, for the `ADD` command, a plugin must respect the `cniVersion` field
-provided in the [network configuration JSON](SPEC.md#network-configuration). 
+provided in the [network configuration JSON](../SPEC.md#configuration-format).
 That field is a request for the plugin to return results of a particular format:
 
 - If the `cniVersion` field is not present, then spec v0.2.0 should be assumed
@@ -102,7 +102,7 @@ That field is a request for the plugin to return results of a particular format:
 
 - If the plugin doesn't support the version, the plugin must error.
 
-- Otherwise, the plugin must return a [CNI Result](SPEC.md#result)
+- Otherwise, the plugin must return a [CNI Result](../SPEC.md#add-success)
 	in the format requested.
 
 Result formats for older CNI spec versions are available in the
@@ -203,15 +203,15 @@ call both new and legacy plugins, and handle the results from either.
 
 When calling a plugin, the runtime must request that the plugin respond in a
 particular format by specifying the `cniVersion` field in the
-[Network Configuration](SPEC.md#network-configuration)
+[Network Configuration](../SPEC.md#configuration-format)
 JSON block.  The plugin will then respond with
-a [Result](SPEC.md#result)
+a [Result](../SPEC.md#add-success)
 in the format defined by that CNI spec version, and the runtime must parse
 and handle this result.
 
 #### Handle errors due to version incompatibility
 Plugins may respond with error indicating that they don't support the requested
-CNI version (see [Well-known Error Codes](SPEC.md#well-known-error-codes)),
+CNI version (see [Well-known Error Codes](../SPEC.md#error)),
 e.g.
 ```json
 {
