@@ -1,0 +1,201 @@
+// Copyright 2019 CNI authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cni.v2;
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/containernetworking/cni/types/v2";
+
+service CNI {
+  rpc ListNetworkConfig(ListNetworkConfigRequest) returns (ListNetworkConfigReply);
+
+  rpc ListNetworkList(ListNetworkListRequest) returns (ListNetworkListReply);
+  rpc AddNetworkList(AddNetworkListRequest)returns (AddNetworkListReply);
+  rpc CheckNetworkList(CheckNetworkListRequest) returns (CheckNetworkListReply);
+  rpc DelNetworkList(DelNetworkListRequest) returns (DelNetworkListReply);
+  rpc ValidateNetworkList(ValidateNetworkListRequest)returns (ValidateNetworkListReply);
+
+  rpc AddNetwork(AddNetworkRequest) returns (AddNetworkReply);
+  rpc CheckNetwork(CheckNetworkRequest) returns (CheckNetworkReply);
+  rpc DelNetwork(DelNetworkRequest) returns (DelNetworkReply);
+  rpc ValidateNetwork(ValidateNetworkRequest) returns (ValidateNetworkReply);
+}
+
+message ListNetworkConfigRequest{
+}
+
+message ListNetworkConfigReply{
+  message NetworkConfigNameAndType {
+    string name = 1;
+    enum NetworkConfigType {
+      UNIVERSAL = 0;
+      CONFIG = 1;
+      CONFIG_LIST = 2;
+    }
+    NetworkConfigType type = 2;
+  }
+  repeated NetworkConfigNameAndType network = 1;
+}
+
+message ValidateNetworkRequest{
+  NetworkConfig networkConfig = 1;
+}
+message ValidateNetworkReply{
+  repeated string capabilities = 1;
+}
+
+message ValidateNetworkListRequest{
+  NetworkConfigList networkConfigList = 1;
+}
+message ValidateNetworkListReply{
+  repeated string capabilities = 1;
+}
+
+message DelNetworkRequest{
+  NetworkConfig networkConfig = 1;
+  RuntimeConf runtimeConf = 2;
+}
+message DelNetworkReply{
+}
+
+message CheckNetworkRequest{
+  NetworkConfig networkConfig = 1;
+  RuntimeConf runtimeConf = 2;
+}
+message CheckNetworkReply{
+}
+
+message AddNetworkRequest{
+  NetworkConfig networkConfig = 1;
+  RuntimeConf runtimeConf = 2;
+}
+message AddNetworkReply{
+  Result result = 1;
+}
+
+message DelNetworkListRequest{
+  NetworkConfigList networkConfigList = 1;
+  RuntimeConf runtimeConf = 2;
+}
+message DelNetworkListReply{
+}
+
+message CheckNetworkListRequest{
+  NetworkConfigList networkConfigList = 1;
+  RuntimeConf runtimeConf = 2;
+}
+message CheckNetworkListReply{
+}
+
+message AddNetworkListRequest{
+  NetworkConfigList networkConfigList = 1;
+  RuntimeConf runtimeConf = 2;
+}
+
+message AddNetworkListReply{
+  Result result = 1;
+}
+
+message ListNetworkListRequest {
+}
+
+message ListNetworkListReply {
+  repeated NetworkConfigList networkConfigList = 1;
+}
+
+message NetworkConfigList {
+  string name = 1;
+  string cniVersion = 2;
+  bool disableCheck = 3;
+  repeated NetworkConfig plugins = 4;
+  repeated google.protobuf.Any extra = 5;
+}
+
+// describes a network.
+message NetworkConfig {
+  string cniVersion = 1;
+
+  string name = 2;
+  string type = 3;
+  map<string, bool> capabilities = 4;
+  IPAM         ipam = 5;
+  DNS          dns = 6;
+
+  repeated google.protobuf.Any extra = 99;
+}
+
+message IPAM {
+  string type = 1;
+}
+
+message DNS {
+  repeated string nameservers = 1;
+  string domain = 2;
+  repeated string search = 3;
+  repeated string options = 4;
+}
+
+message Result {
+  string cniVersion = 1;
+  repeated Interface interfaces = 2;
+  repeated IPConfig ips = 3;
+  repeated Route routes = 4 ;
+  DNS dns = 5;
+}
+
+message Route  {
+  IPNet dst = 1;
+  bytes gw = 2;
+}
+
+message IPNet{
+  bytes ip = 1;
+  bytes ipMask = 2;
+}
+
+// IPConfig contains values necessary to configure an IP address on an interface
+message IPConfig  {
+  // Index into Result structs Interfaces list
+  int32 interface = 1;
+  IPNet address = 2;
+  bytes gateway = 3;
+}
+
+// contains values about the created interfaces
+message Interface  {
+  string name = 1;
+  string mac = 2;
+  string sandbox = 3;
+}
+
+
+// A RuntimeConf holds the arguments to one invocation of a CNI plugin
+// excepting the network configuration, with the nested exception that
+// the `runtimeConfig` from the network configuration is included
+// here.
+message RuntimeConf  {
+  string ContainerID = 1;
+  string NetNS = 2;
+  string IfName = 3;
+  //Args        [][2]string
+  // A dictionary of capability-specific data passed by the runtime
+  // to plugins as top-level keys in the 'runtimeConfig' dictionary
+  // of the plugin's stdin data.  libcni will ensure that only keys
+  // in this map which match the capabilities of the plugin are passed
+  // to the plugin
+  map<string, google.protobuf.Any>    capabilityArgs = 5;
+}
