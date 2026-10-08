@@ -1506,6 +1506,34 @@ var _ = Describe("Invoking plugins", func() {
 			})
 		})
 		Describe("GCNetworkList", func() {
+			DescribeTable("reports cache read errors and still runs supported GC commands", func(cniVersion string, runsGC bool) {
+				netConfigList.CNIVersion = cniVersion
+				resultsPath := filepath.Join(cacheDirPath, "results")
+				Expect(os.WriteFile(resultsPath, []byte("not a directory"), 0o600)).To(Succeed())
+
+				err := cniConfig.GCNetworkList(ctx, netConfigList, &libcni.GCArgs{})
+				Expect(err).To(HaveOccurred())
+				var pathErr *os.PathError
+				Expect(errors.As(err, &pathErr)).To(BeTrue())
+				Expect(pathErr.Path).To(Equal(resultsPath))
+
+				for _, plugin := range plugins {
+					if runsGC {
+						commands, err := noop_debug.ReadCommandLog(plugin.commandFilePath)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(commands).To(HaveLen(1))
+						Expect(commands[0].Command).To(Equal("GC"))
+					} else {
+						commands, err := os.ReadFile(plugin.commandFilePath)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(commands).To(BeEmpty())
+					}
+				}
+			},
+				Entry("before GC support", "1.0.0", false),
+				Entry("with GC support", "1.1.0", true),
+			)
+
 			It("issues a DEL and GC as necessary", func() {
 				By("doing a CNI ADD")
 				_, err := cniConfig.AddNetworkList(ctx, netConfigList, runtimeConfig)
