@@ -217,5 +217,11 @@ var _ = Describe("RawExec", func() {
 			// should complete well under the 1s retry sleep
 			Expect(elapsed).To(BeNumerically("<", 500*time.Millisecond))
 		})
+
+		It("returns an error when the file stays busy after all retries", func() {
+			resultBytes, err := execer.ExecPlugin(ctx, scriptPath, nil, nil)
+			Expect(err).To(MatchError(ContainSubstring("text file busy")))
+			Expect(resultBytes).To(BeNil())
+		})
 	})
 })

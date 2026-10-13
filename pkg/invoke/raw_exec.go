@@ -58,12 +58,12 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 
 		// If the plugin is currently about to be written, then we wait a
 		// second and try it again
-		if strings.Contains(err.Error(), "text file busy") {
+		if i < 5 && strings.Contains(err.Error(), "text file busy") {
 			time.Sleep(time.Second)
 			continue
 		}
 
-		// All other errors except than the busy text file
+		// Return other errors, or the final error after all retries fail.
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
