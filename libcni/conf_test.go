@@ -736,6 +736,31 @@ var _ = Describe("NetworkConfFromBytes", func() {
 			Expect(conf.CNIVersion).To(Equal("1.1.0"))
 		})
 
+		DescribeTable("rejects a version list with no supported version", func(config string) {
+			conf, err := libcni.NetworkConfFromBytes([]byte(config))
+			Expect(err).To(MatchError(ContainSubstring("no supported CNI versions")))
+			Expect(conf).To(BeNil())
+		},
+			Entry("without cniVersion", `{"name":"test","cniVersions":["99.0.0"],"plugins":[{"type":"foo"}]}`),
+			Entry("with an empty cniVersion", `{"name":"test","cniVersion":"","cniVersions":["99.0.0","100.0.0"],"plugins":[{"type":"foo"}]}`),
+			Entry("with an unsupported cniVersion", `{"name":"test","cniVersion":"99.0.0","cniVersions":["100.0.0"],"plugins":[{"type":"foo"}]}`),
+			Entry("with only an unsupported cniVersion and an empty list", `{"name":"test","cniVersion":"99.0.0","cniVersions":[],"plugins":[{"type":"foo"}]}`),
+		)
+
+		It("rejects a file with no supported version before loading plugins", func() {
+			filename := filepath.Join(GinkgoT().TempDir(), "test.conflist")
+			Expect(os.WriteFile(filename, makeConfig("99.0.0"), 0o600)).To(Succeed())
+			conf, err := libcni.NetworkConfFromFile(filename)
+			Expect(err).To(MatchError(ContainSubstring("no supported CNI versions")))
+			Expect(conf).To(BeNil())
+		})
+
+		It("uses a supported cniVersion when all listed versions are unsupported", func() {
+			conf, err := libcni.NetworkConfFromBytes([]byte(`{"name":"test","cniVersion":"1.0.0","cniVersions":["99.0.0"],"plugins":[{"type":"foo"}]}`))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.CNIVersion).To(Equal("1.0.0"))
+		})
+
 		It("fails when invalid versions are specified", func() {
 			_, err := libcni.NetworkConfFromBytes(makeConfig("1.1.0", "0.4.0", "1.0.f"))
 			Expect(err).To(HaveOccurred())

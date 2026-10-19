@@ -156,6 +156,8 @@ func NetworkConfFromBytes(confBytes []byte) (*NetworkConfigList, error) {
 		})
 		if len(vs) > 0 {
 			cniVersion = vs[len(vs)-1]
+		} else if len(rvs) > 0 || cniVersion != "" {
+			return nil, fmt.Errorf("error parsing configuration list: no supported CNI versions")
 		}
 	}
 
