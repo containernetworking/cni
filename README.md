@@ -82,7 +82,7 @@ The CNI team also maintains some [core plugins in a separate repository](https:/
 
 ### Requirements
 
-The CNI spec is language agnostic.  To use the Go language libraries in this repository, you'll need a recent version of Go.  You can find the Go versions covered by our [automated tests](https://travis-ci.org/containernetworking/cni/builds) in [.travis.yaml](.travis.yml).
+The CNI spec is language agnostic.  To use the Go language libraries in this repository, you'll need a recent version of Go.  You can find the Go versions used by our automated tests in the [GitHub Actions test workflow](.github/workflows/test.yaml).
 
 ### Reference Plugins
 

@@ -40,9 +40,8 @@ This is a rough outline of how to prepare a contribution:
 - Push your changes to a topic branch in your fork of the repository.
 - If you changed code:
   - add automated tests to cover your changes, using the [Ginkgo](https://onsi.github.io/ginkgo/) & [Gomega](https://onsi.github.io/gomega/) style
-  - if the package did not previously have any test coverage, add it to the list
-   of `TESTABLE` packages in the `test.sh` script.
-  - run the full test script and ensure it passes
+  - run the full test script and ensure it passes; `test.sh` discovers all Go
+    packages automatically
 - Make sure any new code files have a license header (this is now enforced by automated tests)
 - Submit a pull request to the original repository.
 
@@ -50,22 +49,15 @@ This is a rough outline of how to prepare a contribution:
 
 We generally require test coverage of any new features or bug fixes.
 
-Here's how you can run the test suite on any system (even Mac or Windows) using
- [Vagrant](https://www.vagrantup.com/) and a hypervisor of your choice:
+Install a Go version used by the [GitHub Actions test workflow](.github/workflows/test.yaml).
+From the repository root, run the test script directly with Bash, as CI does:
 
 ```bash
-vagrant up
-vagrant ssh
-# you're now in a shell in a virtual machine
-sudo su
-cd /go/src/github.com/containernetworking/cni
-
 # to run the full test suite
-./test.sh
+bash ./test.sh
 
 # to focus on a particular test suite
-cd libcni
-go test
+PKGS=./libcni bash ./test.sh
 ```
 
 ## Acceptance policy
