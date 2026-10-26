@@ -774,9 +774,10 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 	}
 
 	// First, get the list of cached attachments
+	var errs []error
 	cachedAttachments, err := c.GetCachedAttachments("")
 	if err != nil {
-		return nil
+		errs = append(errs, fmt.Errorf("failed to get cached attachments: %w", err))
 	}
 
 	var validAttachments map[types.GCAttachment]interface{}
@@ -786,8 +787,6 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 			validAttachments[a] = nil
 		}
 	}
-
-	var errs []error
 
 	for _, cachedAttachment := range cachedAttachments {
 		if cachedAttachment.Network != list.Name {
