@@ -169,7 +169,9 @@ func convertFrom04x(from types.Result, toVersion string) (types.Result, error) {
 	toResult := &Result{
 		CNIVersion: toVersion,
 		DNS:        *fromResult.DNS.Copy(),
-		Routes:     []*types.Route{},
+	}
+	if fromResult.Routes != nil {
+		toResult.Routes = make([]*types.Route, 0, len(fromResult.Routes))
 	}
 	for _, fromIntf := range fromResult.Interfaces {
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceFrom040(fromIntf))
@@ -213,7 +215,9 @@ func convertTo04x(from types.Result, toVersion string) (types.Result, error) {
 	toResult := &types040.Result{
 		CNIVersion: toVersion,
 		DNS:        *fromResult.DNS.Copy(),
-		Routes:     []*types.Route{},
+	}
+	if fromResult.Routes != nil {
+		toResult.Routes = make([]*types.Route, 0, len(fromResult.Routes))
 	}
 	for _, fromIntf := range fromResult.Interfaces {
 		toResult.Interfaces = append(toResult.Interfaces, convertInterfaceTo040(fromIntf))

@@ -104,7 +104,10 @@ func convertFrom02x(from types.Result, toVersion string) (types.Result, error) {
 	toResult := &Result{
 		CNIVersion: toVersion,
 		DNS:        *fromResult.DNS.Copy(),
-		Routes:     []*types.Route{},
+	}
+	if (fromResult.IP4 != nil && fromResult.IP4.Routes != nil) ||
+		(fromResult.IP6 != nil && fromResult.IP6.Routes != nil) {
+		toResult.Routes = []*types.Route{}
 	}
 	if fromResult.IP4 != nil {
 		toResult.IPs = append(toResult.IPs, convert020IPConfig(fromResult.IP4, "4"))
@@ -128,7 +131,9 @@ func convertInternal(from types.Result, toVersion string) (types.Result, error) 
 	toResult := &Result{
 		CNIVersion: toVersion,
 		DNS:        *fromResult.DNS.Copy(),
-		Routes:     []*types.Route{},
+	}
+	if fromResult.Routes != nil {
+		toResult.Routes = make([]*types.Route, 0, len(fromResult.Routes))
 	}
 	for _, fromIntf := range fromResult.Interfaces {
 		toResult.Interfaces = append(toResult.Interfaces, fromIntf.Copy())
