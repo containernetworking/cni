@@ -830,10 +830,11 @@ func (c *CNIConfig) GCNetworkList(ctx context.Context, list *NetworkConfigList, 
 			// build config here
 			pluginConfig, err := InjectConf(plugin, inject)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to generate configuration to GC plugin %s: %w", plugin.Network.Type, err))
+				errs = append(errs, fmt.Errorf("failed to generate configuration to GC plugin %s: %w", pluginDescription(plugin.Network), err))
+				continue
 			}
 			if err := c.gcNetwork(ctx, pluginConfig); err != nil {
-				errs = append(errs, fmt.Errorf("failed to GC plugin %s: %w", plugin.Network.Type, err))
+				errs = append(errs, fmt.Errorf("failed to GC plugin %s: %w", pluginDescription(plugin.Network), err))
 			}
 		}
 	}
