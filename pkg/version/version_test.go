@@ -93,6 +93,21 @@ var _ = Describe("Version operations", func() {
 			Expect(reflect.DeepEqual(conf.PrevResult, expectedResult)).To(BeTrue())
 		})
 
+		It("injects the config version if the prevResult cniVersion is empty", func() {
+			conf := &types.PluginConf{
+				CNIVersion: "1.0.0",
+				Name:       "foobar",
+				Type:       "baz",
+				RawPrevResult: map[string]interface{}{
+					"cniVersion": "",
+				},
+			}
+
+			err := version.ParsePrevResult(conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.PrevResult.Version()).To(Equal("1.0.0"))
+		})
+
 		It("fails if the prevResult version is unknown", func() {
 			conf := &types.PluginConf{
 				CNIVersion: version.Current(),
