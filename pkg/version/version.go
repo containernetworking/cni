@@ -71,8 +71,8 @@ func ParsePrevResult(conf *types.PluginConf) error {
 	// Prior to 1.0.0, Result types may not marshal a CNIVersion. Since the
 	// result version must match the config version, if the Result's version
 	// is empty, inject the config version.
-	if ver, ok := conf.RawPrevResult["CNIVersion"]; !ok || ver == "" {
-		conf.RawPrevResult["CNIVersion"] = conf.CNIVersion
+	if ver, ok := conf.RawPrevResult["cniVersion"]; !ok || ver == "" {
+		conf.RawPrevResult["cniVersion"] = conf.CNIVersion
 	}
 
 	resultBytes, err := json.Marshal(conf.RawPrevResult)
