@@ -80,7 +80,7 @@ func LoadArgs(args string, container interface{}) error {
 	pairs := strings.Split(args, ";")
 	unknownArgs := []string{}
 	for _, pair := range pairs {
-		kv := strings.Split(pair, "=")
+		kv := strings.SplitN(pair, "=", 2)
 		if len(kv) != 2 {
 			return fmt.Errorf("ARGS: invalid pair %q", pair)
 		}
