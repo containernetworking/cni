@@ -85,7 +85,7 @@ type GCAttachment struct {
 	IfName      string `json:"ifname"`
 }
 
-// Note: DNS should be omit if DNS is empty but default Marshal function
+// Note: DNS and IPAM should be omit if they are empty but default Marshal function
 // will output empty structure hence need to write a Marshal function
 func (n *PluginConf) MarshalJSON() ([]byte, error) {
 	bytes, err := json.Marshal(*n)
@@ -100,6 +100,10 @@ func (n *PluginConf) MarshalJSON() ([]byte, error) {
 
 	if n.DNS.IsEmpty() {
 		delete(fixupObj, "dns")
+	}
+
+	if n.IPAM.IsEmpty() {
+		delete(fixupObj, "ipam")
 	}
 
 	return json.Marshal(fixupObj)
