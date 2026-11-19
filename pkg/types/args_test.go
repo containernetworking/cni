@@ -119,6 +119,31 @@ var _ = Describe("LoadArgs", func() {
 		})
 	})
 
+	Context("When an argument value contains an equals sign", func() {
+		It("keeps everything after the first equals sign in the value", func() {
+			conf := struct {
+				Token UnmarshallableString
+				Name  UnmarshallableString
+				CommonArgs
+			}{}
+			err := LoadArgs("Token=abc==;Name=a=b=c", &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(conf.Token)).To(Equal("abc=="))
+			Expect(string(conf.Name)).To(Equal("a=b=c"))
+		})
+	})
+
+	Context("When an argument has no equals sign", func() {
+		It("LoadArgs should fail", func() {
+			conf := struct {
+				Token UnmarshallableString
+				CommonArgs
+			}{}
+			err := LoadArgs("Token", &conf)
+			Expect(err).To(MatchError(`ARGS: invalid pair "Token"`))
+		})
+	})
+
 	Context("When known arguments are passed and cannot be unmarshalled", func() {
 		It("LoadArgs should fail", func() {
 			conf := struct {
