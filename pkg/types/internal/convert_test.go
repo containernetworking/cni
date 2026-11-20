@@ -113,6 +113,19 @@ var _ = Describe("converter registry", func() {
 		Expect(err).To(MatchError("no converter for CNI result version 9.9.8 to 7.7.7"))
 	})
 
+	It("rejects a conversion when only one end of the version pair matches", func() {
+		const from, to, other = "9.8.1", "9.8.2", "9.8.3"
+		convert.RegisterConverter(from, []string{to}, func(types.Result, string) (types.Result, error) {
+			return nil, nil
+		})
+
+		_, err := convert.Convert(&stubResult{version: from}, other)
+		Expect(err).To(HaveOccurred())
+
+		_, err = convert.Convert(&stubResult{version: other}, to)
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("panics when a version pair is registered twice", func() {
 		noop := func(types.Result, string) (types.Result, error) { return nil, nil }
 		convert.RegisterConverter("9.9.9", []string{"7.7.9"}, noop)
