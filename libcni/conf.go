@@ -256,11 +256,17 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 	}
 
 	if !conf.LoadOnlyInlinedPlugins {
-		plugins, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
+		dropIns, err := NetworkPluginConfsFromFiles(filepath.Dir(filename), conf.Name)
 		if err != nil {
 			return nil, err
 		}
-		conf.Plugins = append(conf.Plugins, plugins...)
+		if len(dropIns) > 0 {
+			conf.Bytes, err = inlinePluginConfigs(conf.Bytes, dropIns)
+			if err != nil {
+				return nil, fmt.Errorf("inlining plugin configs for %s: %w", filename, err)
+			}
+			conf.Plugins = append(conf.Plugins, dropIns...)
+		}
 	}
 
 	if len(conf.Plugins) == 0 {
@@ -269,6 +275,30 @@ func NetworkConfFromFile(filename string) (*NetworkConfigList, error) {
 		return nil, fmt.Errorf("no plugin configs found")
 	}
 	return conf, nil
+}
+
+// inlinePluginConfigs produces the self-contained list that ADD stores in the cache.
+func inlinePluginConfigs(listBytes []byte, dropIns []*PluginConfig) ([]byte, error) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(listBytes, &fields); err != nil {
+		return nil, err
+	}
+	var inlined []json.RawMessage
+	if original, ok := fields["plugins"]; ok {
+		if err := json.Unmarshal(original, &inlined); err != nil {
+			return nil, err
+		}
+	}
+	for _, plugin := range dropIns {
+		inlined = append(inlined, plugin.Bytes)
+	}
+	encoded, err := json.Marshal(inlined)
+	if err != nil {
+		return nil, err
+	}
+	fields["plugins"] = encoded
+	fields["loadOnlyInlinedPlugins"] = json.RawMessage("true")
+	return json.Marshal(fields)
 }
 
 // Deprecated: This file format is no longer supported, use NetworkConfXXX and NetworkPluginXXX functions
