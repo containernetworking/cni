@@ -164,6 +164,38 @@ var _ = Describe("Types", func() {
 		})
 	})
 
+	Describe("PluginConf JSON", func() {
+		It("omits empty ipam and dns when marshalling", func() {
+			conf := &types.PluginConf{
+				CNIVersion: "1.0.0",
+				Name:       "mynet",
+				Type:       "bridge",
+			}
+			jsonBytes, err := json.Marshal(conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jsonBytes).To(MatchJSON(`{"cniVersion":"1.0.0","name":"mynet","type":"bridge"}`))
+		})
+
+		It("keeps ipam and dns when they are set", func() {
+			conf := &types.PluginConf{
+				CNIVersion: "1.0.0",
+				Name:       "mynet",
+				Type:       "bridge",
+				IPAM:       types.IPAM{Type: "host-local"},
+				DNS:        types.DNS{Nameservers: []string{"1.2.3.4"}},
+			}
+			jsonBytes, err := json.Marshal(conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(jsonBytes).To(MatchJSON(`{
+				"cniVersion": "1.0.0",
+				"name": "mynet",
+				"type": "bridge",
+				"ipam": {"type": "host-local"},
+				"dns": {"nameservers": ["1.2.3.4"]}
+			}`))
+		})
+	})
+
 	Describe("Result conversion", func() {
 		var result *current.Result
 		BeforeEach(func() {
