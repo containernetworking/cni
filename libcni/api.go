@@ -83,7 +83,10 @@ type NetworkConfigList struct {
 	DisableGC              bool
 	LoadOnlyInlinedPlugins bool
 	Plugins                []*PluginConfig
-	Bytes                  []byte
+
+	// Bytes contains the serialized configuration. When a file load adds
+	// drop-ins, the serialized list inlines them and disables further discovery.
+	Bytes []byte
 }
 
 type NetworkAttachment struct {

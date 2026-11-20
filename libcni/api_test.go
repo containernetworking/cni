@@ -1056,6 +1056,54 @@ var _ = Describe("Invoking plugins", func() {
 				Expect(foundCABytes).To(MatchJSON(expectedCABytes))
 			})
 
+			DescribeTable("restores the drop-in plugin chain from the cached config", func(inlineFirst bool) {
+				configDir := GinkgoT().TempDir()
+				dropInDir := filepath.Join(configDir, "some-list")
+				Expect(os.Mkdir(dropInDir, 0o700)).To(Succeed())
+
+				plugin := func(stage string) string {
+					return fmt.Sprintf(`{"type":"noop","stage":%q,"debugFile":%q,"commandLog":%q}`,
+						stage, plugins[0].debugFilePath, plugins[0].commandFilePath)
+				}
+				var inline string
+				if inlineFirst {
+					inline = fmt.Sprintf(`,"plugins":[%s]`, plugin("first"))
+				} else {
+					Expect(os.WriteFile(filepath.Join(dropInDir, "10-first.conf"), []byte(plugin("first")), 0o600)).To(Succeed())
+				}
+				Expect(os.WriteFile(filepath.Join(dropInDir, "20-second.conf"), []byte(plugin("second")), 0o600)).To(Succeed())
+				config := fmt.Sprintf(`{"name":"some-list","cniVersion":%q,"vendorID":9007199254740993%s}`, version.Current(), inline)
+				Expect(os.WriteFile(filepath.Join(configDir, "network.conflist"), []byte(config), 0o600)).To(Succeed())
+
+				list, err := libcni.LoadNetworkConf(configDir, "some-list")
+				Expect(err).NotTo(HaveOccurred())
+				_, err = cniConfig.AddNetworkList(ctx, list, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(os.RemoveAll(dropInDir)).To(Succeed())
+
+				cached, cachedRuntime, err := cniConfig.GetNetworkListCachedConfig(list, runtimeConfig)
+				Expect(err).NotTo(HaveOccurred())
+				restored, err := libcni.NetworkConfFromBytes(cached)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cniConfig.DelNetworkList(ctx, restored, cachedRuntime)).To(Succeed())
+
+				log, err := noop_debug.ReadCommandLog(plugins[0].commandFilePath)
+				Expect(err).NotTo(HaveOccurred())
+				var calls []string
+				for _, entry := range log {
+					var request struct{ Stage string }
+					Expect(json.Unmarshal(entry.CmdArgs.StdinData, &request)).To(Succeed())
+					calls = append(calls, entry.Command+" "+request.Stage)
+				}
+				Expect(calls).To(Equal([]string{"ADD first", "ADD second", "DEL second", "DEL first"}))
+				var extension struct{ VendorID uint64 }
+				Expect(json.Unmarshal(cached, &extension)).To(Succeed())
+				Expect(extension.VendorID).To(Equal(uint64(9007199254740993)))
+			},
+				Entry("with an inline plugin and a drop-in", true),
+				Entry("with only drop-ins", false),
+			)
+
 			Context("when finding the plugin fails", func() {
 				BeforeEach(func() {
 					netConfigList.Plugins[1].Network.Type = "does-not-exist"

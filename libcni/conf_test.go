@@ -535,8 +535,9 @@ var _ = Describe("Loading configuration from disk", func() {
 				subDir := filepath.Join(configDir, "some-network")
 				Expect(os.MkdirAll(subDir, 0o700)).To(Succeed())
 
-				_, err := libcni.LoadNetworkConf(configDir, "some-network")
+				list, err := libcni.LoadNetworkConf(configDir, "some-network")
 				Expect(err).NotTo(HaveOccurred())
+				Expect(list.Bytes).To(Equal(configList))
 			})
 
 			It("will merge loaded and inlined plugin lists if both `plugins` is set and `loadOnlyInlinedPlugins` is false", func() {
@@ -566,6 +567,12 @@ var _ = Describe("Loading configuration from disk", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(netConfigList.LoadOnlyInlinedPlugins).To(BeFalse())
 				Expect(netConfigList.Plugins).To(HaveLen(2))
+
+				snapshot := filepath.Join(configDir, "snapshot.conflist")
+				Expect(os.WriteFile(snapshot, netConfigList.Bytes, 0o600)).To(Succeed())
+				reloaded, err := libcni.NetworkConfFromFile(snapshot)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reloaded.Plugins).To(HaveLen(2))
 			})
 
 			It("will ignore loaded plugins if `plugins` is set and `loadOnlyInlinedPlugins` is true", func() {
