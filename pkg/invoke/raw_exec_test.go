@@ -204,6 +204,14 @@ var _ = Describe("RawExec", func() {
 			Expect(elapsed).To(BeNumerically(">=", time.Second))
 		})
 
+		It("returns an error when the file is still busy after all retries", func() {
+			// scriptFile stays open for writing, so every attempt fails with ETXTBSY
+			resultBytes, err := execer.ExecPlugin(ctx, scriptPath, []byte{}, []string{})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("text file busy"))
+			Expect(resultBytes).To(BeEmpty())
+		})
+
 		It("does not retry when the file is not busy", func() {
 			// close the file so there is no ETXTBSY
 			scriptFile.Close()
