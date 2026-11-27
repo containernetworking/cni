@@ -39,6 +39,7 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 	stderr := &bytes.Buffer{}
 
 	// Retry the command on "text file busy" errors
+	var err error
 	for i := 0; i <= 5; i++ {
 		stdout.Reset()
 		stderr.Reset()
@@ -49,7 +50,7 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 		c.Stdout = stdout
 		c.Stderr = stderr
 
-		err := c.Run()
+		err = c.Run()
 
 		// Command succeeded
 		if err == nil {
@@ -64,6 +65,12 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 		}
 
 		// All other errors except than the busy text file
+		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
+	}
+
+	// Every attempt failed with "text file busy": report it instead of
+	// returning the empty output of the last attempt as a success.
+	if err != nil {
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
